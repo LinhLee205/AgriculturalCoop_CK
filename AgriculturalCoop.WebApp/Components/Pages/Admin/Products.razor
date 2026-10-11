@@ -1,0 +1,178 @@
+@page "/admin/products"
+@using System.ComponentModel.DataAnnotations
+@inject UserSessionState UserSession
+@inject IViewProductsUseCase ViewProductsUseCase
+@inject IAddProductUseCase AddProductUseCase
+
+<PageTitle>Quản Lý Nông Sản - HTX Nông Nghiệp</PageTitle>
+
+@if (!UserSession.IsAdmin)
+{
+    <div class="alert alert-danger p-4 rounded-4 text-center my-5">
+        <i class="bi bi-shield-lock-fill fs-1 text-danger mb-2 d-block"></i>
+        <h4 class="fw-bold">Truy cập bị từ chối (K4.2)</h4>
+        <p class="text-muted">Chỉ Ban Quản trị Hợp tác xã mới có quyền truy cập trang quản lý nông sản.</p>
+    </div>
+}
+else
+{
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-muted">Quản trị</a></li>
+                        <li class="breadcrumb-item active">Nông sản</li>
+                    </ol>
+                </nav>
+                <h2 class="fw-bold text-dark mb-0">Danh Mục Nông Sản Hợp Tác Xã</h2>
+            </div>
+            <button class="btn btn-success rounded-pill px-4 fw-semibold" @onclick="() => showAddModal = true">
+                <i class="bi bi-plus-circle me-1"></i> Thêm Nông Sản Mới
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(alertMsg))
+        {
+            <div class="alert alert-success rounded-3 py-2 px-3 mb-3">@alertMsg</div>
+        }
+
+        <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ảnh</th>
+                            <th>Tên Nông Sản</th>
+                            <th>Phân Loại</th>
+                            <th>Đơn Vị Tính</th>
+                            <th>Giá Chuẩn</th>
+                            <th>Mô Tả</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in products)
+                        {
+                            <tr>
+                                <td>
+                                    <img src="@p.ImageUrl" class="rounded-3 object-fit-cover shadow-xs" style="width: 50px; height: 50px;" alt="@p.ProductName" />
+                                </td>
+                                <td class="fw-bold text-dark">@p.ProductName</td>
+                                <td><span class="badge bg-light text-muted border">@p.Category</span></td>
+                                <td>@p.Unit</td>
+                                <td class="fw-semibold text-success">@p.StandardPrice.ToString("N0") VNĐ</td>
+                                <td class="text-muted small" style="max-width: 300px;">@p.Description</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (showAddModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-header border-bottom">
+                        <h5 class="modal-title fw-bold">Thêm Nông Sản Mới</h5>
+                        <button type="button" class="btn-close" @onclick="() => showAddModal = false"></button>
+                    </div>
+                    <EditForm Model="@newProduct" OnValidSubmit="HandleAddProduct">
+                        <DataAnnotationsValidator />
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Tên nông sản <span class="text-danger">*</span></label>
+                                <InputText @bind-Value="newProduct.ProductName" class="form-control" />
+                                <ValidationMessage For="@(() => newProduct.ProductName)" class="validation-message" />
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Phân loại:</label>
+                                    <InputSelect @bind-Value="newProduct.Category" class="form-select">
+                                        <option value="Trái cây đặc sản">Trái cây đặc sản</option>
+                                        <option value="Rau củ quả">Rau củ quả</option>
+                                        <option value="Rau ăn lá">Rau ăn lá</option>
+                                        <option value="Dược liệu">Dược liệu</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Đơn vị tính:</label>
+                                    <InputText @bind-Value="newProduct.Unit" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Giá tiêu chuẩn (VNĐ):</label>
+                                <InputNumber @bind-Value="newProduct.StandardPrice" class="form-control" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Ảnh minh họa (URL):</label>
+                                <InputText @bind-Value="newProduct.ImageUrl" class="form-control" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Mô tả đặc điểm:</label>
+                                <InputTextArea @bind-Value="newProduct.Description" class="form-control" rows="2" />
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top">
+                            <button type="button" class="btn btn-light rounded-pill px-4" @onclick="() => showAddModal = false">Hủy</button>
+                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">Lưu Nông Sản</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<Product> products = new();
+    private bool showAddModal = false;
+    private string? alertMsg;
+
+    public class NewProductModel
+    {
+        [Required(ErrorMessage = "Tên nông sản không được để trống")]
+        public string ProductName { get; set; } = string.Empty;
+        public string Category { get; set; } = "Trái cây đặc sản";
+        public string Unit { get; set; } = "kg";
+        public decimal StandardPrice { get; set; } = 35000;
+        public string Description { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80";
+    }
+
+    private NewProductModel newProduct = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserSession.IsAdmin)
+        {
+            await LoadProducts();
+        }
+    }
+
+    private async Task LoadProducts()
+    {
+        products = (await ViewProductsUseCase.ExecuteAsync()).ToList();
+    }
+
+    private async Task HandleAddProduct()
+    {
+        var product = new Product
+        {
+            ProductName = newProduct.ProductName,
+            Category = newProduct.Category,
+            Unit = newProduct.Unit,
+            StandardPrice = newProduct.StandardPrice,
+            Description = newProduct.Description,
+            ImageUrl = newProduct.ImageUrl
+        };
+
+        await AddProductUseCase.ExecuteAsync(product);
+        showAddModal = false;
+        alertMsg = $"Đã thêm nông sản {product.ProductName} vào danh mục!";
+        newProduct = new();
+        await LoadProducts();
+    }
+}

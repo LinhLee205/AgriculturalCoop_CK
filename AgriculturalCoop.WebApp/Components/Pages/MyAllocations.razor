@@ -1,0 +1,104 @@
+@page "/my-allocations"
+@inject IViewAllocationsByDealerUseCase ViewAllocationsByDealerUseCase
+@inject UserSessionState UserSession
+
+<PageTitle>Sản Lượng Phân Bổ Thực Tế - Đại Lý</PageTitle>
+
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Sản Lượng Phân Bổ Nhận Được</h2>
+            <p class="text-muted small mb-0">
+                Kết quả phân bổ thực tế sau thu hoạch đối với các đơn của: <strong class="text-success">@UserSession.CurrentDealerName</strong>
+            </p>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="text-muted mt-2">Đang tải kết quả phân bổ...</p>
+        </div>
+    }
+    else if (!allocations.Any())
+    {
+        <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white">
+            <i class="bi bi-pie-chart text-muted fs-1 mb-3"></i>
+            <h4 class="fw-bold text-dark">Chưa có kết quả phân bổ nào</h4>
+            <p class="text-muted small">Các lô nông sản đại lý đặt trước đang trong quá trình chăm sóc và chưa đến đợt thu hoạch.</p>
+            <div class="mt-2">
+                <a href="/batches" class="btn btn-outline-success rounded-pill px-4">Xem các lô đang mở</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            @foreach (var alloc in allocations)
+            {
+                <div class="col">
+                    <div class="card border-0 rounded-4 shadow-sm p-4 bg-white h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-light text-muted border font-monospace">
+                                @alloc.HarvestBatch?.BatchCode
+                            </span>
+                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">
+                                <i class="bi bi-calendar-check me-1"></i> @alloc.AllocationDate.ToString("dd/MM/yyyy")
+                            </span>
+                        </div>
+
+                        <h5 class="fw-bold text-dark mb-1">
+                            @(alloc.HarvestBatch?.Product?.ProductName ?? "Nông sản")
+                        </h5>
+                        <div class="small text-muted mb-3">
+                            Đơn đặt trước #@alloc.PreOrderLine?.PreOrderId
+                        </div>
+
+                        <div class="row g-2 mb-3 text-center">
+                            <div class="col-6">
+                                <div class="bg-light p-3 rounded-3 border">
+                                    <small class="text-muted d-block">Đặt trước ban đầu</small>
+                                    <strong class="text-dark fs-5">@alloc.RequestedQuantity.ToString("N0") kg</strong>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-success-subtle p-3 rounded-3 border border-success-subtle">
+                                    <small class="text-success d-block fw-semibold">Thực tế nhận được</small>
+                                    <strong class="text-success fs-5">@alloc.AllocatedQuantity.ToString("N0") kg</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-3 bg-light border small text-muted">
+                            <i class="bi bi-info-circle me-1 text-primary"></i> <strong>Lý do phân bổ:</strong> @alloc.Reason
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Allocation> allocations = new();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllocations();
+        UserSession.OnSessionChanged += async () =>
+        {
+            await LoadAllocations();
+            StateHasChanged();
+        };
+    }
+
+    private async Task LoadAllocations()
+    {
+        loading = true;
+        var list = await ViewAllocationsByDealerUseCase.ExecuteAsync(UserSession.CurrentDealerId);
+        allocations = list.ToList();
+        loading = false;
+    }
+}

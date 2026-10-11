@@ -1,0 +1,106 @@
+@page "/batches"
+@inject IViewHarvestBatchesUseCase ViewHarvestBatchesUseCase
+@inject IPreOrderCart Cart
+@inject NavigationManager Nav
+
+<PageTitle>Danh Mục Lô Nông Sản - HTX Nông Nghiệp</PageTitle>
+
+<div class="mb-4">
+    <div class="row align-items-center g-3 mb-4">
+        <div class="col-md-6">
+            <h2 class="fw-bold text-dark mb-1">Danh Mục Lô Nông Sản Thu Hoạch</h2>
+            <p class="text-muted small mb-0">Theo dõi tiến độ mùa vụ và đặt trước trực tiếp từ các hộ xã viên</p>
+        </div>
+        <div class="col-md-6">
+            <SearchBar @bind-SearchTerm="searchTerm" OnSearch="ApplyFilter" />
+        </div>
+    </div>
+
+    <!-- Category Filter Chips -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <button class="btn btn-sm rounded-pill px-3 @(selectedCategory == "All" ? "btn-success" : "btn-outline-secondary")" 
+                @onclick="@(() => SelectCategory("All"))">
+            Tất cả
+        </button>
+        <button class="btn btn-sm rounded-pill px-3 @(selectedCategory == "Trái cây đặc sản" ? "btn-success" : "btn-outline-secondary")" 
+                @onclick="@(() => SelectCategory("Trái cây đặc sản"))">
+            Trái cây đặc sản
+        </button>
+        <button class="btn btn-sm rounded-pill px-3 @(selectedCategory == "Rau củ quả" ? "btn-success" : "btn-outline-secondary")" 
+                @onclick="@(() => SelectCategory("Rau củ quả"))">
+            Rau củ quả
+        </button>
+        <button class="btn btn-sm rounded-pill px-3 @(selectedCategory == "Rau ăn lá" ? "btn-success" : "btn-outline-secondary")" 
+                @onclick="@(() => SelectCategory("Rau ăn lá"))">
+            Rau ăn lá
+        </button>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="text-muted mt-2">Đang tải danh sách lô mùa vụ...</p>
+        </div>
+    }
+    else if (!filteredBatches.Any())
+    {
+        <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white">
+            <i class="bi bi-search text-muted fs-1 mb-3"></i>
+            <h5 class="fw-bold text-dark">Không tìm thấy lô nông sản phù hợp</h5>
+            <p class="text-muted small">Vui lòng thử tìm kiếm với từ khóa hoặc danh mục khác.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var batch in filteredBatches)
+            {
+                <div class="col">
+                    <HarvestBatchCard Batch="batch" OnOrderClick="HandleOrderClick" />
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<HarvestBatch> allBatches = new();
+    private List<HarvestBatch> filteredBatches = new();
+    private string searchTerm = string.Empty;
+    private string selectedCategory = "All";
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var batches = await ViewHarvestBatchesUseCase.ExecuteAsync();
+        allBatches = batches.ToList();
+        filteredBatches = allBatches;
+        loading = false;
+    }
+
+    private void SelectCategory(string category)
+    {
+        selectedCategory = category;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        filteredBatches = allBatches.Where(b =>
+        {
+            bool matchCat = selectedCategory == "All" || (b.Product?.Category?.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase) ?? false);
+            bool matchSearch = string.IsNullOrWhiteSpace(searchTerm) ||
+                               (b.BatchCode.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                               (b.Product?.ProductName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                               (b.Member?.FullName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false);
+            return matchCat && matchSearch;
+        }).ToList();
+    }
+
+    private void HandleOrderClick(HarvestBatch batch)
+    {
+        Cart.AddItem(batch, 50);
+        Nav.NavigateTo("/cart");
+    }
+}

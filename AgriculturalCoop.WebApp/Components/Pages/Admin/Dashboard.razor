@@ -1,0 +1,167 @@
+@page "/admin"
+@inject UserSessionState UserSession
+@inject NavigationManager Nav
+@inject IViewMembersUseCase ViewMembersUseCase
+@inject IViewProductsUseCase ViewProductsUseCase
+@inject IViewHarvestBatchesUseCase ViewHarvestBatchesUseCase
+@inject IViewAllPreOrdersUseCase ViewAllPreOrdersUseCase
+
+<PageTitle>Bảng Điều Khiển Quản Trị - HTX Nông Nghiệp</PageTitle>
+
+@if (!UserSession.IsAdmin)
+{
+    <div class="alert alert-danger p-4 rounded-4 text-center my-5">
+        <i class="bi bi-shield-lock-fill fs-1 text-danger mb-2 d-block"></i>
+        <h4 class="fw-bold">Truy cập bị từ chối (K4.2)</h4>
+        <p class="text-muted">Bạn đang đăng nhập với tài khoản Đại lý. Chỉ Ban Quản trị HTX mới có quyền xem trang này.</p>
+        <button class="btn btn-warning rounded-pill px-4 fw-bold" @onclick="SwitchToAdmin">
+            Chuyển sang vai trò Admin HTX để tiếp tục
+        </button>
+    </div>
+}
+else
+{
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold mb-2">QUẢN TRỊ VIÊN HTX</span>
+                <h2 class="fw-bold text-dark mb-1">Bảng Điều Khiển Hợp Tác Xã</h2>
+                <p class="text-muted small mb-0">Theo dõi tổng thể các hộ xã viên, tiến độ mùa vụ và điều phối phân bổ</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/admin/batches" class="btn btn-warning text-dark fw-bold rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-box-seam me-1"></i> Quản lý Lô & Phân bổ
+                </a>
+            </div>
+        </div>
+
+        <!-- 4 Thẻ KPI Thống Kê -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-semibold">Tổng Hộ Xã Viên</span>
+                        <div class="bg-success-subtle text-success p-2 rounded-3">
+                            <i class="bi bi-people-fill fs-5"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-0">@membersCount</h3>
+                    <small class="text-muted">Liên kết tiêu chuẩn VietGAP</small>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-semibold">Lô Thu Hoạch</span>
+                        <div class="bg-warning-subtle text-warning p-2 rounded-3">
+                            <i class="bi bi-box-seam fs-5"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-0">@batchesCount</h3>
+                    <small class="text-muted">Đang canh tác & mở đặt trước</small>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-semibold">Đơn Đặt Trước Sỉ</span>
+                        <div class="bg-primary-subtle text-primary p-2 rounded-3">
+                            <i class="bi bi-receipt fs-5"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-0">@ordersCount</h3>
+                    <small class="text-muted">Từ hệ thống đại lý bao tiêu</small>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 rounded-4 shadow-sm p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-semibold">Giá Trị Bao Tiêu</span>
+                        <div class="bg-danger-subtle text-danger p-2 rounded-3">
+                            <i class="bi bi-currency-dollar fs-5"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-0">@(totalRevenue.ToString("N0")) <small class="fs-6 text-muted font-normal">đ</small></h3>
+                    <small class="text-muted">Doanh số cam kết mùa vụ</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Giới thiệu Demo Nghiệp vụ -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white mb-4">
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-diagram-3-fill text-success me-2"></i> Luồng Nghiệp Vụ Cốt Lõi Cần Vấn Đáp
+                    </h5>
+                    
+                    <div class="p-3 rounded-3 bg-light border mb-3">
+                        <strong class="text-dark d-block mb-1">Ca Demo Lô Thanh trà Lô 001 (Theo Đề Bài Capstone):</strong>
+                        <ul class="mb-0 small text-muted ps-3">
+                            <li>Dự kiến thu hoạch ban đầu: <strong>1.000 kg</strong></li>
+                            <li>Đại lý A đặt: <strong>400 kg</strong> | Đại lý B đặt: <strong>300 kg</strong> | Đại lý C đặt: <strong>200 kg</strong> (Tổng = 900 kg &le; 1.000 kg &rarr; Đạt Luật 1)</li>
+                            <li>Thu hoạch thực tế thực tế bị thiếu hụt: <strong>720 kg</strong></li>
+                            <li>Kích hoạt thuật toán phân bổ theo tỷ lệ (Luật 2): A nhận 320 kg, B nhận 240 kg, C nhận 160 kg (Tổng = 720 kg khớp 100%).</li>
+                        </ul>
+                    </div>
+
+                    <a href="/admin/allocations/1" class="btn btn-warning text-dark fw-bold rounded-pill px-4">
+                        <i class="bi bi-play-circle-fill me-1"></i> Mở Màn Hình Chạy Phân Bổ Lô 001 Ngay
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+                    <h5 class="fw-bold text-dark mb-3">Phím Tắt Quản Trị</h5>
+                    <div class="d-grid gap-2">
+                        <a href="/admin/batches" class="btn btn-outline-success rounded-3 text-start p-3">
+                            <i class="bi bi-box-seam me-2"></i> Quản lý Lô Mùa Vụ
+                        </a>
+                        <a href="/admin/orders" class="btn btn-outline-primary rounded-3 text-start p-3">
+                            <i class="bi bi-card-checklist me-2"></i> Danh Sách Đơn Đặt Trước
+                        </a>
+                        <a href="/admin/members" class="btn btn-outline-secondary rounded-3 text-start p-3">
+                            <i class="bi bi-people me-2"></i> Danh Sách Hộ Xã Viên
+                        </a>
+                        <a href="/admin/products" class="btn btn-outline-secondary rounded-3 text-start p-3">
+                            <i class="bi bi-egg-fried me-2"></i> Danh Mục Nông Sản
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private int membersCount = 0;
+    private int batchesCount = 0;
+    private int ordersCount = 0;
+    private decimal totalRevenue = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserSession.IsAdmin)
+        {
+            var members = await ViewMembersUseCase.ExecuteAsync();
+            membersCount = members.Count();
+
+            var batches = await ViewHarvestBatchesUseCase.ExecuteAsync();
+            batchesCount = batches.Count();
+
+            var orders = await ViewAllPreOrdersUseCase.ExecuteAsync();
+            ordersCount = orders.Count();
+            totalRevenue = orders.Sum(o => o.TotalAmount);
+        }
+    }
+
+    private void SwitchToAdmin()
+    {
+        UserSession.SwitchToAdmin();
+        Nav.NavigateTo("/admin", forceLoad: true);
+    }
+}

@@ -1,0 +1,39 @@
+@page "/access-denied"
+@inject UserSessionState UserSession
+@inject NavigationManager Nav
+
+<PageTitle>Truy Cập Bị Từ Chối - HTX Nông Nghiệp</PageTitle>
+
+<div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white my-5 mx-auto" style="max-width: 580px;">
+    <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-4 d-inline-flex mx-auto mb-3">
+        <i class="bi bi-shield-lock-fill" style="font-size: 3.5rem;"></i>
+    </div>
+    
+    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill fw-bold mx-auto mb-2">
+        BẢO MẬT & PHÂN QUYỀN (K4.2)
+    </span>
+    
+    <h3 class="fw-bold text-dark mb-2">Truy Cập Trang Quản Trị Bị Chặn</h3>
+    <p class="text-muted small mb-4">
+        Bạn đang thao tác với vai trò <strong>@UserSession.CurrentDealerName</strong>. 
+        Khi người dùng thông thường gõ trực tiếp URL quản trị (ví dụ: <code>/admin/products</code>, <code>/admin/batches</code>), 
+        hệ thống sẽ tự động chặn lại và không cho phép truy xuất trái phép.
+    </p>
+
+    <div class="d-flex justify-content-center gap-3">
+        <a href="/" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-1"></i> Về Trang Chủ
+        </a>
+        <button class="btn btn-warning text-dark fw-bold rounded-pill px-4" @onclick="SwitchToAdmin">
+            <i class="bi bi-key-fill me-1"></i> Chuyển Sang Admin Demo
+        </button>
+    </div>
+</div>
+
+@code {
+    private void SwitchToAdmin()
+    {
+        UserSession.SwitchToAdmin();
+        Nav.NavigateTo("/admin");
+    }
+}

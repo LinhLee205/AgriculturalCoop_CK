@@ -1,0 +1,160 @@
+@using AgriculturalCoop.WebApp.State
+@inject IPreOrderCart Cart
+@inject UserSessionState UserSession
+@inject NavigationManager Nav
+@implements IDisposable
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm py-2" style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #0f172a 100%) !important;">
+    <div class="container-fluid px-3 px-lg-4">
+        <!-- Logo Brand -->
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="/">
+            <div class="bg-success text-white p-2 rounded-3 d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;">
+                <i class="bi bi-flower1 fs-5"></i>
+            </div>
+            <div>
+                <span class="fs-5 text-white" style="letter-spacing: -0.5px;">COOP<span class="text-warning">AGRI</span></span>
+                <span class="badge bg-warning text-dark ms-2 small" style="font-size: 0.65rem;">.NET 8</span>
+            </div>
+        </a>
+
+        <!-- Toggler for Mobile (390px) -->
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#coopNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="coopNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+                <li class="nav-item">
+                    <NavLink class="nav-link px-3" href="/" Match="NavLinkMatch.All">
+                        <i class="bi bi-house-door me-1"></i> Trang chủ
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link px-3" href="/batches">
+                        <i class="bi bi-grid me-1"></i> Lô mùa vụ
+                    </NavLink>
+                </li>
+
+                @if (UserSession.IsDealer)
+                {
+                    <li class="nav-item">
+                        <NavLink class="nav-link px-3" href="/my-orders">
+                            <i class="bi bi-receipt me-1"></i> Đơn của tôi
+                        </NavLink>
+                    </li>
+                    <li class="nav-item">
+                        <NavLink class="nav-link px-3" href="/my-allocations">
+                            <i class="bi bi-pie-chart-fill me-1 text-warning"></i> Phân bổ nhận được
+                        </NavLink>
+                    </li>
+                }
+
+                @if (UserSession.IsAdmin)
+                {
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle px-3 fw-bold text-warning" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-shield-lock-fill me-1"></i> Quản Trị HTX
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary">
+                            <li><a class="dropdown-item" href="/admin"><i class="bi bi-speedometer2 me-2"></i> Bảng điều khiển</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/admin/batches"><i class="bi bi-box-seam me-2 text-warning"></i> Lô thu hoạch & Phân bổ</a></li>
+                            <li><a class="dropdown-item" href="/admin/orders"><i class="bi bi-card-checklist me-2"></i> Đơn đặt trước sỉ</a></li>
+                            <li><a class="dropdown-item" href="/admin/members"><i class="bi bi-people-fill me-2"></i> Hồ sơ xã viên</a></li>
+                            <li><a class="dropdown-item" href="/admin/products"><i class="bi bi-egg-fried me-2"></i> Danh mục nông sản</a></li>
+                        </ul>
+                    </li>
+                }
+            </ul>
+
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-3 mt-lg-0">
+                <!-- Giỏ Đặt Trước (Scoped Service State K1.4) -->
+                <a href="/cart" class="btn btn-outline-light rounded-pill position-relative px-3 py-1 d-flex align-items-center gap-2 border-opacity-25">
+                    <i class="bi bi-cart3 fs-5 text-warning"></i>
+                    <span class="d-none d-sm-inline small">Giỏ đặt trước</span>
+                    @if (Cart.TotalItemCount > 0)
+                    {
+                        <span class="badge bg-danger rounded-pill font-monospace">@Cart.TotalItemCount</span>
+                    }
+                </a>
+
+                <!-- Role Switcher Tooltip / Dropdown tiện dụng cho Vấn Đáp -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm @(UserSession.IsAdmin ? "btn-warning text-dark fw-bold" : "btn-success text-white") dropdown-toggle rounded-pill px-3 py-1 shadow-sm" data-bs-toggle="dropdown">
+                        <i class="bi @(UserSession.IsAdmin ? "bi-person-fill-gear" : "bi-shop") me-1"></i>
+                        @(UserSession.IsAdmin ? "Admin HTX" : UserSession.CurrentDealerName)
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2 p-2" style="min-width: 260px;">
+                        <li class="dropdown-header small text-uppercase fw-bold text-muted">Mô phỏng vai trò (Vấn đáp K4.1)</li>
+                        <li>
+                            <button class="dropdown-item rounded-2 py-2 small @(UserSession.IsDealer && UserSession.CurrentDealerId == 1 ? "active bg-success" : "")" 
+                                    @onclick="SwitchToDealerA">
+                                <i class="bi bi-building me-2"></i> Đại lý A (An Phú - Đặt 400kg)
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item rounded-2 py-2 small @(UserSession.IsDealer && UserSession.CurrentDealerId == 2 ? "active bg-success" : "")" 
+                                    @onclick="SwitchToDealerB">
+                                <i class="bi bi-building me-2"></i> Đại lý B (Xanh Mart - Đặt 300kg)
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item rounded-2 py-2 small @(UserSession.IsDealer && UserSession.CurrentDealerId == 3 ? "active bg-success" : "")" 
+                                    @onclick="SwitchToDealerC">
+                                <i class="bi bi-building me-2"></i> Đại lý C (Co.op Mart - Đặt 200kg)
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button class="dropdown-item rounded-2 py-2 small text-warning fw-bold @(UserSession.IsAdmin ? "active bg-dark" : "")" 
+                                    @onclick="SwitchAdmin">
+                                <i class="bi bi-shield-lock-fill me-2"></i> Ban Quản Trị HTX (Admin)
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Cart.OnChange += StateHasChanged;
+        UserSession.OnSessionChanged += StateHasChanged;
+    }
+
+    private void SwitchToDealerA()
+    {
+        SwitchDealer(1, "Đại lý A (An Phú)", "dealer_a@anphu.vn");
+    }
+
+    private void SwitchToDealerB()
+    {
+        SwitchDealer(2, "Đại lý B (Xanh Mart)", "dealer_b@xanhmart.vn");
+    }
+
+    private void SwitchToDealerC()
+    {
+        SwitchDealer(3, "Đại lý C (Co.op Mart)", "dealer_c@coop.vn");
+    }
+
+    private void SwitchDealer(int dealerId, string name, string email)
+    {
+        UserSession.SwitchToDealer(dealerId, name, email);
+        Nav.NavigateTo(Nav.Uri, forceLoad: false);
+    }
+
+    private void SwitchAdmin()
+    {
+        UserSession.SwitchToAdmin();
+        Nav.NavigateTo("/admin", forceLoad: false);
+    }
+
+    public void Dispose()
+    {
+        Cart.OnChange -= StateHasChanged;
+        UserSession.OnSessionChanged -= StateHasChanged;
+    }
+}

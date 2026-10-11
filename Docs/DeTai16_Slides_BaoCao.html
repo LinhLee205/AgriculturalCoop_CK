@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Đề Tài 16 - HTX Nông Sản: Đặt Trước Theo Mùa Vụ</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0b1320;
+            --bg-secondary: #132238;
+            --card-bg: rgba(22, 38, 62, 0.7);
+            --card-border: rgba(56, 189, 248, 0.2);
+            --accent-green: #10b981;
+            --accent-emerald: #059669;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --accent-amber: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-highlight: #38bdf8;
+            --gradient-accent: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            --shadow-glow: 0 10px 30px -10px rgba(16, 185, 129, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Ambient Glow Background */
+        .ambient-glow {
+            position: fixed;
+            top: -20%;
+            left: 20%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 70%);
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+            transition: all 1s ease;
+        }
+
+        /* Top Bar */
+        header {
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 48px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .badge-subject {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .subject-title {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .slide-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-highlight);
+            background: rgba(56, 189, 248, 0.1);
+            padding: 6px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        /* Slides Container */
+        main.slides-viewport {
+            position: relative;
+            flex: 1;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 48px;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            max-width: 1280px;
+            height: calc(100vh - 170px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+            transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 20px 0;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Slide Titles */
+        .slide-header {
+            margin-bottom: 24px;
+        }
+
+        .slide-tag {
+            display: inline-block;
+            color: var(--accent-cyan);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        .slide-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slide-title span.highlight {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide-subtitle {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-top: 6px;
+        }
+
+        /* Cards and Layout Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(16px);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 14px;
+            display: inline-block;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        /* Key Metrics / Pills */
+        .pill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+
+        .pill.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+
+        /* Table Styling */
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        .modern-table th {
+            text-align: left;
+            padding: 12px 14px;
+            color: var(--text-highlight);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.5px;
+        }
+
+        .modern-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+        }
+
+        .modern-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .code-inline {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.35);
+            color: #38bdf8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* Timeline on Slide 4 */
+        .timeline-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            position: relative;
+        }
+
+        .timeline-step {
+            position: relative;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--card-border);
+        }
+
+        .timeline-step.current {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
+        }
+
+        .step-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .step-1 { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .step-2 { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .step-3 { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+        .timeline-date {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .task-list {
+            list-style: none;
+            margin-top: 12px;
+        }
+
+        .task-list li {
+            position: relative;
+            padding-left: 20px;
+            font-size: 0.87rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            line-height: 1.45;
+        }
+
+        .task-list li::before {
+            content: "▹";
+            position: absolute;
+            left: 0;
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        /* Formula Box */
+        .formula-box {
+            background: rgba(15, 23, 42, 0.85);
+            border-left: 4px solid var(--accent-green);
+            padding: 12px 18px;
+            border-radius: 0 10px 10px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #a7f3d0;
+            margin: 10px 0;
+        }
+
+        /* Bottom Control Bar */
+        footer {
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 48px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+        }
+
+        .slide-dots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            width: 32px;
+            border-radius: 99px;
+            background: var(--gradient-accent);
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: transparent;
+        }
+
+        /* Key shortcut hint */
+        .key-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .key-kbd {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow" id="ambientGlow"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <span class="badge-subject">Đồ Án Capstone ECO2415</span>
+            <span class="subject-title">Đề Tài 16: HTX Nông Sản: Đặt Trước Theo Mùa Vụ (★★★)</span>
+        </div>
+        <div class="slide-counter" id="slideCounter">SLIDE 01 / 05</div>
+    </header>
+
+    <!-- Main Viewport -->
+    <main class="slides-viewport">
+
+        <!-- SLIDE 1: TỔNG QUAN & BỐI CẢNH -->
+        <section class="slide active" id="slide-1">
+            <div class="slide-header">
+                <span class="slide-tag">Slide 01 • Giới thiệu dự án</span>
+                <h1 class="slide-title">HTX Nông Sản: <span class="highlight">Đặt Trước Theo Mùa Vụ</span></h1>
+                <p class="slide-subtitle">Giải pháp số hóa phân phối nông sản sỉ & giải quyết bài toán biến động sản lượng thực thu</p>
+            </div>
+
+            <div class="grid-3">
+                <div class="glass-card">
+                    <span class="card-icon">🌱</span>
+                    <h3 class="card-title">1. Bối cảnh & Thách thức</h3>
+                    <p class="card-desc">
+                        Hợp tác xã (HTX) thu hoạch nông sản sạch (thanh trà, bưởi, rau quả) theo mùa. Sản lượng phụ thuộc vào thời tiết và sâu bệnh, dẫn đến sản lượng thực tế thường <strong>thiếu hụt so với dự kiến</strong> ban đầu khi nhận cọc/đơn của đại lý.
+                    </p>
+                </div>
+
+                <div class="glass-card">
+                    <span class="card-icon">🎯</span>
+                    <h3 class="card-title">2. Mục tiêu hệ thống</h3>
+                    <p class="card-desc">
+                        Xây dựng cổng đặt trước (Pre-order) cho đại lý mua buôn. Đảm bảo tính toán <strong>phân bổ minh bạch, công bằng</strong> khi mùa vụ bị giảm sản lượng, tự động hóa tính doanh thu và chia tiền cho từng hộ xã viên.
+                    </p>
+                </div>
+
+                <div class="glass-card">
+                    <span class="card-icon">⚡</span>
+                    <h3 class="card-title">3. Nền tảng công nghệ</h3>
+                    <p class="card-desc">
+                        Tuân thủ tuyệt đối chuẩn đồ án ECO2415:
+                    </p>
+                    <div class="pill-list">
+                        <span class="pill active">.NET 8 / .NET 10</span>
+                        <span class="pill active">Blazor Interactive Server</span>
+                        <span class="pill active">Clean Architecture 4 tầng</span>
+                        <span class="pill active">SQL Server + Dapper/EF Core</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: ENTITIES & ÁNH XẠ ESHOP -->
+        <section class="slide" id="slide-2">
+            <div class="slide-header">
+                <span class="slide-tag">Slide 02 • Kiến trúc dữ liệu</span>
+                <h1 class="slide-title">Mô Hình Dữ Liệu & <span class="highlight">Ánh Xạ eShop Chuẩn</span></h1>
+                <p class="slide-subtitle">Bảo đảm nguyên tắc "eShop đổi miền nghiệp vụ" và quan hệ Header–Line trong Clean Architecture</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card">
+                    <h3 class="card-title">Bảng Ánh Xạ Nghiệp Vụ eShop</h3>
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Thành phần eShop</th>
+                                <th>Ánh xạ HTX Nông Sản</th>
+                                <th>Thực thể (Entity)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Product</strong></td>
+                                <td>Lô thu hoạch mùa vụ</td>
+                                <td><span class="code-inline">HarvestBatch</span>, <span class="code-inline">Product</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Customer</strong></td>
+                                <td>Đại lý bao tiêu / thu mua</td>
+                                <td><span class="code-inline">Dealer</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>ShoppingCart</strong></td>
+                                <td>Giỏ chọn lô đặt trước (Scoped)</td>
+                                <td><span class="code-inline">PreOrderCartService</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Order / LineItem</strong></td>
+                                <td>Đơn đặt trước & Dòng đặt</td>
+                                <td><span class="code-inline">PreOrder</span> / <span class="code-inline">PreOrderLine</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Admin Xử lý đơn</strong></td>
+                                <td>Nhập sản lượng thực & Phân bổ</td>
+                                <td><span class="code-inline">Allocation</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="glass-card">
+                    <h3 class="card-title">2 Vai Trò Người Dùng (K4.1)</h3>
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="color: var(--accent-cyan); font-size: 0.95rem;">👤 Vai trò 1: Đại lý mua sỉ (Dealer)</h4>
+                        <p class="card-desc">Xem danh sách các lô sắp thu hoạch, thông tin mùa vụ; thêm vào giỏ đặt trước; xác nhận đơn đặt trước; theo dõi tiến độ và số lượng thực nhận sau phân bổ.</p>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent-green); font-size: 0.95rem;">🛡️ Vai trò 2: Ban Quản Lý HTX (Admin)</h4>
+                        <p class="card-desc">Được bảo vệ bằng <span class="code-inline">[Authorize(Roles="Admin")]</span>. Quản lý danh mục xã viên (<span class="code-inline">Member</span>), tạo lô mùa vụ, nhập sản lượng thực thu hoạch, kích hoạt thuật toán phân bổ và xuất báo cáo.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: 2 LUẬT NGHIỆP VỤ BẮT BUỘC -->
+        <section class="slide" id="slide-3">
+            <div class="slide-header">
+                <span class="slide-tag">Slide 03 • Trọng tâm chấm điểm</span>
+                <h1 class="slide-title">2 Luật Nghiệp Vụ Cốt Lõi <span class="highlight">(Business Rules)</span></h1>
+                <p class="slide-subtitle">Cài đặt tại CoreBusiness / UseCases, có thông báo thân thiện và chặn vi phạm khi demo</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <h3 class="card-title" style="color: var(--accent-cyan);">Luật 1: Kiểm soát hạn mức đặt trước</h3>
+                        <span class="pill" style="font-size:0.75rem;">Mã K1.3</span>
+                    </div>
+                    <p class="card-desc">
+                        Tổng khối lượng nông sản các đại lý đặt trước trên một lô không được vượt quá <strong>Sản lượng dự kiến</strong> của lô đó.
+                    </p>
+                    <div class="formula-box">
+                        ∑ PreOrderLine.Quantity ≤ HarvestBatch.ExpectedYield
+                    </div>
+                    <p class="card-desc" style="font-size: 0.85rem;">
+                        <strong>Demo vi phạm:</strong> Lô bưởi còn nhận tối đa 200kg, đại lý cố tình nhập 250kg ➔ Hệ thống chặn và hiển thị thông báo lỗi trực tiếp trên giao diện EditForm.
+                    </p>
+                </div>
+
+                <div class="glass-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <h3 class="card-title" style="color: var(--accent-green);">Luật 2: Thuật toán phân bổ hụt sản lượng</h3>
+                        <span class="pill" style="font-size:0.75rem;">Mã K2.2 / K5.2</span>
+                    </div>
+                    <p class="card-desc">
+                        Khi <strong>Sản lượng thực &lt; Tổng đặt trước</strong>: Chạy thuật toán phân bổ tỷ lệ kết hợp bù trừ làm tròn, đảm bảo:
+                    </p>
+                    <div class="formula-box">
+                        ActualAllocated = Round(OrderedQty × ActualYield / TotalOrdered)<br>
+                        ∑ Allocation.ActualQuantity ≡ HarvestBatch.ActualYield
+                    </div>
+                    <p class="card-desc" style="font-size: 0.85rem;">
+                        <strong>Kỹ thuật:</strong> Toàn bộ quá trình tạo bản ghi <span class="code-inline">Allocation</span> cho tất cả đại lý được thực thi trong <strong>1 Transaction duy nhất</strong> ở tầng Plugin.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: KẾ HOẠCH PHÂN BỔ 3 TUẦN (05/10 - 24/10) -->
+        <section class="slide" id="slide-4">
+            <div class="slide-header">
+                <span class="slide-tag">Slide 04 • Tiến độ thực hiện</span>
+                <h1 class="slide-title">Kế Hoạch Dự Án <span class="highlight">3 Tuần (05/10 – 24/10)</span></h1>
+                <p class="slide-subtitle">Lộ trình triển khai chặt chẽ bám sát 3 mốc Sprint của môn học</p>
+            </div>
+
+            <div class="timeline-container">
+                <!-- SPRINT 1 -->
+                <div class="timeline-step">
+                    <span class="step-badge step-1">Sprint 1 • Khởi tạo</span>
+                    <div class="timeline-date">05/10 – 11/10</div>
+                    <p class="card-desc"><strong>Trọng tâm: Kiến trúc & Dữ liệu In-Memory</strong></p>
+                    <ul class="task-list">
+                        <li>Thiết kế ERD chuẩn 3NF (7 bảng: Member, Product, Batch, Dealer, PreOrder, Line, Allocation).</li>
+                        <li>Dựng Solution 4 Project Clean Architecture.</li>
+                        <li>Cài đặt Interface Repository & Mock In-Memory.</li>
+                        <li>Sơ đồ Use Case & Class Diagram ban đầu.</li>
+                    </ul>
+                </div>
+
+                <!-- SPRINT 2 -->
+                <div class="timeline-step current">
+                    <span class="step-badge step-2">Sprint 2 • Hoàn thiện lõi</span>
+                    <div class="timeline-date">12/10 – 18/10</div>
+                    <p class="card-desc"><strong>Trọng tâm: SQL Server & 2 Luật Nghiệp Vụ</strong></p>
+                    <ul class="task-list">
+                        <li>Viết SQL Script tạo bảng, khóa ngoại và nạp dữ liệu mẫu thực tế.</li>
+                        <li>Cài đặt Dapper/EF Core Plugin với Transaction cho Header–Line (K2.2).</li>
+                        <li>Hiện thực hóa 2 Luật nghiệp vụ trong CoreBusiness/UseCases.</li>
+                        <li>Thiết lập Cookie Auth & Phân quyền [Authorize].</li>
+                    </ul>
+                </div>
+
+                <!-- SPRINT 3 -->
+                <div class="timeline-step">
+                    <span class="step-badge step-3">Sprint 3 • Bảo vệ</span>
+                    <div class="timeline-date">19/10 – 24/10</div>
+                    <p class="card-desc"><strong>Trọng tâm: Polish UI, AI & GRADING.md</strong></p>
+                    <ul class="task-list">
+                        <li>Tối ưu giao diện Responsive đạt chuẩn mobile 390px (K3.4).</li>
+                        <li>Tách 3 component dùng Parameter & EventCallback.</li>
+                        <li>Tích hợp AI: IChatClient gửi thông báo phân bổ.</li>
+                        <li>Viết hoàn chỉnh file GRADING.md, sơ đồ PlantUML và diễn tập vấn đáp.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: MỞ RỘNG AI & NGHIỆM THU -->
+        <section class="slide" id="slide-5">
+            <div class="slide-header">
+                <span class="slide-tag">Slide 05 • Đánh giá & Nghiệm thu</span>
+                <h1 class="slide-title">Mở Rộng AI & <span class="highlight">Tiêu Chí Đạt Điểm Tối Đa</span></h1>
+                <p class="slide-subtitle">Đảm bảo trọn vẹn 100 điểm theo phiếu chấm chi tiết 14 mã kiểm tra K1.1 – K5.3</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card">
+                    <h3 class="card-title" style="color: var(--accent-amber);">🤖 Tính năng AI: Trợ lý thông báo phân bổ</h3>
+                    <p class="card-desc">
+                        Sử dụng <strong>Microsoft.Extensions.AI (IChatClient)</strong> thông qua một UseCase riêng biệt (<span class="code-inline">GenerateAllocationNoticeUseCase</span>):
+                    </p>
+                    <ul class="task-list" style="margin-top: 10px;">
+                        <li>Tự động lấy dữ liệu từ bảng <span class="code-inline">Allocation</span> và <span class="code-inline">HarvestBatch</span>.</li>
+                        <li>Soạn thảo văn bản thông báo lịch sự, minh bạch lý do hụt mùa gửi cho từng đại lý.</li>
+                        <li>Được quản trị viên duyệt trước khi gửi (Tuân thủ Mục 10).</li>
+                        <li>API Key lưu trữ trong User Secrets, không commit lên Git.</li>
+                    </ul>
+                </div>
+
+                <div class="glass-card">
+                    <h3 class="card-title" style="color: var(--accent-green);">📋 Chuẩn bị bảo vệ & Hồ sơ nộp</h3>
+                    <table class="modern-table">
+                        <tbody>
+                            <tr>
+                                <td><strong>GRADING.md</strong></td>
+                                <td>Ghi rõ từng đường dẫn file và số dòng code tương ứng 14 tiêu chí (K1.1 - K5.3).</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PlantUML</strong></td>
+                                <td>Use Case, Class, Sequence diagram mô tả đúng luồng Đặt hàng ➔ Phân bổ.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Vấn đáp (K5.2)</strong></td>
+                                <td>Mọi thành viên nhóm đều nắm vững Dependency Inversion & tự tin demo ca vi phạm.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Git Log (K5.3)</strong></td>
+                                <td>Lịch sử commit đều đặn của tất cả thành viên trải dài qua 3 tuần.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Controls -->
+    <footer>
+        <div class="key-hint">
+            <span>Dùng phím</span>
+            <span class="key-kbd">←</span>
+            <span class="key-kbd">→</span>
+            <span>hoặc</span>
+            <span class="key-kbd">Space</span>
+            <span>để chuyển slide</span>
+        </div>
+
+        <div class="slide-dots" id="slideDots">
+            <div class="dot active" onclick="goToSlide(0)"></div>
+            <div class="dot" onclick="goToSlide(1)"></div>
+            <div class="dot" onclick="goToSlide(2)"></div>
+            <div class="dot" onclick="goToSlide(3)"></div>
+            <div class="dot" onclick="goToSlide(4)"></div>
+        </div>
+
+        <div class="nav-controls">
+            <button class="btn-nav" id="prevBtn" onclick="prevSlide()">← Trước</button>
+            <button class="btn-nav" id="nextBtn" onclick="nextSlide()">Tiếp theo →</button>
+            <button class="btn-nav" onclick="toggleFullScreen()">⛶ Toàn màn hình</button>
+        </div>
+    </footer>
+
+    <!-- Slide Script -->
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        const counter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const glow = document.getElementById('ambientGlow');
+
+        const glowPositions = [
+            { top: '-20%', left: '20%' },
+            { top: '30%', left: '60%' },
+            { top: '10%', left: '40%' },
+            { top: '40%', left: '10%' },
+            { top: '-10%', left: '50%' }
+        ];
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === currentSlide);
+            });
+
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+
+            counter.innerText = `SLIDE 0${currentSlide + 1} / 0${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+
+            // Move ambient glow
+            if (glowPositions[currentSlide]) {
+                glow.style.top = glowPositions[currentSlide].top;
+                glow.style.left = glowPositions[currentSlide].left;
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlide();
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            } else if (e.key >= '1' && e.key <= '5') {
+                goToSlide(parseInt(e.key) - 1);
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullScreen();
+            }
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>

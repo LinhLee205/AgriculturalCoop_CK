@@ -1,0 +1,100 @@
+@startuml ClassDiagram
+skinparam classAttributeIconSize 0
+
+package "AgriculturalCoop.CoreBusiness.Entities" {
+    class Member {
+        +int MemberId
+        +string FullName
+        +string Phone
+        +string Address
+        +string Email
+        +decimal AreaHectare
+        +DateTime JoinDate
+    }
+
+    class Product {
+        +int ProductId
+        +string ProductName
+        +string Category
+        +string Unit
+        +decimal StandardPrice
+        +string Description
+        +string ImageUrl
+    }
+
+    class HarvestBatch {
+        +int HarvestBatchId
+        +string BatchCode
+        +int MemberId
+        +int ProductId
+        +decimal ExpectedQuantity
+        +decimal? ActualQuantity
+        +DateTime ExpectedHarvestDate
+        +DateTime? ActualHarvestDate
+        +decimal UnitPrice
+        +HarvestBatchStatus Status
+        +decimal TotalOrderedQuantity
+        +decimal RemainingQuantity
+    }
+
+    class Dealer {
+        +int DealerId
+        +string DealerName
+        +string ContactPerson
+        +string Phone
+        +string Address
+        +string Email
+        +string Tier
+    }
+
+    class PreOrder {
+        +int PreOrderId
+        +string OrderNumber
+        +int DealerId
+        +DateTime OrderDate
+        +PreOrderStatus Status
+        +decimal TotalAmount
+        +string Notes
+        +void RecalculateTotal()
+    }
+
+    class PreOrderLine {
+        +int PreOrderLineId
+        +int PreOrderId
+        +int HarvestBatchId
+        +decimal Quantity
+        +decimal UnitPrice
+        +decimal LineTotal
+    }
+
+    class Allocation {
+        +int AllocationId
+        +int PreOrderLineId
+        +int HarvestBatchId
+        +decimal RequestedQuantity
+        +decimal AllocatedQuantity
+        +DateTime AllocationDate
+        +string Reason
+    }
+}
+
+package "AgriculturalCoop.CoreBusiness.Services" {
+    class AllocationService {
+        +List<AllocationResultItem> CalculateAllocation(HarvestBatch batch, List<PreOrderLine> lines, decimal actualHarvestQuantity)
+    }
+}
+
+' Mối quan hệ giữa các thực thể
+Member "1" -- "0..*" HarvestBatch : cung cấp >
+Product "1" -- "0..*" HarvestBatch : thuộc loại >
+Dealer "1" -- "0..*" PreOrder : lập >
+PreOrder "1" *-- "1..*" PreOrderLine : chứa >
+HarvestBatch "1" -- "0..*" PreOrderLine : nhận đặt >
+PreOrderLine "1" -- "0..1" Allocation : được phân bổ >
+HarvestBatch "1" -- "0..*" Allocation : kết quả thu hoạch >
+
+AllocationService ..> HarvestBatch : uses
+AllocationService ..> PreOrderLine : uses
+AllocationService ..> Allocation : produces
+
+@enduml

@@ -1,0 +1,210 @@
+@page "/cart"
+@inject IPreOrderCart PreOrderCartState
+@inject ICreatePreOrderUseCase CreatePreOrderUseCase
+@inject UserSessionState UserSession
+@inject NavigationManager Nav
+@implements IDisposable
+
+<PageTitle>Giỏ Đặt Trước Nông Sản (Scoped State)</PageTitle>
+
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Giỏ Đặt Trước Nông Sản</h2>
+            <p class="text-muted small mb-0">Quản lý các lô nông sản đã chọn trước khi chốt đơn bao tiêu</p>
+        </div>
+        @if (PreOrderCartState.TotalItemCount > 0)
+        {
+            <button class="btn btn-outline-danger btn-sm rounded-pill px-3" @onclick="PreOrderCartState.Clear">
+                <i class="bi bi-trash3 me-1"></i> Xóa toàn bộ giỏ
+            </button>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger rounded-4 py-3 px-4 mb-4 d-flex align-items-center gap-3">
+            <i class="bi bi-shield-x fs-3 text-danger"></i>
+            <div>
+                <strong>Lỗi vi phạm Luật Nghiệp Vụ 1 (K1.3 / K3.3):</strong>
+                <p class="mb-0 small">@errorMessage</p>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success rounded-4 py-3 px-4 mb-4 d-flex align-items-center gap-3">
+            <i class="bi bi-check-circle-fill fs-3 text-success"></i>
+            <div>
+                <strong>Thành công!</strong>
+                <p class="mb-0 small">@successMessage</p>
+            </div>
+        </div>
+    }
+
+    @if (PreOrderCartState.TotalItemCount == 0)
+    {
+        <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white my-4">
+            <div class="mb-3">
+                <i class="bi bi-cart-x text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h4 class="fw-bold text-dark">Giỏ đặt trước hiện đang trống</h4>
+            <p class="text-muted small mb-4">Quý đại lý chưa chọn lô nông sản nào để đăng ký bao tiêu.</p>
+            <div>
+                <a href="/batches" class="btn btn-success rounded-pill px-4 py-2 fw-semibold">
+                    <i class="bi bi-arrow-left me-1"></i> Khám phá các lô sắp thu hoạch
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Cột Trái: Danh sách mặt hàng (Video 06 style) -->
+            <div class="col-lg-8">
+                @foreach (var item in PreOrderCartState.Items)
+                {
+                    <PreOrderLineItemComponent 
+                        Item="item" 
+                        OnRemove="HandleRemoveItem" 
+                        OnQuantityChanged="HandleQuantityChanged" />
+                }
+            </div>
+
+            <!-- Cột Phải: Bảng Tóm Tắt & Chốt Đặt Trước -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 85px;">
+                    <h5 class="fw-bold text-dark mb-3">Tóm Tắt Đơn Đặt Trước</h5>
+
+                    <div class="d-flex justify-content-between text-muted small mb-2">
+                        <span>Đại lý bao tiêu:</span>
+                        <strong class="text-dark">@UserSession.CurrentDealerName</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between text-muted small mb-2">
+                        <span>Số lượng mặt hàng:</span>
+                        <strong class="text-dark">@PreOrderCartState.TotalItemCount loại nông sản</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between text-muted small mb-3">
+                        <span>Tổng khối lượng:</span>
+                        <strong class="text-dark">@(PreOrderCartState.Items.Sum(i => i.Quantity).ToString("N0")) kg</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Ghi chú gửi HTX:</label>
+                        <textarea class="form-control form-control-sm" rows="2" @bind="orderNotes" placeholder="Yêu cầu đóng gói, giờ lấy hàng..."></textarea>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fs-6 fw-bold text-dark">Tổng Giá Trị Đơn:</span>
+                        <span class="fs-4 fw-extrabold text-success">
+                            @PreOrderCartState.TotalAmount.ToString("N0") <small class="fs-6 text-muted font-normal">đ</small>
+                        </span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="button" 
+                                class="btn btn-success btn-lg rounded-pill fw-bold shadow-sm"
+                                disabled="@isSubmitting"
+                                @onclick="SubmitPreOrder">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                <span>Đang xử lý transaction...</span>
+                            }
+                            else
+                            {
+                                <span><i class="bi bi-send-check-fill me-1"></i> Xác Nhận Đặt Trước</span>
+                            }
+                        </button>
+                    </div>
+
+                    <div class="mt-3 text-center">
+                        <small class="text-muted fst-italic">
+                            <i class="bi bi-info-circle me-1"></i> Lưu ý: Khi thu hoạch thực tế hụt mùa, sản lượng sẽ được phân bổ công bằng theo tỷ lệ (Luật 2).
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string orderNotes = string.Empty;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override void OnInitialized()
+    {
+        PreOrderCartState.OnChange += StateHasChanged;
+    }
+
+    private void HandleRemoveItem(int batchId)
+    {
+        PreOrderCartState.RemoveItem(batchId);
+    }
+
+    private void HandleQuantityChanged((int BatchId, decimal NewQty) args)
+    {
+        PreOrderCartState.UpdateQuantity(args.BatchId, args.NewQty);
+    }
+
+    private async Task SubmitPreOrder()
+    {
+        errorMessage = null;
+        successMessage = null;
+        isSubmitting = true;
+
+        var preOrder = new PreOrder
+        {
+            DealerId = UserSession.CurrentDealerId,
+            OrderDate = DateTime.Now,
+            Status = PreOrderStatus.Confirmed,
+            Notes = string.IsNullOrWhiteSpace(orderNotes) ? "Đại lý đặt từ giỏ hàng Scoped" : orderNotes
+        };
+
+        foreach (var item in PreOrderCartState.Items)
+        {
+            preOrder.PreOrderLines.Add(new PreOrderLine
+            {
+                HarvestBatchId = item.HarvestBatchId,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice
+            });
+        }
+
+        try
+        {
+            // Ghi nhận Header-Line trong 1 TRANSACTION qua UseCase (K2.2 / K1.3)
+            int newOrderId = await CreatePreOrderUseCase.ExecuteAsync(preOrder);
+            PreOrderCartState.Clear();
+            successMessage = $"Tạo đơn đặt trước thành công! Mã đơn: #{newOrderId}. Hệ thống đã cam kết khối lượng trong 1 Transaction.";
+            await Task.Delay(1500);
+            Nav.NavigateTo("/my-orders");
+        }
+        catch (ExceededExpectedYieldException ex)
+        {
+            // Bắt ngoại lệ nghiệp vụ Luật 1 (K3.3)
+            errorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        PreOrderCartState.OnChange -= StateHasChanged;
+    }
+}

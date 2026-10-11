@@ -1,0 +1,72 @@
+@using AgriculturalCoop.CoreBusiness.Services
+
+<div class="card border-0 shadow-sm rounded-4 mb-3 p-3 bg-white">
+    <div class="row align-items-center g-3">
+        <div class="col-12 col-md-4">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-success-subtle text-success p-3 me-3">
+                    <i class="bi bi-shop fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark">@Item.DealerName</h6>
+                    <small class="text-muted">Đơn đặt trước #@Item.PreOrderId</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="small text-muted">Đặt trước yêu cầu</div>
+            <div class="fw-bold fs-5 text-dark">
+                @Item.RequestedQuantity.ToString("N0") <span class="fs-6 text-muted font-normal">kg</span>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="small text-muted">Được phân bổ thực tế</div>
+            <div class="fw-bold fs-5 @(Item.AllocatedQuantity < Item.RequestedQuantity ? "text-warning" : "text-success")">
+                @Item.AllocatedQuantity.ToString("N0") <span class="fs-6 text-muted font-normal">kg</span>
+                <span class="badge @(Item.AllocationRatioPercent == 100 ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning") ms-1 small">
+                    @Item.AllocationRatioPercent%
+                </span>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-2 text-md-end">
+            <button type="button" 
+                    class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-xs" 
+                    @onclick="HandleGenerateNotice">
+                <i class="bi bi-robot me-1"></i> Soạn AI
+            </button>
+        </div>
+
+        <div class="col-12 mt-2 pt-2 border-top">
+            <div class="d-flex align-items-center justify-content-between small">
+                <span class="text-muted fst-italic">
+                    <i class="bi bi-info-circle me-1"></i> @Item.Note
+                </span>
+                @if (Item.RequestedQuantity > Item.AllocatedQuantity)
+                {
+                    <span class="text-danger fw-semibold">
+                        Giảm: -@((Item.RequestedQuantity - Item.AllocatedQuantity).ToString("N0")) kg
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public AllocationResultItem Item { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<AllocationResultItem> OnGenerateNotice { get; set; }
+
+    private async Task HandleGenerateNotice()
+    {
+        if (OnGenerateNotice.HasDelegate)
+        {
+            await OnGenerateNotice.InvokeAsync(Item);
+        }
+    }
+}

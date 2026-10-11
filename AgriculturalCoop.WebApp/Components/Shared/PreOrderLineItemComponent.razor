@@ -1,0 +1,110 @@
+@using AgriculturalCoop.WebApp.State
+
+<div class="card border-0 shadow-sm rounded-4 mb-3 p-3 bg-white">
+    <div class="row align-items-center g-3">
+        <div class="col-3 col-sm-2">
+            <img src="@(string.IsNullOrEmpty(Item?.ImageUrl) ? "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=300&q=80" : Item.ImageUrl)" 
+                 class="img-fluid rounded-3 object-fit-cover shadow-xs" 
+                 alt="@Item?.ProductName" 
+                 style="height: 75px; width: 75px;" />
+        </div>
+
+        <div class="col-9 col-sm-4">
+            <div class="badge bg-light text-success border mb-1 small">@Item?.BatchCode</div>
+            <h6 class="fw-bold mb-1 text-dark">@Item?.ProductName</h6>
+            <div class="text-muted small">
+                Đơn giá: <span class="text-success fw-semibold">@Item?.UnitPrice.ToString("N0") VNĐ/@Item?.Unit</span>
+            </div>
+            <div class="text-muted small">
+                Khả dụng còn lại: <strong class="text-primary">@Item?.AvailableQuantity.ToString("N0") kg</strong>
+            </div>
+        </div>
+
+        <div class="col-7 col-sm-3">
+            <label class="form-label small text-muted mb-1">Số lượng đặt (kg)</label>
+            <div class="input-group input-group-sm">
+                <button class="btn btn-outline-secondary" type="button" @onclick="DecreaseQuantity">
+                    <i class="bi bi-dash"></i>
+                </button>
+                <input type="number" 
+                       class="form-control text-center fw-bold" 
+                       min="1" 
+                       max="@Item?.AvailableQuantity" 
+                       value="@Item?.Quantity" 
+                       @onchange="HandleQuantityInput" />
+                <button class="btn btn-outline-secondary" type="button" @onclick="IncreaseQuantity">
+                    <i class="bi bi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="col-3 col-sm-2 text-end">
+            <div class="small text-muted mb-1">Thành tiền</div>
+            <div class="fw-bold text-dark fs-6">
+                @Item?.LineTotal.ToString("N0") <small class="text-muted">đ</small>
+            </div>
+        </div>
+
+        <div class="col-2 col-sm-1 text-end">
+            <button class="btn btn-outline-danger btn-sm rounded-circle p-2" 
+                    title="Xóa khỏi giỏ" 
+                    @onclick="HandleRemove">
+                <i class="bi bi-trash3-fill"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public PreOrderCartItem Item { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<int> OnRemove { get; set; }
+
+    [Parameter]
+    public EventCallback<(int BatchId, decimal NewQty)> OnQuantityChanged { get; set; }
+
+    private async Task DecreaseQuantity()
+    {
+        if (Item.Quantity > 10)
+        {
+            decimal newQty = Item.Quantity - 10;
+            if (OnQuantityChanged.HasDelegate)
+            {
+                await OnQuantityChanged.InvokeAsync((Item.HarvestBatchId, newQty));
+            }
+        }
+    }
+
+    private async Task IncreaseQuantity()
+    {
+        decimal newQty = Item.Quantity + 10;
+        if (newQty <= Item.AvailableQuantity)
+        {
+            if (OnQuantityChanged.HasDelegate)
+            {
+                await OnQuantityChanged.InvokeAsync((Item.HarvestBatchId, newQty));
+            }
+        }
+    }
+
+    private async Task HandleQuantityInput(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out decimal newQty) && newQty > 0)
+        {
+            if (OnQuantityChanged.HasDelegate)
+            {
+                await OnQuantityChanged.InvokeAsync((Item.HarvestBatchId, newQty));
+            }
+        }
+    }
+
+    private async Task HandleRemove()
+    {
+        if (OnRemove.HasDelegate)
+        {
+            await OnRemove.InvokeAsync(Item.HarvestBatchId);
+        }
+    }
+}

@@ -1,0 +1,63 @@
+<div class="input-group shadow-sm rounded-pill overflow-hidden bg-white border">
+    <span class="input-group-text bg-transparent border-0 ps-3 text-muted">
+        <i class="bi bi-search"></i>
+    </span>
+    <input type="text" 
+           class="form-control border-0 bg-transparent py-2 px-2" 
+           placeholder="@Placeholder" 
+           value="@SearchTerm" 
+           @oninput="HandleInput" />
+    @if (!string.IsNullOrEmpty(SearchTerm))
+    {
+        <button class="btn btn-transparent border-0 text-muted pe-2" type="button" @onclick="Clear">
+            <i class="bi bi-x-circle-fill"></i>
+        </button>
+    }
+    <button class="btn btn-success px-4 rounded-pill m-1 fw-semibold" type="button" @onclick="TriggerSearch">
+        Tìm kiếm
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public string SearchTerm { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Placeholder { get; set; } = "Tìm kiếm lô nông sản, giống cây, xã viên...";
+
+    [Parameter]
+    public EventCallback<string> SearchTermChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnSearch { get; set; }
+
+    private async Task HandleInput(ChangeEventArgs e)
+    {
+        SearchTerm = e.Value?.ToString() ?? string.Empty;
+        if (SearchTermChanged.HasDelegate)
+        {
+            await SearchTermChanged.InvokeAsync(SearchTerm);
+        }
+    }
+
+    private async Task Clear()
+    {
+        SearchTerm = string.Empty;
+        if (SearchTermChanged.HasDelegate)
+        {
+            await SearchTermChanged.InvokeAsync(SearchTerm);
+        }
+        if (OnSearch.HasDelegate)
+        {
+            await OnSearch.InvokeAsync();
+        }
+    }
+
+    private async Task TriggerSearch()
+    {
+        if (OnSearch.HasDelegate)
+        {
+            await OnSearch.InvokeAsync();
+        }
+    }
+}

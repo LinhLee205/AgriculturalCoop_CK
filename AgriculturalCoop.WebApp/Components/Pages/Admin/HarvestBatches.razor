@@ -1,0 +1,309 @@
+@page "/admin/batches"
+@using System.ComponentModel.DataAnnotations
+@inject UserSessionState UserSession
+@inject NavigationManager Nav
+@inject IViewHarvestBatchesUseCase ViewHarvestBatchesUseCase
+@inject ICreateHarvestBatchUseCase CreateHarvestBatchUseCase
+@inject IUpdateActualYieldUseCase UpdateActualYieldUseCase
+@inject IViewMembersUseCase ViewMembersUseCase
+@inject IViewProductsUseCase ViewProductsUseCase
+
+<PageTitle>Quản Lý Lô Thu Hoạch - Admin HTX</PageTitle>
+
+@if (!UserSession.IsAdmin)
+{
+    <div class="alert alert-danger p-4 rounded-4 text-center my-5">
+        <i class="bi bi-shield-lock-fill fs-1 text-danger mb-2 d-block"></i>
+        <h4 class="fw-bold">Truy cập bị từ chối (K4.2)</h4>
+        <p class="text-muted">Trang quản trị chỉ dành riêng cho Ban Quản trị Hợp tác xã.</p>
+    </div>
+}
+else
+{
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-muted">Quản trị</a></li>
+                        <li class="breadcrumb-item active">Lô mùa vụ</li>
+                    </ol>
+                </nav>
+                <h2 class="fw-bold text-dark mb-0">Quản Lý Lô Nông Sản Thu Hoạch</h2>
+            </div>
+            <button class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm" @onclick="() => showCreateModal = true">
+                <i class="bi bi-plus-circle me-1"></i> Tạo Lô Thu Hoạch Mới
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(alertMessage))
+        {
+            <div class="alert alert-success rounded-3 py-2 px-3 mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                <span>@alertMessage</span>
+            </div>
+        }
+
+        <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã Lô</th>
+                            <th>Nông Sản</th>
+                            <th>Xã Viên Phụ Trách</th>
+                            <th>Dự Kiến (kg)</th>
+                            <th>Đã Đặt (kg)</th>
+                            <th>Thực Tế (kg)</th>
+                            <th>Ngày Thu Hoạch</th>
+                            <th>Trạng Thái</th>
+                            <th class="text-end">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var batch in batches)
+                        {
+                            <tr>
+                                <td class="fw-bold font-monospace text-dark">@batch.BatchCode</td>
+                                <td>
+                                    <div class="fw-semibold">@(batch.Product?.ProductName ?? $"SP #{batch.ProductId}")</div>
+                                    <small class="text-muted">@batch.UnitPrice.ToString("N0") đ/@batch.Product?.Unit</small>
+                                </td>
+                                <td>@(batch.Member?.FullName ?? $"Xã viên #{batch.MemberId}")</td>
+                                <td class="fw-bold">@batch.ExpectedQuantity.ToString("N0")</td>
+                                <td>
+                                    <span class="text-success fw-bold">@batch.TotalOrderedQuantity.ToString("N0")</span>
+                                    <small class="text-muted d-block">
+                                        (còn: @batch.RemainingQuantity.ToString("N0"))
+                                    </small>
+                                </td>
+                                <td>
+                                    @if (batch.ActualQuantity.HasValue)
+                                    {
+                                        <span class="badge @(batch.ActualQuantity < batch.TotalOrderedQuantity ? "bg-warning text-dark" : "bg-success text-white") px-2 py-1 fs-6">
+                                            @batch.ActualQuantity.Value.ToString("N0") kg
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Chưa nhập</span>
+                                    }
+                                </td>
+                                <td>@batch.ExpectedHarvestDate.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (batch.Status == HarvestBatchStatus.OpenForPreOrder)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">Đang mở đặt</span>
+                                    }
+                                    else if (batch.Status == HarvestBatchStatus.Harvested)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-1">Đã thu hoạch</span>
+                                    }
+                                    else if (batch.Status == HarvestBatchStatus.Allocated)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1">Đã phân bổ</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary" title="Nhập sản lượng thực tế" @onclick="() => OpenYieldModal(batch)">
+                                            <i class="bi bi-pencil-square"></i> Nhập thực tế
+                                        </button>
+                                        <a href="/admin/allocations/@batch.HarvestBatchId" class="btn btn-warning text-dark fw-bold" title="Chạy phân bổ tỷ lệ">
+                                            <i class="bi bi-diagram-3-fill"></i> Phân bổ (Luật 2)
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nhập Sản Lượng Thực Tế -->
+    @if (selectedBatchForYield != null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-header border-bottom">
+                        <h5 class="modal-title fw-bold">Nhập Sản Lượng Thu Hoạch Thực Tế</h5>
+                        <button type="button" class="btn-close" @onclick="() => selectedBatchForYield = null"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Lô thu hoạch:</label>
+                            <input class="form-control bg-light" value="@selectedBatchForYield.BatchCode - @selectedBatchForYield.Product?.ProductName" readonly />
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Sản lượng dự kiến:</small>
+                                <strong class="fs-6">@selectedBatchForYield.ExpectedQuantity.ToString("N0") kg</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Tổng đại lý đã đặt trước:</small>
+                                <strong class="fs-6 text-success">@selectedBatchForYield.TotalOrderedQuantity.ToString("N0") kg</strong>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Sản lượng thực tế thu hoạch (kg) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control form-control-lg fw-bold" @bind="inputActualYield" placeholder="Ví dụ: 720" />
+                            <small class="text-muted">Nhập sản lượng thực tế cân được tại vườn của xã viên.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top">
+                        <button type="button" class="btn btn-light rounded-pill px-4" @onclick="() => selectedBatchForYield = null">Hủy</button>
+                        <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" @onclick="SaveActualYield">
+                            Lưu và Chuẩn bị Phân Bổ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Modal Tạo Lô Mới -->
+    @if (showCreateModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-header border-bottom">
+                        <h5 class="modal-title fw-bold">Thêm Lô Nông Sản Mùa Vụ Mới</h5>
+                        <button type="button" class="btn-close" @onclick="() => showCreateModal = false"></button>
+                    </div>
+                    <EditForm Model="@newBatchModel" OnValidSubmit="HandleCreateBatch">
+                        <DataAnnotationsValidator />
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Mã lô:</label>
+                                <InputText @bind-Value="newBatchModel.BatchCode" class="form-control" placeholder="Để trống hệ thống sẽ tự sinh..." />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Chọn Hộ Xã Viên:</label>
+                                <InputSelect @bind-Value="newBatchModel.MemberId" class="form-select">
+                                    @foreach (var m in members)
+                                    {
+                                        <option value="@m.MemberId">@m.FullName (@m.Address)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Chọn Nông Sản:</label>
+                                <InputSelect @bind-Value="newBatchModel.ProductId" class="form-select">
+                                    @foreach (var p in products)
+                                    {
+                                        <option value="@p.ProductId">@p.ProductName (@p.Category)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Sản lượng dự kiến (kg):</label>
+                                    <InputNumber @bind-Value="newBatchModel.ExpectedQuantity" class="form-control" />
+                                    <ValidationMessage For="@(() => newBatchModel.ExpectedQuantity)" class="validation-message" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Giá sỉ bao tiêu (VNĐ):</label>
+                                    <InputNumber @bind-Value="newBatchModel.UnitPrice" class="form-control" />
+                                    <ValidationMessage For="@(() => newBatchModel.UnitPrice)" class="validation-message" />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Ngày dự kiến thu hoạch:</label>
+                                <InputDate @bind-Value="newBatchModel.ExpectedHarvestDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top">
+                            <button type="button" class="btn btn-light rounded-pill px-4" @onclick="() => showCreateModal = false">Hủy</button>
+                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">Tạo Lô Mùa Vụ</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<HarvestBatch> batches = new();
+    private List<Member> members = new();
+    private List<Product> products = new();
+    private string? alertMessage;
+
+    private HarvestBatch? selectedBatchForYield;
+    private decimal inputActualYield = 720;
+    private bool showCreateModal = false;
+
+    public class CreateBatchModel
+    {
+        public string BatchCode { get; set; } = string.Empty;
+        public int MemberId { get; set; } = 1;
+        public int ProductId { get; set; } = 1;
+
+        [Range(10, 100000, ErrorMessage = "Sản lượng dự kiến phải lớn hơn 10 kg")]
+        public decimal ExpectedQuantity { get; set; } = 1000;
+
+        [Range(1000, 10000000, ErrorMessage = "Đơn giá phải lớn hơn 1.000 VNĐ")]
+        public decimal UnitPrice { get; set; } = 35000;
+
+        public DateTime ExpectedHarvestDate { get; set; } = DateTime.Today.AddDays(14);
+    }
+
+    private CreateBatchModel newBatchModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserSession.IsAdmin)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        batches = (await ViewHarvestBatchesUseCase.ExecuteAsync()).ToList();
+        members = (await ViewMembersUseCase.ExecuteAsync()).ToList();
+        products = (await ViewProductsUseCase.ExecuteAsync()).ToList();
+    }
+
+    private void OpenYieldModal(HarvestBatch batch)
+    {
+        selectedBatchForYield = batch;
+        inputActualYield = batch.ActualQuantity ?? 720;
+    }
+
+    private async Task SaveActualYield()
+    {
+        if (selectedBatchForYield != null)
+        {
+            await UpdateActualYieldUseCase.ExecuteAsync(selectedBatchForYield.HarvestBatchId, inputActualYield, DateTime.Now);
+            alertMessage = $"Đã cập nhật sản lượng thực tế {inputActualYield:N0} kg cho lô [{selectedBatchForYield.BatchCode}] thành công!";
+            selectedBatchForYield = null;
+            await LoadData();
+        }
+    }
+
+    private async Task HandleCreateBatch()
+    {
+        var batch = new HarvestBatch
+        {
+            BatchCode = string.IsNullOrWhiteSpace(newBatchModel.BatchCode) 
+                ? $"LO-{DateTime.Now:yyyyMMdd}-{new Random().Next(100, 999)}" 
+                : newBatchModel.BatchCode,
+            MemberId = newBatchModel.MemberId,
+            ProductId = newBatchModel.ProductId,
+            ExpectedQuantity = newBatchModel.ExpectedQuantity,
+            UnitPrice = newBatchModel.UnitPrice,
+            ExpectedHarvestDate = newBatchModel.ExpectedHarvestDate,
+            Status = HarvestBatchStatus.OpenForPreOrder
+        };
+
+        await CreateHarvestBatchUseCase.ExecuteAsync(batch);
+        showCreateModal = false;
+        alertMessage = $"Đã tạo mới lô thu hoạch [{batch.BatchCode}] thành công!";
+        await LoadData();
+    }
+}

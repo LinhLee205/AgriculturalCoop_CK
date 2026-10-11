@@ -1,0 +1,47 @@
+@startuml UseCaseDiagram
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor "Đại lý (Dealer)" as Dealer
+actor "Ban Quản trị HTX (Admin)" as Admin
+
+rectangle "Hệ Thống Đặt Trước Nông Sản Theo Mùa Vụ (AgriculturalCoop)" {
+    ' Use Cases cho Đại lý
+    usecase "Xem danh mục lô sắp thu hoạch" as UC_ViewBatches
+    usecase "Xem chi tiết lô nông sản" as UC_BatchDetails
+    usecase "Thêm vào giỏ đặt trước (Scoped)" as UC_AddToCart
+    usecase "Đặt trước lô nông sản (Kiểm tra Luật 1)" as UC_PreOrder
+    usecase "Xem lịch sử đơn đặt trước" as UC_MyOrders
+    usecase "Theo dõi số lượng phân bổ thực tế" as UC_MyAllocations
+    
+    ' Use Cases cho Admin HTX
+    usecase "Quản lý hồ sơ xã viên (Member)" as UC_ManageMembers
+    usecase "Quản lý danh mục nông sản (Product)" as UC_ManageProducts
+    usecase "Tạo và quản lý lô thu hoạch (HarvestBatch)" as UC_ManageBatches
+    usecase "Nhập sản lượng thu hoạch thực tế" as UC_InputActualYield
+    usecase "Chạy thuật toán phân bổ tỷ lệ (Luật 2)" as UC_RunAllocation
+    usecase "AI Soạn thảo thông báo phân bổ cho đại lý" as UC_AiNotice
+    usecase "Xem tổng hợp doanh thu theo xã viên" as UC_ViewReports
+}
+
+' Quan hệ Đại lý
+Dealer --> UC_ViewBatches
+Dealer --> UC_BatchDetails
+Dealer --> UC_AddToCart
+Dealer --> UC_PreOrder
+Dealer --> UC_MyOrders
+Dealer --> UC_MyAllocations
+
+' Quan hệ Admin
+Admin --> UC_ManageMembers
+Admin --> UC_ManageProducts
+Admin --> UC_ManageBatches
+Admin --> UC_InputActualYield
+Admin --> UC_RunAllocation
+Admin --> UC_AiNotice
+Admin --> UC_ViewReports
+
+UC_PreOrder ..> UC_ViewBatches : <<include>>
+UC_RunAllocation ..> UC_InputActualYield : <<include>>
+UC_AiNotice ..> UC_RunAllocation : <<extend>>
+@enduml
