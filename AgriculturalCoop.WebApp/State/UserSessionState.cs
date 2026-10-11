@@ -39,14 +39,47 @@ namespace AgriculturalCoop.WebApp.State
             OnSessionChanged?.Invoke();
         }
 
-        public void Logout()
+        public bool TryLoginAdmin(string username, string password, out string errorMessage)
         {
-            // Reset to default dealer demo
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            {
+                errorMessage = "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.";
+                return false;
+            }
+
+            var cleanUser = username.Trim().ToLowerInvariant();
+            var cleanPass = password.Trim();
+
+            // Mật khẩu và tài khoản quản trị hợp lệ
+            bool isUserValid = cleanUser == "admin" || cleanUser == "admin@coop.vn" || cleanUser == "bqt";
+            bool isPassValid = cleanPass == "admin123" || cleanPass == "admin" || cleanPass == "123456" || cleanPass == "admin@123";
+
+            if (isUserValid && isPassValid)
+            {
+                CurrentRole = AppRole.Admin;
+                CurrentUserName = cleanUser.Contains("@") ? cleanUser : "admin@coop.vn";
+                errorMessage = string.Empty;
+                OnSessionChanged?.Invoke();
+                return true;
+            }
+
+            errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác! (Gợi ý: admin / admin123)";
+            return false;
+        }
+
+        public void LogoutAdmin()
+        {
+            // Trở về vai trò đại lý mặc định
             CurrentRole = AppRole.Dealer;
             CurrentDealerId = 1;
             CurrentDealerName = "Đại lý Nông sản An Phú (Đại lý A)";
             CurrentUserName = "dealer_a@anphu.vn";
             OnSessionChanged?.Invoke();
+        }
+
+        public void Logout()
+        {
+            LogoutAdmin();
         }
     }
 }
