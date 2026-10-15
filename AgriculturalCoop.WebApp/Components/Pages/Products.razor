@@ -1,0 +1,44 @@
+@page "/products"
+@inject IViewProductsUseCase ViewProducts
+@inject IViewOpenBatchesUseCase ViewOpenBatches
+<PageTitle>Danh mục nông sản — COOPAGRI</PageTitle>
+<div class="page-heading"><div><span class="eyebrow">DANH MỤC NÔNG SẢN</span><h1>Chọn nông sản cho đại lý</h1><p>Tìm theo tên, danh mục và mức giá của các lô đang mở đặt.</p></div><a href="/batches" class="btn btn-outline-success">Xem theo lô mùa vụ</a></div>
+<section class="admin-card mb-4" aria-label="Bộ lọc nông sản">
+    <div class="row g-3"><div class="col-md-6"><label for="catalog-search" class="form-label">Tìm nông sản</label><input id="catalog-search" class="form-control" placeholder="Nhập tên hoặc mô tả…" @bind="search" @bind:event="oninput" /></div>
+    <div class="col-md-3"><label for="catalog-category" class="form-label">Danh mục</label><select id="catalog-category" class="form-select" @bind="category"><option value="">Tất cả danh mục</option>@foreach (var c in products.Select(p => p.Category).Distinct().OrderBy(c => c)) { <option value="@c">@c</option> }</select></div>
+    <div class="col-md-3"><label for="catalog-sort" class="form-label">Sắp xếp</label><select id="catalog-sort" class="form-select" @bind="sort"><option value="name">Tên A–Z</option><option value="price">Giá thấp đến cao</option><option value="price-desc">Giá cao đến thấp</option><option value="harvest">Gần ngày thu hoạch</option></select></div></div>
+</section>
+@if (loading) { <p role="status">Đang tải danh mục…</p> }
+else
+{
+    <p class="small text-muted">@Filtered.Count() nông sản phù hợp · Chỉ hiển thị sản phẩm có lô đang mở đặt.</p>
+    @if (!Filtered.Any()) { <div class="store-empty">Không có nông sản phù hợp. Hãy thử tên hoặc danh mục khác.</div> }
+    <div class="catalog-grid">@foreach (var product in Filtered) { <ProductCard Product="product" OpenBatch="Representative(product.ProductId)" /> }</div>
+}
+@code {
+    private List<Product> products = new();
+    private List<HarvestBatch> batches = new();
+    private string search = "", category = "", sort = "name";
+    private bool loading = true;
+    private HarvestBatch Representative(int id) => batches.Where(b => b.ProductId == id)
+        .OrderByDescending(b => b.RemainingQuantity > 0).ThenBy(b => b.ExpectedHarvestDate).ThenBy(b => b.UnitPrice).First();
+    private IEnumerable<Product> Filtered
+    {
+        get
+        {
+            var list = products.Where(p => (category.Length == 0 || p.Category == category) &&
+                (string.IsNullOrWhiteSpace(search) || p.ProductName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || (p.Description?.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)));
+            return sort switch { "price" => list.OrderBy(p => Representative(p.ProductId).UnitPrice),
+                "price-desc" => list.OrderByDescending(p => Representative(p.ProductId).UnitPrice),
+                "harvest" => list.OrderBy(p => batches.Where(b => b.ProductId == p.ProductId).Min(b => b.ExpectedHarvestDate)),
+                _ => list.OrderBy(p => p.ProductName) };
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        batches = (await ViewOpenBatches.ExecuteAsync()).ToList();
+        var ids = batches.Select(b => b.ProductId).ToHashSet();
+        products = (await ViewProducts.ExecuteAsync()).Where(p => ids.Contains(p.ProductId)).ToList();
+        loading = false;
+    }
+}

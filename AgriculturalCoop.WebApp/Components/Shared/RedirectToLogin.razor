@@ -1,0 +1,24 @@
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider Authentication
+
+<p>Đang kiểm tra quyền truy cập…</p>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+
+        var relativePath = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+        var path = relativePath.Split('?', '#')[0].TrimEnd('/');
+        var isAdminPath = path.Equals("/admin", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/admin/", StringComparison.OrdinalIgnoreCase);
+        var authenticated = user.Identity?.IsAuthenticated == true;
+        var destination = isAdminPath
+            ? "/admin/login?" + (authenticated ? "switchAccount=true&" : "") +
+              "returnUrl=" + Uri.EscapeDataString(relativePath)
+            : authenticated ? "/access-denied"
+            : "/account/login?returnUrl=" + Uri.EscapeDataString(relativePath);
+
+        Navigation.NavigateTo(destination, forceLoad: true);
+    }
+}

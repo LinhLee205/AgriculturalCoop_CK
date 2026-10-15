@@ -1,14 +1,14 @@
 @startuml SequenceDiagram
 autonumber
 actor "Đại lý (Dealer)" as Dealer
-boundary "BatchDetails.razor" as UI
+boundary "Cart.razor (/checkout)" as UI
 control "CreatePreOrderUseCase" as UseCase
 database "IHarvestBatchRepository" as BatchRepo
 database "IPreOrderRepository" as OrderRepo
 database "SQL Server (Transaction)" as DB
 
 == Giai đoạn 1: Đặt trước & Kiểm tra Luật 1 ==
-Dealer -> UI : Nhập số lượng đặt (RequestedQuantity) và nhấn "Đặt trước"
+Dealer -> UI : Kiểm tra lô, số lượng; nhập người nhận, điện thoại, địa chỉ
 UI -> UseCase : ExecuteAsync(preOrder)
 
 UseCase -> BatchRepo : GetBatchByIdAsync(batchId)
@@ -50,15 +50,16 @@ note right of AllocService
   Áp dụng công thức Tỷ lệ:
   Allocated = (Line.Quantity / TotalRequested) * ActualQuantity
   Kết hợp Largest Remainder:
-  Tổng phân bổ == ActualQuantity tuyệt đối (K1.3 / K5.2)
+  Tổng phân bổ == min(ActualQuantity, TotalRequested)
 end note
 AllocService --> AllocUseCase : Trả về List<AllocationResultItem>
 
-AllocUseCase -> AllocRepo : SaveAllocationsTransactionAsync(batchId, allocations)
+AllocUseCase -> AllocRepo : SaveAllocationsTransactionAsync(batchId, allocations, actual, date, notices)
 AllocRepo -> DB : BEGIN TRANSACTION
 AllocRepo -> DB : DELETE FROM Allocations WHERE BatchId = @BatchId
 AllocRepo -> DB : INSERT INTO Allocations (Từng đại lý)
 AllocRepo -> DB : UPDATE HarvestBatches SET Status = Allocated
+AllocRepo -> DB : Lưu / cập nhật DealerNotifications theo mẫu
 AllocRepo -> DB : COMMIT
 
 DB --> AllocRepo : Thành công
@@ -66,8 +67,32 @@ AllocRepo --> AllocUseCase : Hoàn tất
 AllocUseCase --> AdminUI : Hiển thị bảng phân bổ từng đại lý (Khớp 100%)
 
 == Giai đoạn 3: Đại lý kiểm tra số lượng thực tế nhận được ==
-Dealer -> UI : Xem trang "Đơn của tôi / Phân bổ nhận được"
-UI -> DB : SELECT Allocations WHERE DealerId = @DealerId
-DB --> UI : Trả về số lượng thực tế được phân bổ
-UI --> Dealer : Hiển thị: Requested 400kg -> Allocated 320kg (80%)
+boundary "MyNotifications.razor" as InboxUI
+control "DealerNotificationUseCases" as InboxUseCase
+database "IDealerNotificationRepository" as NoticeRepo
+Dealer -> InboxUI : Mở thông báo trên web
+InboxUI -> InboxUseCase : ListAsync()
+InboxUseCase -> NoticeRepo : GetByDealerAsync(id từ phiên đã xác thực)
+NoticeRepo -> DB : SELECT thông báo của đúng đại lý
+DB --> NoticeRepo : Thông báo kết quả phân bổ
+NoticeRepo --> InboxUseCase : Danh sách
+InboxUseCase --> InboxUI : Hiển thị số lượng chính xác đến 0,01 kg
+
+== Giai đoạn 4: Nội dung bổ sung cần admin duyệt ==
+control "GenerateAllocationNoticeUseCase" as Draft
+control "ComposeAllocationNoticeWordingUseCase" as AiWording
+participant "IChatClient" as Chat
+control "PublishAllocationNoticeUseCase" as Publish
+Admin -> AdminUI : Chọn AI soạn bản nháp
+AdminUI -> Draft : ExecuteAsync(..., useAi=true)
+Draft -> AiWording : WriteAsync(facts)
+AiWording -> Chat : GetResponseAsync(...)
+Chat --> AiWording : JSON lời văn / lỗi dịch vụ
+AiWording --> Draft : Lời văn hợp lệ / thông báo lỗi thân thiện
+Draft --> AdminUI : Bản nháp chưa ghi CSDL
+Admin -> AdminUI : Kiểm tra, chỉnh sửa và duyệt
+AdminUI -> Publish : ExecuteAsync(draft, approved=true)
+Publish -> Publish : Kiểm tra quyền Admin và dữ liệu còn khớp
+Publish -> NoticeRepo : SaveReviewedAsync(notification)
+NoticeRepo -> DB : Lưu nội dung đã duyệt vào hộp thông báo
 @enduml

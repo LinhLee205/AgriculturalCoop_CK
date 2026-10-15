@@ -7,13 +7,13 @@ using AgriculturalCoop.UseCases.PluginInterfaces;
 
 namespace AgriculturalCoop.DataStore.InMemory
 {
-    public class InMemoryDataStore : 
-        IMemberRepository, 
-        IProductRepository, 
-        IHarvestBatchRepository, 
-        IDealerRepository, 
-        IPreOrderRepository, 
-        IAllocationRepository
+    public class InMemoryDataStore :
+        IMemberRepository,
+        IProductRepository,
+        IHarvestBatchRepository,
+        IDealerRepository,
+        IPreOrderRepository,
+        IAllocationRepository, IUserAccountRepository, IRevenueRepository, IDealerNotificationRepository, IOrderManagementRepository
     {
         private readonly List<Member> _members = new();
         private readonly List<Product> _products = new();
@@ -34,6 +34,152 @@ namespace AgriculturalCoop.DataStore.InMemory
         public InMemoryDataStore()
         {
             SeedInitialData();
+        }
+
+        private readonly List<UserAccount> _accounts = new();
+        private readonly List<DealerNotification> _notifications = new();
+        private readonly object _gate = new();
+
+        public Task<UserAccount?> FindByEmailAsync(string email) =>
+            Task.FromResult(_accounts.FirstOrDefault(a => a.Email == email));
+
+        public Task<bool> HasAdminAsync() =>
+            Task.FromResult(_accounts.Any(a => a.Role == "Admin"));
+
+        public Task CreateAsync(
+            UserAccount account, string phone = "", bool initialAdmin = false)
+        {
+            lock (_gate)
+            {
+                if (_accounts.Any(a => a.Email == account.Email) ||
+                    (initialAdmin && _accounts.Any(a => a.Role == "Admin")))
+                {
+                    throw new AgriculturalCoop.CoreBusiness.Exceptions.PreOrderDomainException(
+                        "Tài khoản đã tồn tại hoặc quản trị viên đã được tạo.");
+                }
+
+                account.Role = initialAdmin ? "Admin" : "Dealer";
+
+                if (!initialAdmin)
+                {
+                    var dealer = new Dealer
+                    {
+                        DealerId = _nextDealerId++,
+                        DealerName = account.DisplayName,
+                        Email = account.Email,
+                        Phone = phone
+                    };
+
+                    _dealers.Add(dealer);
+                    account.DealerId = dealer.DealerId;
+                }
+
+                account.UserAccountId = _accounts.Count + 1;
+                _accounts.Add(account);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> DeleteMemberAsync(int id) =>
+            Task.FromResult(
+                !_batches.Any(b => b.MemberId == id) &&
+                _members.RemoveAll(m => m.MemberId == id) == 1);
+
+        public Task UpdateProductAsync(Product product)
+        {
+            var old = _products.FirstOrDefault(p => p.ProductId == product.ProductId);
+
+            if (old != null)
+            {
+                old.ProductName = product.ProductName;
+                old.Category = product.Category;
+                old.Unit = product.Unit;
+                old.StandardPrice = product.StandardPrice;
+                old.Description = product.Description;
+                old.ImageUrl = product.ImageUrl;
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> DeleteProductAsync(int id) =>
+            Task.FromResult(
+                !_batches.Any(b => b.ProductId == id) &&
+                _products.RemoveAll(p => p.ProductId == id) == 1);
+
+        public Task UpdateBatchAsync(HarvestBatch batch)
+        {
+            if (_batches.Any(b =>
+                b.HarvestBatchId != batch.HarvestBatchId &&
+                b.BatchCode == batch.BatchCode))
+            {
+                throw new AgriculturalCoop.CoreBusiness.Exceptions.PreOrderDomainException(
+                    "Mã lô đã được sử dụng.");
+            }
+
+            var old = _batches.First(b =>
+                b.HarvestBatchId == batch.HarvestBatchId);
+
+            old.BatchCode = batch.BatchCode;
+            old.MemberId = batch.MemberId;
+            old.ProductId = batch.ProductId;
+            old.ExpectedQuantity = batch.ExpectedQuantity;
+            old.ExpectedHarvestDate = batch.ExpectedHarvestDate;
+            old.UnitPrice = batch.UnitPrice;
+
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> DeleteBatchAsync(int id) =>
+            Task.FromResult(
+                !_preOrderLines.Any(l => l.HarvestBatchId == id) &&
+                _batches.RemoveAll(b =>
+                    b.HarvestBatchId == id &&
+                    b.Status < HarvestBatchStatus.Harvested) == 1);
+
+        public Task<IEnumerable<MemberRevenue>> GetMemberRevenueAsync(
+            DateTime? from, DateTime? to)
+        {
+            var orders = _preOrders
+                .Where(o =>
+                    o.Status != PreOrderStatus.Cancelled &&
+                    (!from.HasValue || o.OrderDate >= from) &&
+                    (!to.HasValue || o.OrderDate < to))
+                .Select(o => o.PreOrderId)
+                .ToHashSet();
+
+            var rows = _members.Select(m =>
+            {
+                var batches = _batches
+                    .Where(b => b.MemberId == m.MemberId)
+                    .Select(b => b.HarvestBatchId)
+                    .ToHashSet();
+
+                var lines = _preOrderLines
+                    .Where(l =>
+                        batches.Contains(l.HarvestBatchId) &&
+                        orders.Contains(l.PreOrderId))
+                    .ToList();
+
+                decimal Quantity(PreOrderLine line) =>
+                    _allocations
+                        .Where(a => a.PreOrderLineId == line.PreOrderLineId)
+                        .Sum(a => a.AllocatedQuantity);
+
+                return new MemberRevenue
+                {
+                    MemberId = m.MemberId,
+                    FullName = m.FullName,
+                    BatchCount = batches.Count,
+                    OrderedQuantity = lines.Sum(l => l.Quantity),
+                    AllocatedQuantity = lines.Sum(Quantity),
+                    CommittedAmount = lines.Sum(l => l.LineTotal),
+                    AllocatedAmount = lines.Sum(l => Quantity(l) * l.UnitPrice)
+                };
+            }).ToList();
+
+            return Task.FromResult<IEnumerable<MemberRevenue>>(rows);
         }
 
         private void SeedInitialData()
@@ -236,7 +382,7 @@ namespace AgriculturalCoop.DataStore.InMemory
         {
             PopulateBatchRelations();
             return Task.FromResult<IEnumerable<HarvestBatch>>(
-                _batches.Where(b => b.Status == HarvestBatchStatus.OpenForPreOrder).ToList());
+                _batches.Where(b => !b.IsArchived && b.Status == HarvestBatchStatus.OpenForPreOrder).ToList());
         }
 
         public Task AddBatchAsync(HarvestBatch batch)
@@ -270,24 +416,83 @@ namespace AgriculturalCoop.DataStore.InMemory
             return Task.CompletedTask;
         }
 
+        public Task<bool> SetPreOrderAvailabilityAsync(int batchId, bool isOpen)
+        {
+            var batch = _batches.FirstOrDefault(b => b.HarvestBatchId == batchId);
+            if (batch == null || batch.IsArchived || batch.Status >= HarvestBatchStatus.Harvested || batch.ActualQuantity != null)
+                return Task.FromResult(false);
+            batch.Status = isOpen ? HarvestBatchStatus.OpenForPreOrder : HarvestBatchStatus.Planned;
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> SetArchivedAsync(int batchId, bool archived)
+        {
+            var batch = _batches.FirstOrDefault(b => b.HarvestBatchId == batchId);
+            if (batch == null) return Task.FromResult(false);
+            batch.IsArchived = archived;
+            if (archived && batch.Status == HarvestBatchStatus.OpenForPreOrder) batch.Status = HarvestBatchStatus.Planned;
+            return Task.FromResult(true);
+        }
+        public Task<bool> CompleteBatchAsync(int batchId)
+        {
+            var batch = _batches.FirstOrDefault(b => b.HarvestBatchId == batchId);
+            if (batch == null || batch.IsArchived || batch.Status != HarvestBatchStatus.Allocated || !_allocations.Any(a => a.HarvestBatchId == batchId))
+                return Task.FromResult(false);
+            batch.Status = HarvestBatchStatus.Completed;
+            return Task.FromResult(true);
+        }
+
         private void PopulateBatchRelations()
         {
             foreach (var b in _batches)
             {
                 b.Member = _members.FirstOrDefault(m => m.MemberId == b.MemberId);
                 b.Product = _products.FirstOrDefault(p => p.ProductId == b.ProductId);
+                b.LinkedOrderCount = _preOrderLines.Where(l => l.HarvestBatchId == b.HarvestBatchId).Select(l => l.PreOrderId).Distinct().Count();
                 b.TotalOrderedQuantity = _preOrderLines
-                    .Where(l => l.HarvestBatchId == b.HarvestBatchId)
+                    .Where(l => l.HarvestBatchId == b.HarvestBatchId && _preOrders.Any(o => o.PreOrderId == l.PreOrderId && o.Status != PreOrderStatus.Cancelled))
                     .Sum(l => l.Quantity);
             }
         }
 
         // ==================== IDealerRepository ====================
-        public Task<IEnumerable<Dealer>> GetAllDealersAsync() =>
-            Task.FromResult<IEnumerable<Dealer>>(_dealers.ToList());
+        public Task<IEnumerable<Dealer>> GetAllDealersAsync()
+        {
+            foreach (var d in _dealers) d.HasAccount = _accounts.Any(a => a.DealerId == d.DealerId);
+            return Task.FromResult<IEnumerable<Dealer>>(_dealers.ToList());
+        }
 
         public Task<Dealer?> GetDealerByIdAsync(int id) =>
             Task.FromResult(_dealers.FirstOrDefault(d => d.DealerId == id));
+
+        public Task<bool> UpdateDealerAsync(Dealer dealer)
+        {
+            var old = _dealers.FirstOrDefault(d => d.DealerId == dealer.DealerId);
+            if (old == null) return Task.FromResult(false);
+            old.DealerName = dealer.DealerName; old.ContactPerson = dealer.ContactPerson; old.Phone = dealer.Phone;
+            old.Address = dealer.Address; old.Email = dealer.Email; old.Tier = dealer.Tier; old.IsActive = dealer.IsActive;
+            return Task.FromResult(true);
+        }
+        public Task<bool> DeleteDealerAsync(int dealerId) => Task.FromResult(
+            !_preOrders.Any(o => o.DealerId == dealerId) && !_accounts.Any(a => a.DealerId == dealerId) && _dealers.RemoveAll(d => d.DealerId == dealerId) == 1);
+
+        public Task<bool> ConfirmOrderAsync(int orderId)
+        {
+            var order = _preOrders.FirstOrDefault(o => o.PreOrderId == orderId);
+            if (order?.Status != PreOrderStatus.Pending || !_dealers.Any(d => d.DealerId == order.DealerId && d.IsActive) || !CanChangeOrder(orderId)) return Task.FromResult(false);
+            order.Status = PreOrderStatus.Confirmed;
+            return Task.FromResult(true);
+        }
+        private bool CanChangeOrder(int orderId) => _preOrderLines.Any(l => l.PreOrderId == orderId) &&
+            !_preOrderLines.Where(l => l.PreOrderId == orderId).Any(l => _allocations.Any(a => a.PreOrderLineId == l.PreOrderLineId) ||
+                _batches.Any(b => b.HarvestBatchId == l.HarvestBatchId && b.Status >= HarvestBatchStatus.Allocated));
+        public Task<bool> CancelOrderAsync(int orderId, string reason)
+        {
+            var order = _preOrders.FirstOrDefault(o => o.PreOrderId == orderId);
+            if (order == null || order.Status is not (PreOrderStatus.Pending or PreOrderStatus.Confirmed) || !CanChangeOrder(orderId)) return Task.FromResult(false);
+            order.Status = PreOrderStatus.Cancelled; order.CancellationReason = reason;
+            return Task.FromResult(true);
+        }
 
         public Task AddDealerAsync(Dealer dealer)
         {
@@ -338,7 +543,7 @@ namespace AgriculturalCoop.DataStore.InMemory
         public Task<decimal> GetTotalOrderedQuantityForBatchAsync(int batchId)
         {
             decimal total = _preOrderLines
-                .Where(l => l.HarvestBatchId == batchId)
+                .Where(l => l.HarvestBatchId == batchId && _preOrders.Any(o => o.PreOrderId == l.PreOrderId && o.Status != PreOrderStatus.Cancelled))
                 .Sum(l => l.Quantity);
             return Task.FromResult(total);
         }
@@ -358,6 +563,7 @@ namespace AgriculturalCoop.DataStore.InMemory
                 o.PreOrderLines = _preOrderLines.Where(l => l.PreOrderId == o.PreOrderId).ToList();
                 foreach (var line in o.PreOrderLines)
                 {
+                    line.PreOrder = o;
                     line.HarvestBatch = _batches.FirstOrDefault(b => b.HarvestBatchId == line.HarvestBatchId);
                     if (line.HarvestBatch != null)
                     {
@@ -365,11 +571,13 @@ namespace AgriculturalCoop.DataStore.InMemory
                     }
                     line.Allocation = _allocations.FirstOrDefault(a => a.PreOrderLineId == line.PreOrderLineId);
                 }
+                o.RefreshAllocationStatus();
             }
         }
 
         // ==================== IAllocationRepository ====================
-        public Task SaveAllocationsTransactionAsync(int batchId, IEnumerable<Allocation> allocations)
+        public Task SaveAllocationsTransactionAsync(int batchId, IEnumerable<Allocation> allocations,
+            decimal actualQuantity, DateTime harvestDate, IEnumerable<DealerNotification> notifications)
         {
             // Xóa phân bổ cũ của lô này (nếu có tính toán lại)
             _allocations.RemoveAll(a => a.HarvestBatchId == batchId);
@@ -381,8 +589,55 @@ namespace AgriculturalCoop.DataStore.InMemory
                 _allocations.Add(alloc);
             }
 
+            var batch = _batches.Single(b => b.HarvestBatchId == batchId);
+            batch.ActualQuantity = actualQuantity;
+            batch.ActualHarvestDate = harvestDate;
+            batch.Status = HarvestBatchStatus.Allocated;
+            foreach (var n in _notifications.Where(n => n.HarvestBatchId == batchId && n.Kind == 1)) n.IsSuperseded = true;
+            foreach (var n in notifications) UpsertNotification(n);
+            foreach (var order in _preOrders.Where(o => o.Status != PreOrderStatus.Cancelled && _preOrderLines.Any(l => l.PreOrderId == o.PreOrderId && l.HarvestBatchId == batchId)))
+            {
+                var orderLines = _preOrderLines.Where(l => l.PreOrderId == order.PreOrderId);
+                order.Status = orderLines.All(l => _allocations.Any(a => a.PreOrderLineId == l.PreOrderLineId && a.AllocatedQuantity >= l.Quantity))
+                    ? PreOrderStatus.FullyAllocated : PreOrderStatus.PartiallyAllocated;
+            }
             PopulatePreOrderRelations();
             return Task.CompletedTask;
+        }
+
+        private bool OwnNotification(DealerNotification n, int dealerId) => n.DealerId == dealerId &&
+            _preOrderLines.Any(l => l.PreOrderLineId == n.PreOrderLineId &&
+                _preOrders.Any(o => o.PreOrderId == l.PreOrderId && o.DealerId == dealerId && o.Status != PreOrderStatus.Cancelled));
+        public Task<IEnumerable<DealerNotification>> GetByDealerAsync(int dealerId) =>
+            Task.FromResult<IEnumerable<DealerNotification>>(_notifications.Where(n => OwnNotification(n, dealerId)).OrderByDescending(n => n.UpdatedAt).ToList());
+        public Task<int> GetUnreadCountAsync(int dealerId) => Task.FromResult(_notifications.Count(n => OwnNotification(n, dealerId) && n.ReadAt == null && !n.IsSuperseded));
+        public Task<bool> MarkReadAsync(int notificationId, int dealerId)
+        {
+            var n = _notifications.SingleOrDefault(n => n.DealerNotificationId == notificationId && OwnNotification(n, dealerId));
+            if (n == null) return Task.FromResult(false);
+            n.ReadAt ??= DateTime.Now;
+            return Task.FromResult(true);
+        }
+        public Task SaveReviewedAsync(DealerNotification notification)
+        {
+            UpsertNotification(notification);
+            return Task.CompletedTask;
+        }
+        private void UpsertNotification(DealerNotification n)
+        {
+            var old = _notifications.SingleOrDefault(x => x.PreOrderLineId == n.PreOrderLineId && x.Kind == n.Kind);
+            if (old == null)
+            {
+                n.DealerNotificationId = _notifications.Count + 1;
+                _notifications.Add(n);
+                return;
+            }
+            if (old.Body != n.Body || old.Subject != n.Subject || old.IsSuperseded)
+            {
+                old.ReadAt = null;
+                old.UpdatedAt = n.UpdatedAt;
+            }
+            old.Subject = n.Subject; old.Body = n.Body; old.IsAiGenerated = n.IsAiGenerated; old.IsSuperseded = false;
         }
 
         public Task<IEnumerable<Allocation>> GetAllocationsByBatchIdAsync(int batchId)
@@ -400,7 +655,7 @@ namespace AgriculturalCoop.DataStore.InMemory
         public Task<IEnumerable<Allocation>> GetAllocationsByDealerIdAsync(int dealerId)
         {
             PopulatePreOrderRelations();
-            var dealerOrderIds = _preOrders.Where(o => o.DealerId == dealerId).Select(o => o.PreOrderId).ToHashSet();
+            var dealerOrderIds = _preOrders.Where(o => o.DealerId == dealerId && o.Status != PreOrderStatus.Cancelled).Select(o => o.PreOrderId).ToHashSet();
             var dealerLineIds = _preOrderLines.Where(l => dealerOrderIds.Contains(l.PreOrderId)).Select(l => l.PreOrderLineId).ToHashSet();
 
             var list = _allocations.Where(a => dealerLineIds.Contains(a.PreOrderLineId)).ToList();

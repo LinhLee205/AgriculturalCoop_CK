@@ -1,0 +1,89 @@
+@inherits LayoutComponentBase
+@inject UserSessionState UserSession
+
+<div class="admin-shell">
+    <aside class="admin-sidebar @(menuOpen ? "is-open" : "")">
+        <a class="admin-brand" href="/admin">
+            🌿 COOP<span>AGRI</span>
+            <small>QUẢN TRỊ HỢP TÁC XÃ</small>
+        </a>
+
+        <nav aria-label="Menu quản lý">
+            <span class="admin-menu-label">TỔNG QUAN</span>
+            <NavLink href="/admin" Match="NavLinkMatch.All">
+                ▦ Bảng điều khiển
+            </NavLink>
+
+            <span class="admin-menu-label">DANH MỤC</span>
+            <NavLink href="/admin/members">♧ Xã viên</NavLink>
+            <NavLink href="/admin/products">▣ Nông sản</NavLink>
+            <NavLink href="/admin/dealers">♧ Đại lý</NavLink>
+
+            <span class="admin-menu-label">MÙA VỤ & GIAO DỊCH</span>
+            <NavLink href="/admin/batches">▤ Lô thu hoạch & phân bổ</NavLink>
+            <NavLink href="/admin/orders">▥ Đơn đặt trước</NavLink>
+
+            <span class="admin-menu-label">GIAO DIỆN CỬA HÀNG</span>
+            <NavLink href="/admin/banner">▧ Banner trang chủ</NavLink>
+            <NavLink href="/admin/integrations">♧ AI &amp; thông báo</NavLink>
+
+            <span class="admin-menu-label">BÁO CÁO</span>
+            <NavLink href="/admin/revenue">◷ Doanh thu theo xã viên</NavLink>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+            @UserSession.CurrentDealerName
+            <small>@UserSession.CurrentUserName</small>
+        </div>
+    </aside>
+
+    @if (menuOpen)
+    {
+        <button class="admin-menu-backdrop"
+                aria-label="Đóng menu"
+                @onclick="() => menuOpen = false">
+        </button>
+    }
+
+    <div class="admin-workspace">
+        <header class="admin-topbar">
+            <button type="button"
+                    class="mobile-menu-button text-dark"
+                    aria-label="Mở menu quản lý"
+                    aria-expanded="@menuOpen"
+                    @onclick="() => menuOpen = !menuOpen">
+                ☰
+            </button>
+
+            <span class="text-muted small">
+                Khu vực quản lý hợp tác xã
+            </span>
+
+            <div class="d-flex align-items-center gap-2">
+                <a href="/" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm">
+                    ↗ Xem trang khách hàng
+                </a>
+
+                <form method="post" action="/auth/logout">
+                    <AntiforgeryToken />
+                    <button class="btn btn-success btn-sm" type="submit">
+                        Đăng xuất
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <main class="admin-content">@Body</main>
+    </div>
+</div>
+
+<div id="blazor-error-ui" style="display:none">
+    Kết nối bị gián đoạn. <a href="">Tải lại</a>
+</div>
+
+@code {
+    private bool menuOpen;
+
+    protected override async Task OnInitializedAsync() =>
+        await UserSession.InitializeAsync();
+}

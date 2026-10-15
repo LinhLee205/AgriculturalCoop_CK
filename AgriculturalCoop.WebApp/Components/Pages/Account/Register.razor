@@ -1,0 +1,28 @@
+@page "/account/register"
+@attribute [AllowAnonymous]
+
+<PageTitle>Đăng ký đại lý - COOPAGRI</PageTitle>
+
+<div class="account-panel card border-0 shadow-sm p-4 p-md-5">
+    <span class="eyebrow">ĐỒNG HÀNH CÙNG HỢP TÁC XÃ</span>
+    <h1 class="h3 mt-2">Đăng ký đại lý</h1>
+    <p class="text-muted">
+        Thông tin tài khoản của bạn sẽ được lưu trên hệ thống.
+    </p>
+
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert alert-danger">@Error</div>
+    }
+
+    <AccountRegistrationForm Action="/auth/register" />
+
+    <p class="mt-4 mb-0 text-center">
+        Đã có tài khoản? <a href="/account/login">Đăng nhập</a>
+    </p>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+}

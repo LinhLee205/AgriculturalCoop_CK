@@ -24,6 +24,7 @@ namespace AgriculturalCoop.CoreBusiness.Entities
         public DateTime? ActualHarvestDate { get; set; }
         public decimal UnitPrice { get; set; }
         public HarvestBatchStatus Status { get; set; } = HarvestBatchStatus.OpenForPreOrder;
+        public bool IsArchived { get; set; }
 
         // Navigation helpers
         public Member? Member { get; set; }
@@ -32,6 +33,7 @@ namespace AgriculturalCoop.CoreBusiness.Entities
 
         // Computed helper
         public decimal TotalOrderedQuantity { get; set; }
+        public int LinkedOrderCount { get; set; }
         public decimal RemainingQuantity => Math.Max(0, ExpectedQuantity - TotalOrderedQuantity);
     }
 }

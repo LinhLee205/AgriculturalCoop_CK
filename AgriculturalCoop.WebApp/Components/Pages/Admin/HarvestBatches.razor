@@ -1,312 +1,431 @@
 @page "/admin/batches"
-@using System.ComponentModel.DataAnnotations
-@inject UserSessionState UserSession
-@inject NavigationManager Nav
-@inject IViewHarvestBatchesUseCase ViewHarvestBatchesUseCase
-@inject ICreateHarvestBatchUseCase CreateHarvestBatchUseCase
-@inject IUpdateActualYieldUseCase UpdateActualYieldUseCase
-@inject IViewMembersUseCase ViewMembersUseCase
-@inject IViewProductsUseCase ViewProductsUseCase
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin")]
+@using AgriculturalCoop.WebApp.Models
+@inject IViewHarvestBatchesUseCase ViewBatches
+@inject IViewMembersUseCase ViewMembers
+@inject IViewProductsUseCase ViewProducts
+@inject IManageBatchesUseCase ManageBatches
+@inject IUpdateActualYieldUseCase UpdateYield
+@inject ILogger<HarvestBatches> Logger
 
-<PageTitle>Quản Lý Lô Thu Hoạch - Admin HTX</PageTitle>
+<PageTitle>Lô thu hoạch - COOPAGRI</PageTitle>
 
-@if (!UserSession.IsAdmin)
-{
-    <div class="alert alert-danger p-4 rounded-4 text-center my-5">
-        <i class="bi bi-shield-lock-fill fs-1 text-danger mb-2 d-block"></i>
-        <h4 class="fw-bold">Truy cập bị từ chối (K4.2)</h4>
-        <p class="text-muted mb-3">Trang quản trị chỉ dành riêng cho Ban Quản trị Hợp tác xã.</p>
-        <a href="/admin" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm">
-            <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập Quản trị viên
-        </a>
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">MÙA VỤ & GIAO DỊCH</span>
+        <h1>Lô thu hoạch</h1>
+        <p>Tạo lô → nhận đặt trước → nhập sản lượng thực → phân bổ.</p>
     </div>
-}
-else
+    <button class="btn btn-success" @onclick="() => Open(null)">
+        + Tạo lô thu hoạch
+    </button>
+</div>
+
+@if (message != null)
 {
-    <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-1">
-                        <li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-muted">Quản trị</a></li>
-                        <li class="breadcrumb-item active">Lô mùa vụ</li>
-                    </ol>
-                </nav>
-                <h2 class="fw-bold text-dark mb-0">Quản Lý Lô Nông Sản Thu Hoạch</h2>
-            </div>
-            <button class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm" @onclick="() => showCreateModal = true">
-                <i class="bi bi-plus-circle me-1"></i> Tạo Lô Thu Hoạch Mới
-            </button>
-        </div>
-
-        @if (!string.IsNullOrEmpty(alertMessage))
-        {
-            <div class="alert alert-success rounded-3 py-2 px-3 mb-3 d-flex align-items-center gap-2">
-                <i class="bi bi-check-circle-fill fs-5 text-success"></i>
-                <span>@alertMessage</span>
-            </div>
-        }
-
-        <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Mã Lô</th>
-                            <th>Nông Sản</th>
-                            <th>Xã Viên Phụ Trách</th>
-                            <th>Dự Kiến (kg)</th>
-                            <th>Đã Đặt (kg)</th>
-                            <th>Thực Tế (kg)</th>
-                            <th>Ngày Thu Hoạch</th>
-                            <th>Trạng Thái</th>
-                            <th class="text-end">Thao Tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var batch in batches)
-                        {
-                            <tr>
-                                <td class="fw-bold font-monospace text-dark">@batch.BatchCode</td>
-                                <td>
-                                    <div class="fw-semibold">@(batch.Product?.ProductName ?? $"SP #{batch.ProductId}")</div>
-                                    <small class="text-muted">@batch.UnitPrice.ToString("N0") đ/@batch.Product?.Unit</small>
-                                </td>
-                                <td>@(batch.Member?.FullName ?? $"Xã viên #{batch.MemberId}")</td>
-                                <td class="fw-bold">@batch.ExpectedQuantity.ToString("N0")</td>
-                                <td>
-                                    <span class="text-success fw-bold">@batch.TotalOrderedQuantity.ToString("N0")</span>
-                                    <small class="text-muted d-block">
-                                        (còn: @batch.RemainingQuantity.ToString("N0"))
-                                    </small>
-                                </td>
-                                <td>
-                                    @if (batch.ActualQuantity.HasValue)
-                                    {
-                                        <span class="badge @(batch.ActualQuantity < batch.TotalOrderedQuantity ? "bg-warning text-dark" : "bg-success text-white") px-2 py-1 fs-6">
-                                            @batch.ActualQuantity.Value.ToString("N0") kg
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">Chưa nhập</span>
-                                    }
-                                </td>
-                                <td>@batch.ExpectedHarvestDate.ToString("dd/MM/yyyy")</td>
-                                <td>
-                                    @if (batch.Status == HarvestBatchStatus.OpenForPreOrder)
-                                    {
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">Đang mở đặt</span>
-                                    }
-                                    else if (batch.Status == HarvestBatchStatus.Harvested)
-                                    {
-                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-1">Đã thu hoạch</span>
-                                    }
-                                    else if (batch.Status == HarvestBatchStatus.Allocated)
-                                    {
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1">Đã phân bổ</span>
-                                    }
-                                </td>
-                                <td class="text-end">
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary" title="Nhập sản lượng thực tế" @onclick="() => OpenYieldModal(batch)">
-                                            <i class="bi bi-pencil-square"></i> Nhập thực tế
-                                        </button>
-                                        <a href="/admin/allocations/@batch.HarvestBatchId" class="btn btn-warning text-dark fw-bold" title="Chạy phân bổ tỷ lệ">
-                                            <i class="bi bi-diagram-3-fill"></i> Phân bổ (Luật 2)
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Nhập Sản Lượng Thực Tế -->
-    @if (selectedBatchForYield != null)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content rounded-4 border-0 shadow">
-                    <div class="modal-header border-bottom">
-                        <h5 class="modal-title fw-bold">Nhập Sản Lượng Thu Hoạch Thực Tế</h5>
-                        <button type="button" class="btn-close" @onclick="() => selectedBatchForYield = null"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label text-muted small">Lô thu hoạch:</label>
-                            <input class="form-control bg-light" value="@selectedBatchForYield.BatchCode - @selectedBatchForYield.Product?.ProductName" readonly />
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <small class="text-muted d-block">Sản lượng dự kiến:</small>
-                                <strong class="fs-6">@selectedBatchForYield.ExpectedQuantity.ToString("N0") kg</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Tổng đại lý đã đặt trước:</small>
-                                <strong class="fs-6 text-success">@selectedBatchForYield.TotalOrderedQuantity.ToString("N0") kg</strong>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Sản lượng thực tế thu hoạch (kg) <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control form-control-lg fw-bold" @bind="inputActualYield" placeholder="Ví dụ: 720" />
-                            <small class="text-muted">Nhập sản lượng thực tế cân được tại vườn của xã viên.</small>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-top">
-                        <button type="button" class="btn btn-light rounded-pill px-4" @onclick="() => selectedBatchForYield = null">Hủy</button>
-                        <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" @onclick="SaveActualYield">
-                            Lưu và Chuẩn bị Phân Bổ
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- Modal Tạo Lô Mới -->
-    @if (showCreateModal)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content rounded-4 border-0 shadow">
-                    <div class="modal-header border-bottom">
-                        <h5 class="modal-title fw-bold">Thêm Lô Nông Sản Mùa Vụ Mới</h5>
-                        <button type="button" class="btn-close" @onclick="() => showCreateModal = false"></button>
-                    </div>
-                    <EditForm Model="@newBatchModel" OnValidSubmit="HandleCreateBatch">
-                        <DataAnnotationsValidator />
-                        <div class="modal-body p-4">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold small">Mã lô:</label>
-                                <InputText @bind-Value="newBatchModel.BatchCode" class="form-control" placeholder="Để trống hệ thống sẽ tự sinh..." />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold small">Chọn Hộ Xã Viên:</label>
-                                <InputSelect @bind-Value="newBatchModel.MemberId" class="form-select">
-                                    @foreach (var m in members)
-                                    {
-                                        <option value="@m.MemberId">@m.FullName (@m.Address)</option>
-                                    }
-                                </InputSelect>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold small">Chọn Nông Sản:</label>
-                                <InputSelect @bind-Value="newBatchModel.ProductId" class="form-select">
-                                    @foreach (var p in products)
-                                    {
-                                        <option value="@p.ProductId">@p.ProductName (@p.Category)</option>
-                                    }
-                                </InputSelect>
-                            </div>
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
-                                    <label class="form-label fw-semibold small">Sản lượng dự kiến (kg):</label>
-                                    <InputNumber @bind-Value="newBatchModel.ExpectedQuantity" class="form-control" />
-                                    <ValidationMessage For="@(() => newBatchModel.ExpectedQuantity)" class="validation-message" />
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label fw-semibold small">Giá sỉ bao tiêu (VNĐ):</label>
-                                    <InputNumber @bind-Value="newBatchModel.UnitPrice" class="form-control" />
-                                    <ValidationMessage For="@(() => newBatchModel.UnitPrice)" class="validation-message" />
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold small">Ngày dự kiến thu hoạch:</label>
-                                <InputDate @bind-Value="newBatchModel.ExpectedHarvestDate" class="form-control" />
-                            </div>
-                        </div>
-                        <div class="modal-footer border-top">
-                            <button type="button" class="btn btn-light rounded-pill px-4" @onclick="() => showCreateModal = false">Hủy</button>
-                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">Tạo Lô Mùa Vụ</button>
-                        </div>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-    }
+    <div class="alert alert-success" role="status">@message</div>
 }
 
+<section class="admin-card mb-4"><div class="row g-3"><div class="col-md-8"><label for="batch-search" class="form-label">Tìm mã lô, nông sản hoặc xã viên</label><input id="batch-search" class="form-control" @bind="search" @bind:event="oninput" /></div><div class="col-md-4"><label for="batch-archive-filter" class="form-label">Hiển thị</label><select id="batch-archive-filter" class="form-select" @bind="archiveFilter"><option value="active">Đang quản lý</option><option value="archived">Đã lưu trữ</option><option value="all">Tất cả</option></select></div></div><p class="small text-muted mt-3 mb-0">Lô có đơn hoặc đã thu hoạch dùng Lưu trữ để giữ lịch sử. Xóa chỉ dành cho lô trống, chưa thu hoạch.</p></section>
+<section class="admin-card table-responsive">
+    @if (error != null && !editing && yieldBatch == null && deleting == null) { <div class="alert alert-danger" role="alert">@error</div> }
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Lô / nông sản</th>
+                <th>Xã viên</th>
+                <th>Dự kiến / đã đặt</th>
+                <th>Thu hoạch</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var batch in FilteredBatches)
+            {
+                <tr>
+                    <td>
+                        <strong>@batch.BatchCode</strong>
+                        <small class="d-block text-muted">
+                            @batch.Product?.ProductName ·
+                            @batch.UnitPrice.ToString("N0") đ/kg
+                        </small>
+                    </td>
+                    <td>@batch.Member?.FullName</td>
+                    <td>
+                        @batch.ExpectedQuantity.ToString("N2") kg
+                        <small class="d-block text-muted">
+                            Đã đặt: @batch.TotalOrderedQuantity.ToString("N2") kg
+                        </small>
+                        <a class="small" href="/admin/orders?batchId=@batch.HarvestBatchId">@batch.LinkedOrderCount đơn liên quan</a>
+                    </td>
+                    <td>
+                        @batch.ExpectedHarvestDate.ToString("dd/MM/yyyy")
+                        <small class="d-block text-muted">
+                            Thực tế:
+                            @(batch.ActualQuantity?.ToString("N2") ?? "Chưa nhập") kg
+                        </small>
+                    </td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success">
+                            @Status(batch.Status)
+                        </span>
+                        @if (batch.IsArchived) { <small class="d-block text-muted">Đã lưu trữ</small> }
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="() => AskAction(batch, false)">@(batch.IsArchived ? "Khôi phục" : "Lưu trữ")</button>
+                            @if (batch.Status == HarvestBatchStatus.Allocated && !batch.IsArchived) { <button class="btn btn-sm btn-success" disabled="@busy" @onclick="() => AskAction(batch, true)">Hoàn tất giao hàng</button> }
+                            @if (!batch.IsArchived && batch.Status < HarvestBatchStatus.Harvested && batch.ActualQuantity == null)
+                            {
+                                <button class="btn btn-sm btn-outline-success" disabled="@busy" @onclick="() => ToggleOpen(batch)">@(batch.Status == HarvestBatchStatus.OpenForPreOrder ? "Tạm ẩn / ngừng đặt" : "Mở đặt / hiện trên web")</button>
+                            }
+                            <button class="btn btn-sm btn-outline-success"
+                                    disabled="@(busy || batch.IsArchived || batch.Status >= HarvestBatchStatus.Harvested)"
+                                    @onclick="() => Open(batch)">
+                                Sửa
+                            </button>
+
+                            @if (batch.LinkedOrderCount == 0 && batch.Status < HarvestBatchStatus.Harvested)
+                            {
+                            <button class="btn btn-sm btn-outline-danger" disabled="@busy"
+                                    @onclick="() => AskDelete(batch)">
+                                Xóa
+                            </button>
+                            }
+
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    disabled="@(busy || batch.IsArchived || batch.Status >= HarvestBatchStatus.Allocated)"
+                                    @onclick="() => OpenYield(batch)">
+                                Nhập thực tế
+                            </button>
+
+                            <a class="btn btn-sm btn-warning"
+                               href="/admin/allocations/@batch.HarvestBatchId">
+                                Đơn / phân bổ
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (!FilteredBatches.Any())
+    {
+        <p class="text-muted">Không có lô phù hợp với bộ lọc.</p>
+    }
+</section>
+
+@if (editing)
+{
+    <div class="editor-backdrop">
+        <section class="editor-dialog"
+                 role="dialog" aria-modal="true"
+                 aria-labelledby="batch-title">
+            <div class="d-flex justify-content-between">
+                <h2 id="batch-title" class="h5">
+                    @(form.HarvestBatchId == 0
+                        ? "Tạo lô thu hoạch" : "Sửa lô thu hoạch")
+                </h2>
+
+                <button class="btn-close" aria-label="Đóng"
+                        disabled="@busy"
+                        @onclick="() => editing = false">
+                </button>
+            </div>
+
+            <EditForm Model="form" OnValidSubmit="Save">
+                <DataAnnotationsValidator />
+
+                @if (error != null)
+                {
+                    <div class="alert alert-danger" role="alert">@error</div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label" for="batch-code">Mã lô</label>
+                    <InputText id="batch-code" class="form-control"
+                               @bind-Value="form.BatchCode" />
+                    <ValidationMessage For="@(() => form.BatchCode)" />
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="batch-member">Xã viên</label>
+                        <InputSelect id="batch-member" class="form-select"
+                                     @bind-Value="form.MemberId">
+                            <option value="0">Chọn xã viên</option>
+                            @foreach (var m in members)
+                            {
+                                <option value="@m.MemberId">@m.FullName</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => form.MemberId)" />
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label class="form-label" for="batch-product">Nông sản</label>
+                        <InputSelect id="batch-product" class="form-select"
+                                     @bind-Value="form.ProductId">
+                            <option value="0">Chọn nông sản</option>
+                            @foreach (var p in products)
+                            {
+                                <option value="@p.ProductId">@p.ProductName</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => form.ProductId)" />
+                    </div>
+                </div>
+
+                <div class="row g-3 my-1">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="batch-quantity">
+                            Sản lượng dự kiến (kg)
+                        </label>
+                        <InputNumber id="batch-quantity"
+                                     class="form-control"
+                                     @bind-Value="form.ExpectedQuantity"
+                                     step="0.01" />
+                        <ValidationMessage For="@(() => form.ExpectedQuantity)" />
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label class="form-label" for="batch-price">
+                            Đơn giá (đ/kg)
+                        </label>
+                        <InputNumber id="batch-price" class="form-control"
+                                     @bind-Value="form.UnitPrice" />
+                        <ValidationMessage For="@(() => form.UnitPrice)" />
+                    </div>
+                </div>
+
+                <div class="my-3">
+                    <label class="form-label" for="batch-date">
+                        Ngày thu hoạch dự kiến
+                    </label>
+                    <InputDate id="batch-date" class="form-control"
+                               @bind-Value="form.ExpectedHarvestDate" />
+                </div>
+
+                <p class="text-muted small">
+                    Lô đã có đơn đặt sẽ khóa xã viên, nông sản và đơn giá.
+                    Lô đã thu hoạch giữ nguyên thông tin đã chốt.
+                </p>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-light"
+                            disabled="@busy"
+                            @onclick="() => editing = false">
+                        Hủy
+                    </button>
+                    <button type="submit" class="btn btn-success" disabled="@busy">
+                        Lưu lô thu hoạch
+                    </button>
+                </div>
+            </EditForm>
+        </section>
+    </div>
+}
+
+@if (yieldBatch != null)
+{
+    <div class="editor-backdrop">
+        <section class="editor-dialog compact"
+                 role="dialog" aria-modal="true"
+                 aria-labelledby="yield-title">
+            <h2 id="yield-title" class="h5">Nhập sản lượng thực tế</h2>
+            <p>@yieldBatch.BatchCode</p>
+
+            @if (error != null)
+            {
+                <div class="alert alert-danger" role="alert">@error</div>
+            }
+
+            <label class="form-label" for="actual-yield">Sản lượng (kg)</label>
+            <input id="actual-yield"
+                   class="form-control mb-4"
+                   type="number" min="0" step="0.01"
+                   @bind="actualYield" />
+
+            <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-light"
+                        disabled="@busy"
+                        @onclick="() => yieldBatch = null">
+                    Hủy
+                </button>
+                <button class="btn btn-success"
+                        disabled="@busy"
+                        @onclick="SaveYield">
+                    Lưu sản lượng
+                </button>
+            </div>
+        </section>
+    </div>
+}
+
+@if (deleting != null)
+{
+    <ConfirmDelete Name="@deleting.BatchCode"
+                   Error="@error" Busy="busy"
+                   OnCancel="() => deleting = null"
+                   OnConfirm="Delete" />
+}
+
+@if (actionBatch != null) { <ConfirmAction Title="@(completing ? "Hoàn tất giao hàng" : actionBatch.IsArchived ? "Khôi phục lô" : "Lưu trữ lô")" Message="@(completing ? "Xác nhận lô đã giao xong. Sau bước này không chạy lại phân bổ." : actionBatch.IsArchived ? "Khôi phục lô vào danh sách quản lý. Lô bị đóng khi lưu trữ cần mở đặt lại nếu muốn nhận đơn mới." : "Ẩn lô khỏi danh sách đang quản lý và ngừng nhận đơn mới. Đơn, phân bổ và lịch sử được giữ nguyên.")" Error="@error" Busy="busy" OnCancel="() => actionBatch = null" OnConfirm="ApplyAction" /> }
 @code {
     private List<HarvestBatch> batches = new();
     private List<Member> members = new();
     private List<Product> products = new();
-    private string? alertMessage;
-
-    private HarvestBatch? selectedBatchForYield;
-    private decimal inputActualYield = 720;
-    private bool showCreateModal = false;
-
-    public class CreateBatchModel
+    private BatchForm form = new();
+    private HarvestBatch? deleting, yieldBatch;
+    private decimal actualYield;
+    private bool editing, busy;
+    private string? error, message;
+    private string search = "", archiveFilter = "active";
+    private HarvestBatch? actionBatch;
+    private bool completing;
+    private IEnumerable<HarvestBatch> FilteredBatches => batches.Where(b => (archiveFilter == "all" || b.IsArchived == (archiveFilter == "archived")) &&
+        (search.Trim().Length == 0 || b.BatchCode.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        (b.Product?.ProductName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false) || (b.Member?.FullName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)));
+    private void AskAction(HarvestBatch b, bool complete) { actionBatch = b; completing = complete; error = null; }
+    private async Task ApplyAction()
     {
-        public string BatchCode { get; set; } = string.Empty;
-        public int MemberId { get; set; } = 1;
-        public int ProductId { get; set; } = 1;
-
-        [Range(10, 100000, ErrorMessage = "Sản lượng dự kiến phải lớn hơn 10 kg")]
-        public decimal ExpectedQuantity { get; set; } = 1000;
-
-        [Range(1000, 10000000, ErrorMessage = "Đơn giá phải lớn hơn 1.000 VNĐ")]
-        public decimal UnitPrice { get; set; } = 35000;
-
-        public DateTime ExpectedHarvestDate { get; set; } = DateTime.Today.AddDays(14);
+        if (busy || actionBatch == null) return; busy = true; error = message = null;
+        try
+        {
+            if (completing) await ManageBatches.CompleteAsync(actionBatch.HarvestBatchId);
+            else await ManageBatches.SetArchivedAsync(actionBatch.HarvestBatchId, !actionBatch.IsArchived);
+            actionBatch = null; await Load(); message = "Đã cập nhật lô; đơn và kết quả phân bổ được giữ nguyên.";
+        }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) { Logger.LogError(ex, "Could not update batch lifecycle"); error = "Chưa cập nhật được lô. Vui lòng thử lại."; }
+        finally { busy = false; }
     }
-
-    private CreateBatchModel newBatchModel = new();
 
     protected override async Task OnInitializedAsync()
     {
-        if (UserSession.IsAdmin)
+        await Load();
+        members = (await ViewMembers.ExecuteAsync()).ToList();
+        products = (await ViewProducts.ExecuteAsync()).ToList();
+    }
+
+    private async Task Load() =>
+        batches = (await ViewBatches.ExecuteAsync()).ToList();
+
+    private async Task ToggleOpen(HarvestBatch batch)
+    {
+        if (busy) return;
+        busy = true; error = message = null;
+        try
         {
-            await LoadData();
+            var isOpen = batch.Status != HarvestBatchStatus.OpenForPreOrder;
+            await ManageBatches.SetOpenAsync(batch.HarvestBatchId, isOpen);
+            message = isOpen ? "Đã mở đặt và hiển thị lô trên trang khách hàng." : "Đã ẩn lô khỏi trang khách hàng và ngừng nhận đơn mới. Các đơn đã đặt vẫn được giữ lại.";
+            await Load();
+        }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private void Open(HarvestBatch? batch)
+    {
+        form = batch == null ? new() : BatchForm.From(batch);
+        editing = true;
+        error = null;
+    }
+
+    private void AskDelete(HarvestBatch batch)
+    {
+        deleting = batch;
+        error = null;
+    }
+
+    private void OpenYield(HarvestBatch batch)
+    {
+        yieldBatch = batch;
+        actualYield = batch.ActualQuantity ?? 0;
+        error = null;
+    }
+
+    private static string Status(HarvestBatchStatus status) => status switch
+    {
+        HarvestBatchStatus.OpenForPreOrder => "Đang mở đặt",
+        HarvestBatchStatus.Harvested => "Đã thu hoạch",
+        HarvestBatchStatus.Allocated => "Đã phân bổ",
+        HarvestBatchStatus.Completed => "Hoàn tất",
+        _ => "Dự kiến"
+    };
+
+    private async Task Save()
+    {
+        if (busy) return;
+        busy = true;
+        error = null;
+
+        try
+        {
+            await ManageBatches.SaveAsync(form.ToEntity());
+            editing = false;
+            message = "Đã lưu lô thu hoạch.";
+            await Load();
+        }
+        catch (PreOrderDomainException ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
         }
     }
 
-    private async Task LoadData()
+    private async Task Delete()
     {
-        batches = (await ViewHarvestBatchesUseCase.ExecuteAsync()).ToList();
-        members = (await ViewMembersUseCase.ExecuteAsync()).ToList();
-        products = (await ViewProductsUseCase.ExecuteAsync()).ToList();
-    }
+        if (busy || deleting == null) return;
+        busy = true;
+        error = null;
 
-    private void OpenYieldModal(HarvestBatch batch)
-    {
-        selectedBatchForYield = batch;
-        inputActualYield = batch.ActualQuantity ?? 720;
-    }
-
-    private async Task SaveActualYield()
-    {
-        if (selectedBatchForYield != null)
+        try
         {
-            await UpdateActualYieldUseCase.ExecuteAsync(selectedBatchForYield.HarvestBatchId, inputActualYield, DateTime.Now);
-            alertMessage = $"Đã cập nhật sản lượng thực tế {inputActualYield:N0} kg cho lô [{selectedBatchForYield.BatchCode}] thành công!";
-            selectedBatchForYield = null;
-            await LoadData();
+            await ManageBatches.DeleteAsync(deleting.HarvestBatchId);
+            deleting = null;
+            message = "Đã xóa lô thu hoạch.";
+            await Load();
+        }
+        catch (PreOrderDomainException ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
         }
     }
 
-    private async Task HandleCreateBatch()
+    private async Task SaveYield()
     {
-        var batch = new HarvestBatch
-        {
-            BatchCode = string.IsNullOrWhiteSpace(newBatchModel.BatchCode) 
-                ? $"LO-{DateTime.Now:yyyyMMdd}-{new Random().Next(100, 999)}" 
-                : newBatchModel.BatchCode,
-            MemberId = newBatchModel.MemberId,
-            ProductId = newBatchModel.ProductId,
-            ExpectedQuantity = newBatchModel.ExpectedQuantity,
-            UnitPrice = newBatchModel.UnitPrice,
-            ExpectedHarvestDate = newBatchModel.ExpectedHarvestDate,
-            Status = HarvestBatchStatus.OpenForPreOrder
-        };
+        if (busy || yieldBatch == null) return;
+        busy = true;
+        error = null;
 
-        await CreateHarvestBatchUseCase.ExecuteAsync(batch);
-        showCreateModal = false;
-        alertMessage = $"Đã tạo mới lô thu hoạch [{batch.BatchCode}] thành công!";
-        await LoadData();
+        try
+        {
+            await UpdateYield.ExecuteAsync(
+                yieldBatch.HarvestBatchId, actualYield, DateTime.Now);
+
+            yieldBatch = null;
+            message = "Đã nhập sản lượng. Bạn có thể chạy phân bổ tại lô này.";
+            await Load();
+        }
+        catch (PreOrderDomainException ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
     }
 }

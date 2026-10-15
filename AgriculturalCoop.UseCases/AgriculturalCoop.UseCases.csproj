@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AgriculturalCoop.CoreBusiness\AgriculturalCoop.CoreBusiness.csproj" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.11.0" />
   </ItemGroup>
 
   <PropertyGroup>

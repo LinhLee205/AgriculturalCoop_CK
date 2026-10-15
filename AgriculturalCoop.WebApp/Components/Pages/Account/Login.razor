@@ -1,0 +1,80 @@
+@page "/account/login"
+@page "/admin/login"
+@attribute [AllowAnonymous]
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsAdminLogin ? "Đăng nhập quản trị" : "Đăng nhập đại lý") - COOPAGRI</PageTitle>
+
+<div class="account-panel card border-0 shadow-sm p-4 p-md-5">
+    <span class="eyebrow">@(IsAdminLogin ? "BAN QUẢN LÝ HỢP TÁC XÃ" : "TÀI KHOẢN ĐẠI LÝ COOPAGRI")</span>
+    <h1 class="h3 mt-2">@(IsAdminLogin ? "Đăng nhập quản trị" : "Đăng nhập đại lý")</h1>
+    <p class="text-muted">
+        @(IsAdminLogin ? "Đăng nhập để quản lý mùa vụ và hoạt động hợp tác xã." : "Đăng nhập để đặt trước nông sản và theo dõi lượng phân bổ của bạn.")
+    </p>
+
+    @if (Error == "invalid")
+    {
+        <div class="alert alert-danger">
+            @(IsAdminLogin ? "Email hoặc mật khẩu chưa đúng, hoặc tài khoản không có quyền quản trị." : "Email hoặc mật khẩu chưa đúng, hoặc tài khoản không phải đại lý.")
+        </div>
+    }
+
+    @if (IsAdminLogin && SwitchAccount)
+    {
+        <div class="alert alert-info" role="status">
+            Tài khoản hiện tại chưa có quyền quản trị. Vui lòng đăng nhập bằng tài khoản Admin để tiếp tục.
+            Các tab trong cùng trình duyệt dùng chung phiên; đăng nhập thành công sẽ chuyển sang tài khoản Admin.
+        </div>
+    }
+
+    @if (Registered)
+    {
+        <div class="alert alert-success">
+            Tài khoản đã được tạo. Bạn có thể đăng nhập.
+        </div>
+    }
+
+    <form method="post" action="@(IsAdminLogin ? "/auth/admin/login" : "/auth/login")">
+        <AntiforgeryToken />
+        <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+
+        <label class="form-label" for="email">Email</label>
+        <input id="email" name="email"
+               class="form-control mb-3"
+               type="email" required maxlength="254"
+               autocomplete="username" />
+
+        <label class="form-label" for="password">Mật khẩu</label>
+        <input id="password" name="password"
+               class="form-control mb-4"
+               type="password" required maxlength="128"
+               autocomplete="current-password" />
+
+        <button class="btn btn-success w-100" type="submit">
+            Đăng nhập
+        </button>
+    </form>
+
+    @if (!IsAdminLogin)
+    {
+        <p class="mt-4 mb-0 text-center">
+            Chưa có tài khoản? <a href="/account/register">Đăng ký đại lý</a>
+        </p>
+    }
+</div>
+
+@code {
+    private bool IsAdminLogin => new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/')
+        .Equals("/admin/login", StringComparison.OrdinalIgnoreCase);
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+
+    [SupplyParameterFromQuery]
+    public bool Registered { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "switchAccount")]
+    public bool SwitchAccount { get; set; }
+}

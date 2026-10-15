@@ -1,5 +1,6 @@
+@inject UserSessionState UserSession
 @page "/batches"
-@inject IViewHarvestBatchesUseCase ViewHarvestBatchesUseCase
+@inject IViewOpenBatchesUseCase ViewHarvestBatchesUseCase
 @inject IPreOrderCart Cart
 @inject NavigationManager Nav
 
@@ -53,10 +54,10 @@
     }
     else
     {
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <div class="catalog-grid">
             @foreach (var batch in filteredBatches)
             {
-                <div class="col">
+                <div>
                     <HarvestBatchCard Batch="batch" OnOrderClick="HandleOrderClick" />
                 </div>
             }
@@ -98,9 +99,17 @@
         }).ToList();
     }
 
-    private void HandleOrderClick(HarvestBatch batch)
+    private async Task HandleOrderClick(HarvestBatch batch)
     {
-        Cart.AddItem(batch, 50);
-        Nav.NavigateTo("/cart");
+        await UserSession.InitializeAsync();
+
+        if (!UserSession.IsDealer)
+        {
+            Nav.NavigateTo("/batches/" + batch.HarvestBatchId);
+            return;
+        }
+
+        Nav.NavigateTo("/batches/" + batch.HarvestBatchId);
     }
+
 }

@@ -1,0 +1,65 @@
+@page "/admin/integrations"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin")]
+@inject IGenerateAllocationNoticeUseCase GenerateNotice
+@inject ISendAllocationNoticeUseCase SendNotice
+@inject AgriculturalCoop.WebApp.Services.INoticeAiStatus AiConnection
+<PageTitle>AI & thông báo — COOPAGRI</PageTitle>
+<div class="page-heading"><div><span class="eyebrow">THÔNG BÁO CHO ĐẠI LÝ</span><h1>AI & thông báo trên web</h1><p>Thông báo kết quả ngay trong ứng dụng; AI là lựa chọn bổ sung qua Internet.</p></div></div>
+<section class="admin-card mb-4">
+    <h2 class="h5">Bạn có thể dùng ngay mà chưa cần cấu hình</h2>
+    <p>Khi lưu phân bổ, ứng dụng tự tạo thông báo kết quả trên web cho từng đại lý. Đại lý mở biểu tượng chuông → <strong>Thông báo của tôi</strong> để xem. Không cần AI hoặc email cho bước này.</p>
+    <p>Muốn giải thích thêm, admin bấm <strong>Soạn thông báo</strong>, chọn mẫu hoặc AI, kiểm tra và bấm <strong>Duyệt và đăng trên web</strong>. Nội dung AI chưa duyệt không được lưu thành thông báo.</p>
+    <dl class="mb-3">
+        <dt>API và khóa API là gì?</dt><dd>API là đường kết nối để ứng dụng nhờ dịch vụ AI bên ngoài viết lời văn. Khóa API giống mật khẩu riêng cho đường kết nối đó, do nhà cung cấp cấp cho tài khoản của bạn.</dd>
+        <dt>SMTP là gì?</dt><dd>SMTP là cách ứng dụng chuyển thư qua nhà cung cấp email. Chỉ cần cấu hình khi bạn muốn bấm gửi thư trực tiếp trong ứng dụng.</dd>
+        <dt>Manage User Secrets là gì?</dt><dd>Đây là nơi Visual Studio lưu riêng thông tin bí mật của ứng dụng trên tài khoản Windows đang dùng. Khi triển khai, thông tin này được đặt ở máy chủ.</dd>
+    </dl>
+    <p class="small mb-0">Theo đề tài 16 trong PDF: AI soạn thông báo là mở rộng tùy chọn. Đề không bắt buộc email/SMTP. Luồng hiện tại dùng thông báo trên web.</p>
+</section>
+<div class="row g-4 mb-4">
+    <div class="col-md-6"><section class="admin-card"><h2 class="h5">AI hỗ trợ soạn thư</h2><span class="badge @(GenerateNotice.IsAiAvailable ? "bg-success" : "bg-secondary")">@(GenerateNotice.IsAiAvailable ? "Đã có cấu hình" : "Chưa cấu hình / đã tắt")</span><p class="small mt-3 mb-1"><strong>Nhà cung cấp:</strong> @AiConnection.DisplayName</p><p class="small"><strong>Mô hình:</strong> @(string.IsNullOrEmpty(AiConnection.Model) ? "Chưa chọn" : AiConnection.Model)</p><p class="small text-muted mb-0">AI xử lý lời văn. Số liệu thật do ứng dụng điền; ứng dụng không tự gửi tên, email, địa chỉ hoặc điện thoại đại lý tới AI. Trạng thái trên chỉ xác nhận đủ cấu hình, chưa kiểm tra khóa hoặc gói miễn phí của tài khoản.</p></section></div>
+    <div class="col-md-6"><section class="admin-card"><h2 class="h5">Thông báo trên website</h2><span class="badge bg-success-subtle text-success">Không cần email / SMTP</span><p class="small text-muted mt-3">Lưu phân bổ sẽ tạo thông báo riêng cho từng đại lý. Đại lý xem qua biểu tượng chuông và đánh dấu đã đọc. Nội dung AI chỉ được đăng sau khi admin duyệt.</p></section></div>
+</div>
+<section class="admin-card mb-4">
+    <h2 class="h5">Dùng Gemini với hạn mức miễn phí</h2>
+    <ol class="integration-steps">
+        <li>Mở <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio</a>, đăng nhập tài khoản Google rồi chọn <strong>Get API key</strong>.</li>
+        <li>Chọn dự án ở <strong>Free tier</strong>, chưa liên kết tài khoản thanh toán. Kiểm tra mô hình có Free tier trong <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener noreferrer">bảng giá của Google</a>.</li>
+        <li>Trong Visual Studio: bấm phải <strong>AgriculturalCoop.WebApp → Manage User Secrets</strong>. Thêm mục AI theo mẫu dưới đây, thay phần khóa bằng khóa Gemini của bạn; giữ các cấu hình khác đang có.</li>
+        <li>Khởi động lại app. Lưu phân bổ → Soạn thông báo → Soạn bằng AI → kiểm tra → Duyệt và đăng trên web.</li>
+    </ol>
+    <pre class="integration-config">@GeminiExample</pre>
+    <p class="small">Khi hết hạn mức, ứng dụng báo lỗi để bạn chờ hoặc dùng bản nháp theo mẫu; không tự thử lại hay chuyển sang OpenAI. Nếu Google báo “Your project has been denied access”, hãy kiểm tra dự án trong AI Studio và liên hệ hỗ trợ Google; thay SMTP không giải quyết lỗi này. Ứng dụng không kiểm tra được trạng thái thanh toán của dự án Google.</p>
+    <p class="small text-muted mb-0">Google có thể dùng nội dung ở Free tier để cải thiện sản phẩm. Khi demo, dùng dữ liệu giả; không nhập thông tin cá nhân hoặc bí mật vào ô lý do mùa vụ. Xem <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer">điều khoản Google</a>. Không cần cài mô hình AI trên máy.</p>
+</section>
+<section class="admin-card">
+    <details><summary class="fw-bold">Email mở rộng — không dùng trong luồng thông báo hiện tại</summary>
+    <p class="mt-3">Adapter email được giữ trong mã nguồn để mở rộng sau. Nút duyệt hiện tại đăng lên website, không gửi email. Bạn không cần điền các cấu hình dưới đây.</p>
+    <ol class="integration-steps">
+        <li>Gemini dùng mẫu ở trên. Nếu muốn dùng OpenAI, chủ động đổi Provider thành OpenAI và điền cấu hình OpenAI riêng theo tài liệu của dự án; ứng dụng không tự chuyển nhà cung cấp.</li>
+        <li>Chuẩn bị tài khoản SMTP của nhà cung cấp email. Nếu dùng Gmail, dùng mật khẩu ứng dụng do Google cấp; không nhập mật khẩu đăng nhập thông thường.</li>
+        <li>Trong Visual Studio, bấm phải dự án <strong>AgriculturalCoop.WebApp → Manage User Secrets</strong>, điền cấu hình mẫu bên dưới bằng thông tin thật. Giữ nguyên phần ConnectionStrings nếu đang có.</li>
+        <li>Việc cấu hình chỉ chuẩn bị adapter, chưa bật một luồng gửi email trong giao diện hiện tại.</li>
+    </ol>
+    <pre class="integration-config">@Example</pre>
+    <p class="text-muted small mb-0">Không đưa khóa API hoặc mật khẩu thật vào Git hay gửi qua chat. Ứng dụng không gửi thư thử tự động.</p>
+    </details>
+</section>
+@code {
+    private const string Example = @"{
+  ""Email"": {
+    ""Host"": ""SMTP_CUA_NHA_CUNG_CAP"",
+    ""Port"": 587,
+    ""EnableSsl"": true,
+    ""Username"": ""TAI_KHOAN_SMTP"",
+    ""Password"": ""MAT_KHAU_UNG_DUNG_HOAC_SMTP"",
+    ""FromAddress"": ""EMAIL_GUI_CUA_BAN"",
+    ""FromName"": ""COOPAGRI""
+  }
+}";
+    private static string GeminiExample => System.Text.Json.JsonSerializer.Serialize(new
+    {
+        AI = new { Provider = "Gemini", Gemini = new { ApiKey = "DAN_KHOA_GEMINI_CUA_BAN_TAI_DAY", Model = AgriculturalCoop.WebApp.Services.NoticeAiConnection.DefaultGeminiModel } }
+    }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+}

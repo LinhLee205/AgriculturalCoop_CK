@@ -1,0 +1,54 @@
+@page "/account/setup"
+@attribute [AllowAnonymous]
+@inject IAccountUseCases Accounts
+@inject IWebHostEnvironment Environment
+
+<PageTitle>Thiết lập quản trị viên - COOPAGRI</PageTitle>
+
+<div class="account-panel card border-0 shadow-sm p-4 p-md-5">
+    <span class="eyebrow">THIẾT LẬP BAN ĐẦU</span>
+    <h1 class="h3 mt-2">Tạo quản trị viên</h1>
+
+    @if (available)
+    {
+        <p class="text-muted">
+            Chỉ tạo một lần trong môi trường phát triển cục bộ.
+            Khi đã có quản trị viên, trang này sẽ khóa.
+        </p>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="alert alert-danger">@Error</div>
+        }
+
+        <AccountRegistrationForm Action="/auth/setup" Admin="true" />
+    }
+    else
+    {
+        <div class="alert alert-info">
+            Thiết lập ban đầu đã đóng hoặc không khả dụng tại địa chỉ này.
+        </div>
+
+        <a class="btn btn-success" href="/admin/login">
+            Đến trang đăng nhập
+        </a>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+
+    private bool available;
+
+    protected override async Task OnInitializedAsync()
+    {
+        available = Environment.IsDevelopment()
+            && HttpContext?.Connection.RemoteIpAddress is { } ip
+            && System.Net.IPAddress.IsLoopback(ip)
+            && !await Accounts.HasAdminAsync();
+    }
+}

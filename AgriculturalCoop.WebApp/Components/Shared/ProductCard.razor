@@ -1,0 +1,27 @@
+<article class="produce-card" data-product-id="@Product.ProductId">
+    <a class="produce-image-link" href="/products/@Product.ProductId" tabindex="-1" aria-hidden="true">
+        <img src="@(string.IsNullOrEmpty(Product.ImageUrl) ? "/images/products/placeholder.svg" : Product.ImageUrl)"
+             alt="" loading="lazy" onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
+        <span class="produce-status @(OpenBatch == null ? "is-upcoming" : "")">
+            @(OpenBatch == null ? "Sắp mở đợt đặt" : OpenBatch.RemainingQuantity <= 0 ? "Đã đủ lượng đặt" : "Đang mở đặt trước")
+        </span>
+    </a>
+    <div class="produce-body">
+        <span class="produce-category">@Product.Category</span>
+        <h3><a href="/products/@Product.ProductId">@Product.ProductName</a></h3>
+        <p class="produce-description">@Product.Description</p>
+        <div class="produce-price">
+            @((OpenBatch?.UnitPrice ?? Product.StandardPrice).ToString("N0")) <small>đ/@Product.Unit</small>
+        </div>
+        <div class="produce-card-footer">
+            <span>@(OpenBatch == null ? "Giá tham khảo" : "Còn " + OpenBatch.RemainingQuantity.ToString("N0") + " " + Product.Unit)</span>
+            <a class="produce-link" href="/products/@Product.ProductId" aria-label="Xem @Product.ProductName">
+                Xem sản phẩm <span aria-hidden="true">→</span>
+            </a>
+        </div>
+    </div>
+</article>
+@code {
+    [Parameter, EditorRequired] public Product Product { get; set; } = null!;
+    [Parameter] public HarvestBatch? OpenBatch { get; set; }
+}

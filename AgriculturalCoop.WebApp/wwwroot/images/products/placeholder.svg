@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#ecf4ee"/>
+  <path d="M260 360c0-130 190-190 280-160 0 150-140 210-250 180l90-90"
+        fill="#8bb99c"/>
+  <path d="m285 395 170-150"
+        fill="none" stroke="#34654a"
+        stroke-width="16" stroke-linecap="round"/>
+  <text x="400" y="490" text-anchor="middle"
+        font-family="sans-serif" font-size="26"
+        fill="#34654a">COOPAGRI</text>
+</svg>

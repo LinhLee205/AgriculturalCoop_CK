@@ -1,0 +1,26 @@
+@implements IDisposable
+@inject IDealerNotificationUseCases Notifications
+@inject ILogger<DealerNotificationBell> Logger
+<a class="account-trigger notification-bell" href="/my-notifications" aria-label="Thông báo, @unread chưa đọc" title="Thông báo của tôi"><i class="bi bi-bell" aria-hidden="true"></i>@if (unread > 0) { <span class="notification-count">@(unread > 99 ? "99+" : unread.ToString())</span> }</a>
+@code {
+    private int unread;
+    private readonly CancellationTokenSource lifetime = new();
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+        _ = Poll();
+    }
+    private async Task Refresh()
+    {
+        try { unread = await Notifications.UnreadCountAsync(); }
+        catch (Exception ex) { Logger.LogDebug(ex, "Could not refresh notification count"); }
+    }
+    private async Task Poll()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+        try { while (await timer.WaitForNextTickAsync(lifetime.Token)) await InvokeAsync(async () => { await Refresh(); StateHasChanged(); }); }
+        catch (OperationCanceledException) { }
+        catch (ObjectDisposedException) { }
+    }
+    public void Dispose() { lifetime.Cancel(); lifetime.Dispose(); }
+}

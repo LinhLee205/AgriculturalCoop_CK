@@ -1,133 +1,42 @@
-@using AgriculturalCoop.CoreBusiness.Entities
-
-<div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden card-hover transition">
-    <div class="position-relative">
-        <img src="@(string.IsNullOrEmpty(Batch?.Product?.ImageUrl) ? "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80" : Batch.Product.ImageUrl)" 
-             class="card-img-top object-fit-cover" 
-             alt="@Batch?.Product?.ProductName" 
-             style="height: 200px;" />
-        
-        <div class="position-absolute top-0 end-0 m-3">
-            @if (Batch?.Status == HarvestBatchStatus.OpenForPreOrder)
-            {
-                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold shadow-sm">
-                    <i class="bi bi-clock-history me-1"></i> Đang mở đặt trước
-                </span>
-            }
-            else if (Batch?.Status == HarvestBatchStatus.Harvested)
-            {
-                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill fw-semibold shadow-sm">
-                    <i class="bi bi-basket3-fill me-1"></i> Đã thu hoạch
-                </span>
-            }
-            else if (Batch?.Status == HarvestBatchStatus.Allocated)
-            {
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold shadow-sm">
-                    <i class="bi bi-check2-circle me-1"></i> Đã phân bổ
-                </span>
-            }
-            else
-            {
-                <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill fw-semibold shadow-sm">
-                    @Batch?.Status
-                </span>
-            }
+<article class="produce-card batch-card">
+    <a class="produce-image-link" href="/batches/@Batch.HarvestBatchId" tabindex="-1" aria-hidden="true">
+        <img src="@(string.IsNullOrEmpty(Batch.Product?.ImageUrl) ? "/images/products/placeholder.svg" : Batch.Product.ImageUrl)"
+             alt="" loading="lazy" onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
+        <span class="produce-status @(CanOrder ? "" : "is-upcoming")">@StatusText</span>
+        <span class="batch-code">@Batch.BatchCode</span>
+    </a>
+    <div class="produce-body">
+        <span class="produce-category">@Batch.Product?.Category</span>
+        <h3><a href="/batches/@Batch.HarvestBatchId">@Batch.Product?.ProductName</a></h3>
+        <p class="batch-grower"><i class="bi bi-person" aria-hidden="true"></i> @Batch.Member?.FullName</p>
+        <div class="produce-price">@Batch.UnitPrice.ToString("N0") <small>đ/@Batch.Product?.Unit</small></div>
+        <div class="batch-availability">
+            <span>@(CanOrder ? "Còn " + Batch.RemainingQuantity.ToString("N0") + " " + Batch.Product?.Unit : "Dự kiến " + Batch.ExpectedQuantity.ToString("N0") + " " + Batch.Product?.Unit)</span>
+            <span><i class="bi bi-calendar3" aria-hidden="true"></i> @Batch.ExpectedHarvestDate.ToString("dd/MM/yyyy")</span>
         </div>
-
-        <div class="position-absolute bottom-0 start-0 m-3">
-            <span class="badge bg-dark bg-opacity-75 text-white px-2 py-1 rounded-2 small font-monospace">
-                @Batch?.BatchCode
-            </span>
-        </div>
-    </div>
-
-    <div class="card-body p-4 d-flex flex-column">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-            <span class="badge bg-light text-muted border rounded-pill px-2 py-1 small">
-                @Batch?.Product?.Category
-            </span>
-            <span class="text-success fw-bold fs-5">
-                @Batch?.UnitPrice.ToString("N0") <small class="text-muted fs-6">VNĐ/@Batch?.Product?.Unit</small>
-            </span>
-        </div>
-
-        <h5 class="card-title fw-bold text-dark mb-1">
-            @Batch?.Product?.ProductName
-        </h5>
-
-        <p class="text-muted small mb-3">
-            <i class="bi bi-person-badge me-1 text-success"></i> Xã viên: <strong>@Batch?.Member?.FullName</strong>
-            <span class="mx-1">•</span>
-            <i class="bi bi-geo-alt me-1 text-danger"></i> @Batch?.Member?.Address
-        </p>
-
-        <!-- Progress bar sản lượng -->
-        <div class="bg-light p-3 rounded-3 mb-3 border">
-            <div class="d-flex justify-content-between text-muted small mb-1">
-                <span>Dự kiến: <strong class="text-dark">@Batch?.ExpectedQuantity.ToString("N0") kg</strong></span>
-                <span>Đã đặt: <strong class="text-success">@Batch?.TotalOrderedQuantity.ToString("N0") kg</strong></span>
-            </div>
-            
-            @{
-                decimal percent = Batch?.ExpectedQuantity > 0 
-                    ? Math.Min(100, Math.Round((Batch.TotalOrderedQuantity / Batch.ExpectedQuantity) * 100m, 1)) 
-                    : 0;
-            }
-            <div class="progress" style="height: 8px;">
-                <div class="progress-bar @(percent >= 100 ? "bg-danger" : percent >= 80 ? "bg-warning" : "bg-success")" 
-                     role="progressbar" 
-                     style="width: @percent%;" 
-                     aria-valuenow="@percent" 
-                     aria-valuemin="0" 
-                     aria-valuemax="100"></div>
-            </div>
-
-            <div class="d-flex justify-content-between text-muted small mt-1">
-                <span>Còn trống: <strong class="@(Batch?.RemainingQuantity <= 0 ? "text-danger" : "text-primary")">@Batch?.RemainingQuantity.ToString("N0") kg</strong></span>
-                <span class="text-muted">(@percent% đạt chỉ tiêu)</span>
-            </div>
-        </div>
-
-        <div class="text-muted small mb-3">
-            <i class="bi bi-calendar-event me-1"></i> Ngày dự kiến thu hoạch: 
-            <strong class="text-dark">@Batch?.ExpectedHarvestDate.ToString("dd/MM/yyyy")</strong>
-        </div>
-
         @if (ShowActions)
         {
-            <div class="mt-auto d-flex gap-2">
-                <a href="/batches/@Batch?.HarvestBatchId" class="btn btn-outline-success flex-grow-1 rounded-pill fw-semibold">
-                    <i class="bi bi-eye me-1"></i> Chi tiết
-                </a>
-                
-                @if (Batch?.Status == HarvestBatchStatus.OpenForPreOrder && Batch.RemainingQuantity > 0)
+            <div class="batch-actions">
+                <a href="/batches/@Batch.HarvestBatchId" class="btn btn-sm btn-outline-success">Chi tiết</a>
+                @if (CanOrder)
                 {
-                    <button type="button" 
-                            class="btn btn-success rounded-pill px-3 fw-semibold shadow-sm"
-                            @onclick="HandleOrderClick">
-                        <i class="bi bi-cart-plus me-1"></i> Đặt trước
-                    </button>
+                    <button type="button" class="btn btn-sm btn-success" @onclick="() => OnOrderClick.InvokeAsync(Batch)">Đặt trước ↗</button>
                 }
             </div>
         }
     </div>
-</div>
-
+</article>
 @code {
-    [Parameter]
-    public HarvestBatch Batch { get; set; } = null!;
-
-    [Parameter]
-    public bool ShowActions { get; set; } = true;
-
-    [Parameter]
-    public EventCallback<HarvestBatch> OnOrderClick { get; set; }
-
-    private async Task HandleOrderClick()
+    [Parameter, EditorRequired] public HarvestBatch Batch { get; set; } = null!;
+    [Parameter] public bool ShowActions { get; set; } = true;
+    [Parameter] public EventCallback<HarvestBatch> OnOrderClick { get; set; }
+    private bool CanOrder => Batch.Status == HarvestBatchStatus.OpenForPreOrder && Batch.RemainingQuantity > 0;
+    private string StatusText => Batch.Status switch
     {
-        if (OnOrderClick.HasDelegate)
-        {
-            await OnOrderClick.InvokeAsync(Batch);
-        }
-    }
+        HarvestBatchStatus.OpenForPreOrder => Batch.RemainingQuantity > 0 ? "Đang mở đặt trước" : "Đã đủ lượng đặt",
+        HarvestBatchStatus.Harvested => "Đã thu hoạch",
+        HarvestBatchStatus.Allocated => "Đã phân bổ",
+        HarvestBatchStatus.Completed => "Đã hoàn tất",
+        _ => "Sắp mở đợt đặt"
+    };
 }

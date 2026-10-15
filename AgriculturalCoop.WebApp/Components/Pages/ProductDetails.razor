@@ -1,0 +1,202 @@
+@page "/products/{ProductId:int}"
+@inject IViewProductsUseCase ViewProducts
+@inject IViewOpenBatchesUseCase ViewBatches
+@inject IViewHarvestBatchByIdUseCase ViewBatch
+@inject IValidatePreOrderUseCase ValidateOrder
+@inject UserSessionState UserSession
+@inject IPreOrderCart Cart
+@inject NavigationManager Navigation
+@inject ILogger<ProductDetails> Logger
+
+<PageTitle>@(product?.ProductName ?? "Nông sản") — COOPAGRI</PageTitle>
+@if (loading)
+{
+    <p role="status">Đang tải nông sản…</p>
+}
+else if (product == null)
+{
+    <div class="store-empty">Không tìm thấy nông sản. <a href="/">Về trang chủ</a></div>
+}
+else
+{
+    <nav class="product-breadcrumb" aria-label="Đường dẫn"><a href="/">Trang chủ</a><span>/</span><a href="/#nong-san">Nông sản</a><span>/</span><strong>@product.ProductName</strong></nav>
+    <section class="product-purchase-layout">
+        <div class="product-photo-panel">
+            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/images/products/placeholder.svg" : product.ImageUrl)"
+                 alt="@product.ProductName" onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
+            <span class="product-photo-brand">🌿 COOPAGRI <small>Nông sản theo mùa</small></span>
+        </div>
+        <div class="product-purchase-info">
+            <span class="eyebrow">@product.Category</span>
+            <h1>@product.ProductName</h1>
+            <div class="product-detail-price">@((selectedBatch?.UnitPrice ?? product.StandardPrice).ToString("N0")) <small>đ/@product.Unit</small></div>
+            <dl class="product-facts">
+                <div><dt>Thương hiệu</dt><dd><span>COOPAGRI</span></dd></div>
+                <div><dt>Đơn vị tính</dt><dd>@product.Unit</dd></div>
+                <div><dt>Tình trạng</dt><dd class="@(selectedBatch == null ? "text-muted" : "text-success")">@(selectedBatch == null ? "Chưa có lô mở đặt trước" : "Đang nhận đặt trước")</dd></div>
+            </dl>
+            <div class="product-benefits">
+                <span><i class="bi bi-flower1" aria-hidden="true"></i> Kết nối trực tiếp người trồng</span>
+                <span><i class="bi bi-tags" aria-hidden="true"></i> Đơn giá rõ ràng theo từng lô</span>
+                <span><i class="bi bi-calendar3" aria-hidden="true"></i> Theo dõi ngày thu hoạch</span>
+                <span><i class="bi bi-pie-chart" aria-hidden="true"></i> Xem số lượng được phân bổ</span>
+            </div>
+            @if (openBatches.Count > 0)
+            {
+                <div class="product-batch-choice">
+                    <label for="product-batch">Chọn lô thu hoạch</label>
+                    <select id="product-batch" class="form-select" value="@selectedBatchId" @onchange="SelectBatch" disabled="@busy">
+                        @foreach (var item in openBatches)
+                        {
+                            <option value="@item.HarvestBatchId">@item.BatchCode · @item.ExpectedHarvestDate.ToString("dd/MM/yyyy") · @item.UnitPrice.ToString("N0") đ/@product.Unit</option>
+                        }
+                    </select>
+                    <p>@selectedBatch?.Member?.FullName · Còn @selectedBatch?.RemainingQuantity.ToString("N2") @product.Unit</p>
+                </div>
+            }
+            else
+            {
+                <p class="product-stock-note">Giá tham khảo. Bạn có thể xem thông tin sản phẩm và theo dõi các lô mùa vụ bên dưới.</p>
+            }
+            <div class="product-quantity-row">
+                <label for="product-quantity">Số lượng (@product.Unit)</label>
+                <div class="quantity-stepper">
+                    <button type="button" aria-label="Giảm số lượng" disabled="@(busy || selectedBatch == null || quantity <= .01m)" @onclick="Decrease">−</button>
+                    <input id="product-quantity" type="number" min="0.01" step="0.01" @bind="quantity" disabled="@(busy || selectedBatch == null)" />
+                    <button type="button" aria-label="Tăng số lượng" disabled="@(busy || selectedBatch == null)" @onclick="() => quantity += 1">+</button>
+                </div>
+            </div>
+            @if (error != null) { <div class="alert alert-danger small" role="alert">@error</div> }
+            @if (message != null) { <div class="alert alert-success small" role="status">@message <a href="/cart">Xem giỏ đặt trước →</a></div> }
+            <div class="product-purchase-actions">
+                <button type="button" class="btn btn-outline-success" disabled="@(busy || selectedBatch == null)" @onclick="AddToCart"><i class="bi bi-bag-plus" aria-hidden="true"></i> Thêm vào giỏ</button>
+                <button type="button" class="btn btn-success" disabled="@(busy || selectedBatch == null)" @onclick="BuyNow">@(busy ? "Đang xử lý…" : "Đặt trước ngay")</button>
+            </div>
+            <p class="product-allocation-note">Khi sản lượng thực tế thay đổi, số lượng nhận được sẽ theo kết quả phân bổ của hợp tác xã.</p>
+        </div>
+    </section>
+    <section class="product-information">
+        <div class="product-tabs" role="tablist" aria-label="Thông tin sản phẩm">
+            <button type="button" role="tab" aria-controls="product-tab-panel" aria-selected="@(!showSeasonInfo)" class="@(!showSeasonInfo ? "active" : "")" @onclick="() => showSeasonInfo = false">Thông tin chi tiết</button>
+            <button type="button" role="tab" aria-controls="product-tab-panel" aria-selected="@showSeasonInfo" class="@(showSeasonInfo ? "active" : "")" @onclick="() => showSeasonInfo = true">Mùa vụ & phân bổ</button>
+        </div>
+        <div id="product-tab-panel" class="product-tab-panel" role="tabpanel" tabindex="0">
+            @if (!showSeasonInfo)
+            {
+                <p>@(string.IsNullOrWhiteSpace(product.Description) ? "Thông tin nông sản đang được cập nhật." : product.Description)</p>
+                <p>Phân loại: @product.Category · Đơn vị: @product.Unit.</p>
+            }
+            else
+            {
+                <p>Chọn lô để xem xã viên canh tác, sản lượng dự kiến, ngày thu hoạch và đơn giá đã chốt. Tổng lượng đặt trước không vượt sản lượng dự kiến.</p>
+                <p>Khi hụt mùa, lượng thu hoạch được phân bổ theo tỷ lệ đặt trước, làm tròn đến 0,01 @product.Unit. Bạn có thể theo dõi kết quả trong tài khoản đại lý.</p>
+            }
+        </div>
+    </section>
+    <section class="product-season-section">
+        <div class="catalog-heading"><div><span class="eyebrow">THEO DÕI MÙA THU HOẠCH</span><h2>Lô thu hoạch của sản phẩm</h2></div></div>
+        @if (batches.Count == 0)
+        {
+            <div class="store-empty">Nông sản này chưa có lô mở bán. Hãy quay lại khi mùa vụ mới bắt đầu.</div>
+        }
+        else
+        {
+            <div class="catalog-grid">@foreach (var batch in batches) { <HarvestBatchCard @key="batch.HarvestBatchId" Batch="batch" OnOrderClick="OrderBatch" /> }</div>
+        }
+    </section>
+    <section class="product-season-section" aria-label="Các lô đề xuất">
+        <div class="catalog-heading"><div><span class="eyebrow">KHÁM PHÁ THÊM</span><h2>Các lô mùa vụ gợi ý</h2></div><a class="catalog-more" href="/batches">Xem tất cả lô →</a></div>
+        @if (recommendations.Count == 0)
+        {
+            <div class="store-empty">Các lô mùa vụ khác đang được cập nhật.</div>
+        }
+        else
+        {
+            <div class="catalog-grid">@foreach (var batch in recommendations) { <HarvestBatchCard @key="batch.HarvestBatchId" Batch="batch" OnOrderClick="OrderBatch" /> }</div>
+        }
+    </section>
+}
+@code {
+    [Parameter] public int ProductId { get; set; }
+    private Product? product;
+    private HarvestBatch? selectedBatch;
+    private List<HarvestBatch> batches = new(), openBatches = new(), recommendations = new();
+    private int selectedBatchId;
+    private decimal quantity = 1;
+    private bool loading = true, busy, showSeasonInfo;
+    private string? error, message;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        error = message = null;
+        quantity = 1;
+        product = (await ViewProducts.ExecuteAsync()).FirstOrDefault(p => p.ProductId == ProductId);
+        var all = (await ViewBatches.ExecuteAsync()).ToList();
+        batches = all.Where(b => b.ProductId == ProductId).OrderByDescending(b => b.Status == HarvestBatchStatus.OpenForPreOrder).ThenBy(b => b.ExpectedHarvestDate).ToList();
+        if (batches.Count == 0) product = null;
+        openBatches = batches.Where(b => b.Status == HarvestBatchStatus.OpenForPreOrder && b.RemainingQuantity > 0).ToList();
+        selectedBatch = openBatches.FirstOrDefault();
+        selectedBatchId = selectedBatch?.HarvestBatchId ?? 0;
+        recommendations = all.Where(b => b.ProductId != ProductId && b.Status == HarvestBatchStatus.OpenForPreOrder && b.RemainingQuantity > 0)
+            .OrderByDescending(b => b.Product?.Category == product?.Category).ThenBy(b => b.ExpectedHarvestDate).Take(4).ToList();
+        loading = false;
+    }
+    private void SelectBatch(ChangeEventArgs args)
+    {
+        selectedBatchId = int.TryParse(args.Value?.ToString(), out var id) ? id : 0;
+        selectedBatch = openBatches.FirstOrDefault(b => b.HarvestBatchId == selectedBatchId);
+        error = message = null;
+    }
+    private void Decrease() => quantity = Math.Max(.01m, quantity - 1);
+    private PreOrder BuildOrder(bool includeCart)
+    {
+        var order = new PreOrder { DealerId = UserSession.CurrentDealerId };
+        if (includeCart)
+            order.PreOrderLines.AddRange(Cart.Items.Select(i => new PreOrderLine { HarvestBatchId = i.HarvestBatchId, Quantity = i.Quantity }));
+        order.PreOrderLines.Add(new PreOrderLine { HarvestBatchId = selectedBatchId, Quantity = quantity });
+        return order;
+    }
+    private async Task<bool> RequireDealer()
+    {
+        await UserSession.InitializeAsync();
+        if (UserSession.IsDealer) return true;
+        Navigation.NavigateTo("/account/login?returnUrl=" + Uri.EscapeDataString("/products/" + ProductId), forceLoad: true);
+        return false;
+    }
+    private async Task AddToCart()
+    {
+        if (busy || selectedBatch == null || !await RequireDealer()) return;
+        busy = true; error = message = null;
+        try
+        {
+            await ValidateOrder.ValidateAsync(BuildOrder(true));
+            var latest = await ViewBatch.ExecuteAsync(selectedBatchId) ?? throw new PreOrderDomainException("Lô không còn tồn tại.");
+            Cart.AddItem(latest, quantity);
+            message = "Đã thêm nông sản vào giỏ đặt trước.";
+        }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) { Logger.LogError(ex, "Could not add product to preorder cart"); error = "Chưa thêm được vào giỏ. Vui lòng thử lại."; }
+        finally { busy = false; }
+    }
+    private async Task BuyNow()
+    {
+        if (busy || selectedBatch == null || !await RequireDealer()) return;
+        busy = true; error = message = null;
+        try
+        {
+            await ValidateOrder.ValidateAsync(BuildOrder(true));
+            var latest = await ViewBatch.ExecuteAsync(selectedBatchId) ?? throw new PreOrderDomainException("Lô không còn tồn tại.");
+            Cart.AddItem(latest, quantity);
+            Navigation.NavigateTo("/checkout");
+        }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) { Logger.LogError(ex, "Could not create product preorder"); error = "Chưa đặt được nông sản. Vui lòng thử lại."; }
+        finally { busy = false; }
+    }
+    private async Task OrderBatch(HarvestBatch batch)
+    {
+        Navigation.NavigateTo("/batches/" + batch.HarvestBatchId);
+        await Task.CompletedTask;
+    }
+}

@@ -1,0 +1,47 @@
+@page "/my-notifications"
+@attribute [Authorize(Roles = "Dealer")]
+@inject IDealerNotificationUseCases Notifications
+@inject ILogger<MyNotifications> Logger
+<PageTitle>Thông báo của tôi — COOPAGRI</PageTitle>
+<div class="page-heading"><div><span class="eyebrow">TÀI KHOẢN ĐẠI LÝ</span><h1>Thông báo của tôi</h1><p>Kết quả phân bổ và nội dung bổ sung từ hợp tác xã.</p></div><button class="btn btn-outline-success" @onclick="Load" disabled="@loading">Làm mới</button></div>
+@if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }
+@if (loading) { <p role="status">Đang tải thông báo…</p> }
+else if (items.Count == 0) { <div class="store-empty">Chưa có thông báo. Khi hợp tác xã lưu phân bổ cho đơn của bạn, thông báo sẽ xuất hiện tại đây.</div> }
+else
+{
+    <div class="notification-list">
+        @foreach (var item in items)
+        {
+            <article class="admin-card mb-3 @(item.ReadAt == null && !item.IsSuperseded ? "notification-unread" : "")" @key="item.DealerNotificationId">
+                <div class="d-flex justify-content-between flex-wrap gap-2 mb-3"><span class="badge bg-success-subtle text-success">@(item.Kind == 0 ? "Kết quả phân bổ" : "Nội dung bổ sung đã duyệt")</span><small class="text-muted">@item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</small></div>
+                <h2 class="h5">@item.Subject</h2>
+                @if (item.IsSuperseded) { <p class="alert alert-warning small">Lô đã được phân bổ lại sau thông báo bổ sung này. Hãy xem kết quả mới nhất trước khi nhận hàng.</p> }
+                <p class="notification-body">@item.Body</p>
+                <div class="d-flex align-items-center gap-3 flex-wrap"><a href="/my-allocations" class="btn btn-sm btn-outline-success">Xem phân bổ nhận được</a>@if (item.ReadAt == null) { <button class="btn btn-sm btn-success" disabled="@busy" @onclick="() => MarkRead(item.DealerNotificationId)">Đánh dấu đã đọc</button> } else { <small class="text-muted">Đã đọc</small> }</div>
+            </article>
+        }
+    </div>
+}
+@code {
+    private List<DealerNotification> items = new();
+    private bool loading = true, busy;
+    private string? error;
+    protected override async Task OnInitializedAsync() => await Load();
+    private async Task Load()
+    {
+        loading = true; error = null;
+        try { items = (await Notifications.ListAsync()).ToList(); }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) { Logger.LogError(ex, "Could not read dealer notifications"); error = "Chưa tải được thông báo. Vui lòng thử lại."; }
+        finally { loading = false; }
+    }
+    private async Task MarkRead(int id)
+    {
+        if (busy) return;
+        busy = true; error = null;
+        try { await Notifications.MarkReadAsync(id); await Load(); }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) { Logger.LogError(ex, "Could not mark notification read"); error = "Chưa đánh dấu được thông báo. Vui lòng thử lại."; }
+        finally { busy = false; }
+    }
+}

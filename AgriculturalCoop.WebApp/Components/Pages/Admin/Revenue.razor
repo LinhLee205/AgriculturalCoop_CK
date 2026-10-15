@@ -1,0 +1,121 @@
+@page "/admin/revenue"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin")]
+@inject IViewMemberRevenueUseCase ViewRevenue
+
+<PageTitle>Doanh thu theo xã viên - COOPAGRI</PageTitle>
+
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">BÁO CÁO</span>
+        <h1>Doanh thu theo xã viên</h1>
+        <p>Đối chiếu giá trị đặt trước và giá trị nông sản đã được phân bổ.</p>
+    </div>
+</div>
+
+<section class="admin-card mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-sm-4">
+            <label class="form-label" for="revenue-from">Đơn từ ngày</label>
+            <InputDate id="revenue-from" class="form-control"
+                       @bind-Value="from" />
+        </div>
+
+        <div class="col-sm-4">
+            <label class="form-label" for="revenue-to">Đến ngày</label>
+            <InputDate id="revenue-to" class="form-control"
+                       @bind-Value="to" />
+        </div>
+
+        <div class="col-sm-4 d-flex gap-2">
+            <button class="btn btn-success" @onclick="Load">Xem báo cáo</button>
+            <button class="btn btn-light" @onclick="Reset">Tất cả</button>
+        </div>
+    </div>
+
+    @if (error != null)
+    {
+        <div class="alert alert-danger mt-3 mb-0" role="alert">@error</div>
+    }
+</section>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <span>Giá trị theo lượng đã phân bổ</span>
+            <strong>@rows.Sum(r => r.AllocatedAmount).ToString("N0") đ</strong>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="stat-card">
+            <span>Giá trị đặt trước</span>
+            <strong>@rows.Sum(r => r.CommittedAmount).ToString("N0") đ</strong>
+        </div>
+    </div>
+</div>
+
+<section class="admin-card table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Xã viên</th>
+                <th>Số lô</th>
+                <th>Đặt trước (kg)</th>
+                <th>Phân bổ (kg)</th>
+                <th>Giá trị đặt trước</th>
+                <th>Giá trị đã phân bổ</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in rows)
+            {
+                <tr>
+                    <td><strong>@row.FullName</strong></td>
+                    <td>@row.BatchCount</td>
+                    <td>@row.OrderedQuantity.ToString("N2")</td>
+                    <td>@row.AllocatedQuantity.ToString("N2")</td>
+                    <td>@row.CommittedAmount.ToString("N0") đ</td>
+                    <td class="fw-bold text-success">
+                        @row.AllocatedAmount.ToString("N0") đ
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="text-muted small mb-0">
+        Khoảng ngày lọc theo ngày đặt đơn.
+        Giá trị đã phân bổ = lượng phân bổ × đơn giá đã chốt;
+        chưa phải tiền đã thu. Đơn đã hủy không được tính.
+    </p>
+</section>
+
+@code {
+    private DateTime? from, to;
+    private List<MemberRevenue> rows = new();
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        error = null;
+
+        try
+        {
+            rows = (await ViewRevenue.ExecuteAsync(from, to)).ToList();
+        }
+        catch (PreOrderDomainException ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    private async Task Reset()
+    {
+        from = null;
+        to = null;
+        await Load();
+    }
+}

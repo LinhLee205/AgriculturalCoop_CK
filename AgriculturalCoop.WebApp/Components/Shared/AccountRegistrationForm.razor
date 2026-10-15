@@ -1,0 +1,53 @@
+<form method="post" action="@Action">
+    <AntiforgeryToken />
+
+    <label class="form-label" for="name">
+        @(Admin ? "Tên người quản trị" : "Tên đại lý")
+    </label>
+    <input id="name" name="name"
+           class="form-control mb-3"
+           required minlength="2" maxlength="150"
+           autocomplete="organization" />
+
+    <label class="form-label" for="email">Email</label>
+    <input id="email" name="email"
+           class="form-control mb-3"
+           type="email" required maxlength="100"
+           autocomplete="email" />
+
+    @if (!Admin)
+    {
+        <label class="form-label" for="phone">Số điện thoại</label>
+        <input id="phone" name="phone"
+               class="form-control mb-3"
+               type="tel" maxlength="20"
+               autocomplete="tel" />
+    }
+
+    <label class="form-label" for="password">Mật khẩu</label>
+    <input id="password" name="password"
+           class="form-control"
+           type="password" required minlength="10" maxlength="128"
+           autocomplete="new-password" />
+    <small class="text-muted d-block mb-3">
+        Từ 10 ký tự, gồm chữ và số.
+    </small>
+
+    <label class="form-label" for="confirmation">Nhập lại mật khẩu</label>
+    <input id="confirmation" name="confirmation"
+           class="form-control mb-4"
+           type="password" required minlength="10" maxlength="128"
+           autocomplete="new-password" />
+
+    <button class="btn btn-success w-100" type="submit">
+        @(Admin ? "Tạo quản trị viên" : "Đăng ký đại lý")
+    </button>
+</form>
+
+@code {
+    [Parameter]
+    public string Action { get; set; } = "/auth/register";
+
+    [Parameter]
+    public bool Admin { get; set; }
+}

@@ -1,0 +1,15 @@
+<div class="small order-delivery-summary">
+    <strong>Thông tin nhận hàng:</strong>
+    @if (string.IsNullOrWhiteSpace(Order.DeliveryAddress))
+    {
+        <span class="text-muted">Đơn cũ chưa cung cấp địa chỉ, điện thoại nhận hàng.</span>
+    }
+    else
+    {
+        <span>@Order.RecipientName · @Order.ContactPhone</span>
+        <span class="d-block mt-1">@Order.DeliveryAddress</span>
+    }
+</div>
+@code {
+    [Parameter, EditorRequired] public PreOrder Order { get; set; } = default!;
+}

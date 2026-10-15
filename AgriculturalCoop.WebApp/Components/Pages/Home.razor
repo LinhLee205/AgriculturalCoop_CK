@@ -1,132 +1,55 @@
 @page "/"
-@inject IViewOpenBatchesUseCase ViewOpenBatchesUseCase
-@inject IPreOrderCart Cart
-@inject UserSessionState UserSession
-@inject NavigationManager Nav
+@inject IViewProductsUseCase ViewProducts
+@inject IViewOpenBatchesUseCase ViewOpenBatches
+@inject IHomeBannerUseCases Banners
 
-<PageTitle>Hợp Tác Xã Nông Sản - Đặt Trước Mùa Vụ</PageTitle>
-
-<!-- Hero Section -->
-<div class="card border-0 rounded-4 overflow-hidden mb-5 shadow-sm hero-gradient position-relative">
-    <div class="card-body p-4 p-lg-5 position-relative" style="z-index: 1;">
-        <div class="row align-items-center g-4">
-            <div class="col-lg-7">
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill shadow-xs">
-                        <i class="bi bi-patch-check-fill me-1"></i> VietGAP & Hữu Cơ
-                    </span>
-                    <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 rounded-pill">
-                        <i class="bi bi-clock-history me-1"></i> Mùa vụ Thu hoạch 2026
-                    </span>
-                </div>
-
-                <h1 class="display-5 fw-extrabold text-white mb-3" style="letter-spacing: -1px; line-height: 1.2;">
-                    Hệ Thống Đặt Trước Nông Sản <span class="text-warning">Theo Mùa Vụ</span>
-                </h1>
-
-                <p class="lead text-white-50 mb-4" style="font-size: 1.1rem; line-height: 1.7;">
-                    Giải pháp kết nối trực tiếp chuỗi cung ứng giữa Hợp tác xã nông nghiệp và các đại lý bao tiêu sỉ. 
-                    Minh bạch sản lượng dự kiến, cam kết chất lượng chuẩn sạch và <strong>thuật toán phân bổ công bằng</strong> khi mùa vụ biến động.
-                </p>
-
-                <div class="d-flex flex-wrap gap-3">
-                    <a href="/batches" class="btn btn-warning text-dark fw-bold px-4 py-2 rounded-pill shadow-sm">
-                        <i class="bi bi-cart3 me-1"></i> Xem các lô sắp thu hoạch
-                    </a>
-                    <a href="/admin/allocations/1" class="btn btn-outline-light px-4 py-2 rounded-pill">
-                        <i class="bi bi-calculator-fill me-1"></i> Demo thuật toán phân bổ (Luật 2)
-                    </a>
-                </div>
-            </div>
-
-            <div class="col-lg-5">
-                <div class="bg-dark bg-opacity-50 p-4 rounded-4 border border-white border-opacity-10 backdrop-blur">
-                    <h6 class="text-warning fw-bold text-uppercase mb-3 small" style="letter-spacing: 1px;">
-                        <i class="bi bi-check2-circle me-1"></i> 2 Luật Nghiệp Vụ Cốt Lõi
-                    </h6>
-
-                    <div class="d-flex flex-column gap-3">
-                        <div class="p-3 rounded-3 bg-white bg-opacity-10">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="text-white fw-bold small">Luật 1: Kiểm soát hạn mức</span>
-                                <span class="badge bg-success text-white small">K1.3</span>
-                            </div>
-                            <small class="text-white-50 d-block">
-                                Tổng đặt trước của các đại lý không được vượt quá sản lượng dự kiến của lô mùa vụ ($\sum Q_{đặt} \le ExpectedYield$).
-                            </small>
-                        </div>
-
-                        <div class="p-3 rounded-3 bg-white bg-opacity-10">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="text-white fw-bold small">Luật 2: Phân bổ hụt mùa</span>
-                                <span class="badge bg-warning text-dark small">K1.3 / K5.2</span>
-                            </div>
-                            <small class="text-white-50 d-block">
-                                Khi sản lượng thực &lt; tổng đặt, phân bổ theo tỷ lệ; làm tròn không vượt sản lượng và tổng khớp đúng 100% sản lượng thực.
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<PageTitle>COOPAGRI — Nông sản tươi theo mùa</PageTitle>
+<StoreBanner Banner="banner" />
+<div class="store-promises" aria-label="Cam kết của hợp tác xã">
+    <span><i class="bi bi-flower1" aria-hidden="true"></i> Tươi từ nông trại</span>
+    <span><i class="bi bi-people" aria-hidden="true"></i> Kết nối người trồng</span>
+    <span><i class="bi bi-calendar-heart" aria-hidden="true"></i> Chọn đúng mùa, trọn vị ngon</span>
 </div>
-
-<!-- Lô Sắp Thu Hoạch -->
-<div class="mb-5">
-    <div class="d-flex justify-content-between align-items-end mb-4">
+<section id="nong-san" class="store-catalog">
+    <div class="catalog-heading">
         <div>
-            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 mb-2 fw-semibold">
-                NÔNG SẢN ĐANG MỞ ĐẶT TRƯỚC
-            </span>
-            <h2 class="fw-bold text-dark mb-0">Lô Thu Hoạch Tiêu Biểu</h2>
+            <span class="eyebrow">TỪ NHỮNG KHU VƯỜN TẬN TÂM</span>
+            <h2>Nông sản đang vào mùa</h2>
+            <p>Gợi ý từ các lô đang nhận đặt trước, được sắp theo ngày thu hoạch gần nhất.</p>
         </div>
-        <a href="/batches" class="btn btn-link text-success fw-bold text-decoration-none p-0">
-            Xem tất cả lô <i class="bi bi-arrow-right"></i>
-        </a>
+        <a class="catalog-more" href="/products">Xem tất cả nông sản <span aria-hidden="true">→</span></a>
     </div>
-
     @if (loading)
     {
-        <div class="text-center py-5">
-            <div class="spinner-border text-success" role="status"></div>
-            <p class="text-muted mt-2">Đang tải danh mục nông sản...</p>
-        </div>
+        <p role="status" class="text-muted">Đang tải nông sản…</p>
     }
-    else if (!openBatches.Any())
+    else if (products.Count == 0)
     {
-        <div class="alert alert-info text-center rounded-4 py-4">
-            Hiện chưa có lô nông sản nào đang mở đặt trước.
-        </div>
+        <div class="store-empty">Danh mục nông sản đang được cập nhật. Hẹn bạn ghé lại sớm!</div>
     }
     else
     {
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            @foreach (var batch in openBatches)
+        <div class="catalog-grid">
+            @foreach (var product in products)
             {
-                <div class="col">
-                    <HarvestBatchCard Batch="batch" OnOrderClick="HandleOrderClick" />
-                </div>
+                <ProductCard @key="product.ProductId" Product="product"
+                             OpenBatch="openBatches.FirstOrDefault(b => b.ProductId == product.ProductId)" />
             }
         </div>
     }
-</div>
-
+</section>
 @code {
+    private HomeBanner banner = new();
+    private List<Product> products = new();
     private List<HarvestBatch> openBatches = new();
     private bool loading = true;
-
     protected override async Task OnInitializedAsync()
     {
-        var batches = await ViewOpenBatchesUseCase.ExecuteAsync();
-        openBatches = batches.ToList();
+        banner = await Banners.GetAsync();
+        openBatches = (await ViewOpenBatches.ExecuteAsync()).ToList();
+        var visibleProductIds = openBatches.Select(b => b.ProductId).ToHashSet();
+        products = (await ViewProducts.ExecuteAsync()).Where(p => visibleProductIds.Contains(p.ProductId))
+            .OrderBy(p => openBatches.Where(b => b.ProductId == p.ProductId).Min(b => b.ExpectedHarvestDate)).Take(4).ToList();
         loading = false;
-    }
-
-    private void HandleOrderClick(HarvestBatch batch)
-    {
-        // Thêm vào giỏ mặc định 50kg hoặc dẫn tới trang chi tiết
-        Cart.AddItem(batch, 50);
-        Nav.NavigateTo("/cart");
     }
 }

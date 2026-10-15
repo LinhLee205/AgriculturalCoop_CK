@@ -1,0 +1,49 @@
+<div class="editor-backdrop" role="presentation">
+    <section class="editor-dialog compact"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="delete-title">
+        <h2 id="delete-title" class="h5">Xác nhận xóa</h2>
+
+        <p>Bạn có muốn xóa <strong>@Name</strong>?</p>
+        <p class="text-muted small">
+            Hệ thống sẽ từ chối nếu hồ sơ đã có giao dịch liên quan.
+        </p>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="alert alert-danger" role="alert">@Error</div>
+        }
+
+        <div class="d-flex gap-2 justify-content-end">
+            <button class="btn btn-light"
+                    disabled="@Busy"
+                    @onclick="OnCancel">
+                Hủy
+            </button>
+
+            <button class="btn btn-danger"
+                    disabled="@Busy"
+                    @onclick="OnConfirm">
+                Xác nhận xóa
+            </button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string Name { get; set; } = "";
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+}

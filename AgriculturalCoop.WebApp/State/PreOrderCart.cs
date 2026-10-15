@@ -70,7 +70,7 @@ namespace AgriculturalCoop.WebApp.State
                     Quantity = quantity,
                     ExpectedQuantity = batch.ExpectedQuantity,
                     CurrentOrderedQuantity = batch.TotalOrderedQuantity,
-                    ImageUrl = batch.Product?.ImageUrl ?? "/images/products/default.jpg"
+                    ImageUrl = batch.Product?.ImageUrl ?? "/images/products/placeholder.svg"
                 });
             }
 

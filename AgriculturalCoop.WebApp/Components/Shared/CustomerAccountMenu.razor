@@ -1,0 +1,40 @@
+@using System.Globalization
+<div class="customer-account" @onkeydown="HandleKey">
+    <AuthorizeView Roles="Dealer" Context="dealer">
+        <Authorized>
+            <DealerNotificationBell />
+            <button type="button" class="account-trigger account-avatar" aria-label="Tài khoản của @dealer.User.Identity?.Name"
+                    aria-expanded="@open" aria-controls="customer-account-panel" title="@dealer.User.Identity?.Name" @onclick="Toggle">
+                @Initial(dealer.User.Identity?.Name)
+            </button>
+            <div id="customer-account-panel" class="account-dropdown" hidden="@(!open)">
+                <span class="account-dropdown-caption">TÀI KHOẢN ĐẠI LÝ</span>
+                <strong>@dealer.User.Identity?.Name</strong>
+                <a href="/my-orders" @onclick="Close">Đơn đặt trước của tôi</a>
+                <a href="/my-notifications" @onclick="Close">Thông báo của tôi</a>
+                <a href="/my-allocations" @onclick="Close">Phân bổ nhận được</a>
+                <a href="/cart" @onclick="Close">Giỏ đặt trước</a>
+                <form method="post" action="/auth/logout"><AntiforgeryToken /><button class="account-signout" type="submit">Đăng xuất</button></form>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <button type="button" class="account-trigger" aria-label="Mở tài khoản đại lý" aria-expanded="@open"
+                    aria-controls="customer-account-panel" @onclick="Toggle"><i class="bi bi-person" aria-hidden="true"></i></button>
+            <div id="customer-account-panel" class="account-dropdown" hidden="@(!open)">
+                <span class="account-dropdown-caption">CHÀO MỪNG ĐẾN COOPAGRI</span>
+                <strong>Tài khoản đại lý</strong>
+                <p>Đăng nhập để đặt trước và theo dõi mùa vụ.</p>
+                <a href="/account/login" class="btn btn-success" data-enhance-nav="false">Đăng nhập</a>
+                <a href="/account/register" class="btn btn-outline-success" data-enhance-nav="false">Đăng ký đại lý</a>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+    @if (open) { <button class="account-menu-backdrop" type="button" aria-label="Đóng tài khoản" tabindex="-1" @onclick="Close"></button> }
+</div>
+@code {
+    private bool open;
+    private void Toggle() => open = !open;
+    private void Close() => open = false;
+    private void HandleKey(KeyboardEventArgs args) { if (args.Key == "Escape") Close(); }
+    private static string Initial(string? name) => string.IsNullOrWhiteSpace(name) ? "?" : StringInfo.GetNextTextElement(name.Trim()).ToUpperInvariant();
+}

@@ -25,8 +25,8 @@ namespace AgriculturalCoop.CoreBusiness.Services
         /// bảo đảm: Tổng phân bổ = Sản lượng thực tế (100% khớp, không chênh lệch, không vượt quá).
         /// </summary>
         public List<AllocationResultItem> CalculateAllocation(
-            HarvestBatch batch, 
-            List<PreOrderLine> preOrderLines, 
+            HarvestBatch batch,
+            List<PreOrderLine> preOrderLines,
             decimal actualHarvestQuantity)
         {
             if (batch == null) throw new ArgumentNullException(nameof(batch));
@@ -34,6 +34,16 @@ namespace AgriculturalCoop.CoreBusiness.Services
 
             if (actualHarvestQuantity < 0)
                 throw new ArgumentException("Sản lượng thực tế không được âm.", nameof(actualHarvestQuantity));
+
+            if (actualHarvestQuantity != decimal.Round(actualHarvestQuantity, 2) ||
+                preOrderLines.Any(l =>
+                    l.Quantity <= 0 ||
+                    l.Quantity != decimal.Round(l.Quantity, 2)))
+            {
+                throw new ArgumentException(
+                    "Khối lượng phải hợp lệ và có tối đa 2 chữ số thập phân.");
+            }
+
 
             decimal totalRequested = preOrderLines.Sum(l => l.Quantity);
             var results = new List<AllocationResultItem>();
@@ -52,7 +62,7 @@ namespace AgriculturalCoop.CoreBusiness.Services
                         RequestedQuantity = line.Quantity,
                         AllocatedQuantity = line.Quantity,
                         AllocationRatioPercent = 100.0m,
-                        Note = actualHarvestQuantity > totalRequested 
+                        Note = actualHarvestQuantity > totalRequested
                             ? $"Phân bổ đủ 100% (Thu hoạch thặng dư {actualHarvestQuantity - totalRequested:N0} kg)"
                             : "Phân bổ đủ 100% số lượng yêu cầu"
                     });
@@ -83,82 +93,42 @@ namespace AgriculturalCoop.CoreBusiness.Services
 
             decimal globalRatio = actualHarvestQuantity / totalRequested;
 
-            var calculationEntries = preOrderLines.Select(line =>
-            {
-                decimal exactShare = (line.Quantity / totalRequested) * actualHarvestQuantity;
-                decimal floorShare = Math.Floor(exactShare);
-                decimal remainder = exactShare - floorShare;
-
-                return new
+            var entries = preOrderLines
+                .Select(line =>
                 {
-                    Line = line,
-                    ExactShare = exactShare,
-                    FloorShare = floorShare,
-                    Remainder = remainder
-                };
-            }).ToList();
+                    var exactUnits =
+                        line.Quantity / totalRequested * actualHarvestQuantity * 100m;
 
-            decimal totalFloorAllocated = calculationEntries.Sum(e => e.FloorShare);
-            decimal missingUnits = actualHarvestQuantity - totalFloorAllocated; // Số đơn vị dư cần bù
-
-            // Sắp xếp ưu tiên bù phần dư: Remainder giảm dần, sau đó theo ID đơn đặt trước
-            var sortedEntries = calculationEntries
+                    return new
+                    {
+                        Line = line,
+                        Units = decimal.Floor(exactUnits),
+                        Remainder = exactUnits - decimal.Floor(exactUnits)
+                    };
+                })
                 .OrderByDescending(e => e.Remainder)
                 .ThenBy(e => e.Line.PreOrderId)
+                .ThenBy(e => e.Line.PreOrderLineId)
                 .ToList();
 
-            var allocatedDictionary = new Dictionary<int, decimal>();
-            for (int i = 0; i < sortedEntries.Count; i++)
-            {
-                var entry = sortedEntries[i];
-                decimal allocated = entry.FloorShare;
-                if (i < missingUnits)
-                {
-                    allocated += 1.0m; // Cộng thêm 1 đơn vị từ phần dư
-                }
-                // Đảm bảo không vượt quá số lượng đại lý yêu cầu ban đầu
-                if (allocated > entry.Line.Quantity)
-                {
-                    allocated = entry.Line.Quantity;
-                }
-                allocatedDictionary[entry.Line.PreOrderLineId] = allocated;
-            }
+            var missingUnits = decimal.ToInt32(
+                actualHarvestQuantity * 100m - entries.Sum(e => e.Units));
 
-            // Điều chỉnh tinh chỉnh nếu tổng chưa khớp do cận biên
-            decimal currentSum = allocatedDictionary.Values.Sum();
-            if (currentSum < actualHarvestQuantity)
-            {
-                decimal diff = actualHarvestQuantity - currentSum;
-                foreach (var entry in sortedEntries)
+            var allocatedDictionary = entries
+                .Select((entry, index) => new
                 {
-                    if (diff <= 0) break;
-                    if (allocatedDictionary[entry.Line.PreOrderLineId] < entry.Line.Quantity)
-                    {
-                        allocatedDictionary[entry.Line.PreOrderLineId] += 1;
-                        diff -= 1;
-                    }
-                }
-            }
-            else if (currentSum > actualHarvestQuantity)
-            {
-                decimal diff = currentSum - actualHarvestQuantity;
-                foreach (var entry in sortedEntries.OrderBy(e => e.Remainder))
-                {
-                    if (diff <= 0) break;
-                    if (allocatedDictionary[entry.Line.PreOrderLineId] > 0)
-                    {
-                        allocatedDictionary[entry.Line.PreOrderLineId] -= 1;
-                        diff -= 1;
-                    }
-                }
-            }
+                    entry.Line.PreOrderLineId,
+                    Quantity =
+                        (entry.Units + (index < missingUnits ? 1m : 0m)) / 100m
+                })
+                .ToDictionary(x => x.PreOrderLineId, x => x.Quantity);
 
             // Tạo danh sách kết quả cuối cùng
             foreach (var line in preOrderLines)
             {
                 decimal allocated = allocatedDictionary[line.PreOrderLineId];
-                decimal ratioPercent = line.Quantity > 0 
-                    ? Math.Round((allocated / line.Quantity) * 100m, 2) 
+                decimal ratioPercent = line.Quantity > 0
+                    ? Math.Round((allocated / line.Quantity) * 100m, 2)
                     : 0;
 
                 results.Add(new AllocationResultItem

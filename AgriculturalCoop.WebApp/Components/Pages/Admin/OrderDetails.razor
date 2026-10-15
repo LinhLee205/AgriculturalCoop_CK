@@ -1,0 +1,49 @@
+@page "/admin/orders/{OrderId:int}"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin")]
+@inject IViewPreOrderByIdUseCase ViewOrder
+@inject IManageOrdersUseCase ManageOrders
+@inject ILogger<OrderDetails> Logger
+<PageTitle>Chi tiết đơn đặt — COOPAGRI</PageTitle>
+<div class="page-heading"><div><span class="eyebrow">QUẢN LÝ ĐƠN</span><h1>Chi tiết đơn đặt trước</h1></div><a class="btn btn-outline-success" href="/admin/orders">← Danh sách đơn</a></div>
+@if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }
+@if (message != null) { <div class="alert alert-success" role="status">@message</div> }
+@if (loading) { <p role="status">Đang tải đơn…</p> }
+else if (order == null) { <div class="store-empty">Không tìm thấy đơn đặt trước.</div> }
+else
+{
+    <section class="admin-card mb-4"><div class="d-flex justify-content-between flex-wrap gap-3"><h2 class="h5">@order.OrderNumber</h2><OrderStatusBadge Status="order.Status" /></div><p>Đại lý: <a href="/admin/dealers?search=@Uri.EscapeDataString(order.Dealer?.DealerName ?? "")">@order.Dealer?.DealerName</a> · Ngày đặt: @order.OrderDate.ToString("dd/MM/yyyy HH:mm")</p><OrderDeliverySummary Order="order" /><p class="small mt-3 mb-0">Ghi chú: @order.Notes</p>
+    @if (order.Status == PreOrderStatus.Cancelled) { <p class="alert alert-secondary mt-3 mb-0">Lý do hủy: @order.CancellationReason</p> }</section>
+    <section class="admin-card table-responsive mb-4"><table class="table align-middle"><thead><tr><th>Lô / nông sản</th><th>Lượng đặt</th><th>Đơn giá</th><th>Giá trị đặt</th><th>Phân bổ thực tế</th></tr></thead><tbody>
+    @foreach (var l in order.PreOrderLines) { <tr><td><a href="/admin/allocations/@l.HarvestBatchId">@l.HarvestBatch?.BatchCode</a><small class="d-block">@l.HarvestBatch?.Product?.ProductName</small></td><td>@l.Quantity.ToString("N2") kg</td><td>@l.UnitPrice.ToString("N0") đ/kg</td><td>@l.LineTotal.ToString("N0") đ</td><td>@(l.Allocation == null ? "Chưa phân bổ" : l.Allocation.AllocatedQuantity.ToString("N2") + " kg")</td></tr> }
+    </tbody></table><strong>Tổng giá trị đặt: @order.TotalAmount.ToString("N0") đ</strong></section>
+    @if (CanChange)
+    {
+        <section class="admin-card"><h2 class="h5">Xử lý đơn</h2><p class="small text-muted">Hủy đơn sẽ trả lại hạn mức đặt trước của các lô. Đơn và lý do hủy vẫn được giữ trong lịch sử.</p>
+        @if (order.Status == PreOrderStatus.Pending) { <button class="btn btn-success mb-3" disabled="@busy" @onclick="Confirm">Xác nhận đơn</button> }
+        <label for="cancel-reason" class="form-label d-block">Lý do hủy đơn</label><textarea id="cancel-reason" class="form-control mb-3" rows="2" maxlength="500" @bind="reason" disabled="@busy"></textarea><button class="btn btn-outline-danger" disabled="@(busy || string.IsNullOrWhiteSpace(reason))" @onclick="() => confirmingCancel = true">Hủy đơn…</button></section>
+    }
+    else if (order.Status != PreOrderStatus.Cancelled) { <p class="alert alert-info">Đơn đã có lô phân bổ hoặc hoàn tất. Giữ kết quả để đối chiếu; có thể lưu trữ lô trong danh sách lô thu hoạch.</p> }
+}
+@if (confirmingCancel) { <ConfirmAction Title="Hủy đơn đặt trước" Message="Đơn được giữ trong lịch sử với lý do hủy; lượng đã đặt của đơn không còn chiếm hạn mức lô." ConfirmText="Xác nhận hủy đơn" Busy="busy" OnCancel="() => confirmingCancel = false" OnConfirm="Cancel" /> }
+@code {
+    [Parameter] public int OrderId { get; set; }
+    private PreOrder? order;
+    private bool loading = true, busy, confirmingCancel;
+    private string reason = "";
+    private string? error, message;
+    private bool CanChange => order?.Status is PreOrderStatus.Pending or PreOrderStatus.Confirmed &&
+        order.PreOrderLines.All(l => l.Allocation == null && l.HarvestBatch?.Status < HarvestBatchStatus.Allocated);
+    protected override async Task OnParametersSetAsync() => await Load();
+    private async Task Load() { loading = true; order = await ViewOrder.ExecuteAsync(OrderId); loading = false; }
+    private Task Confirm() => Run(() => ManageOrders.ConfirmAsync(OrderId), "Đã xác nhận đơn.");
+    private Task Cancel() { confirmingCancel = false; return Run(() => ManageOrders.CancelAsync(OrderId, reason), "Đã hủy đơn và trả lại hạn mức lô."); }
+    private async Task Run(Func<Task> action, string success)
+    {
+        if (busy) return; busy = true; error = message = null;
+        try { await action(); await Load(); message = success; }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) { Logger.LogError(ex, "Could not update preorder"); error = "Chưa cập nhật được đơn. Vui lòng tải lại và thử lại."; }
+        finally { busy = false; }
+    }
+}

@@ -10,6 +10,6 @@ namespace AgriculturalCoop.CoreBusiness.Entities
         public string Unit { get; set; } = "kg";
         public decimal StandardPrice { get; set; }
         public string Description { get; set; } = string.Empty;
-        public string ImageUrl { get; set; } = "/images/products/default.jpg";
+        public string ImageUrl { get; set; } = "/images/products/placeholder.svg";
     }
 }

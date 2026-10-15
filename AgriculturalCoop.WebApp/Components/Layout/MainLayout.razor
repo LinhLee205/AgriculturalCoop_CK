@@ -1,37 +1,17 @@
 @inherits LayoutComponentBase
+@inject UserSessionState UserSession
 
-<div class="d-flex flex-column min-vh-100 bg-light">
-    <!-- Top Navigation Bar -->
+<div class="store-shell">
     <TopNavBar />
-
-    <!-- Main Content Area -->
-    <main class="flex-grow-1 py-4">
-        <div class="container-fluid px-3 px-lg-4">
-            @Body
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-white border-top py-4 text-center text-muted small mt-auto">
-        <div class="container">
-            <div class="row align-items-center g-3">
-                <div class="col-md-6 text-md-start">
-                    <span class="fw-semibold text-dark">HỢP TÁC XÃ NÔNG SẢN ĐẶT TRƯỚC THEO MÙA VỤ</span>
-                    <div class="text-muted">Đề tài 16 — Capstone ECO2415 (Clean Architecture 4 Tầng)</div>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
-                        <i class="bi bi-shield-check me-1"></i> .NET 8 LTS & Blazor Interactive
-                    </span>
-                    <span class="text-secondary ms-2">© 2026 Bản quyền HTX</span>
-                </div>
-            </div>
-        </div>
+    <main class="store-main">@Body</main>
+    <footer class="store-footer">
+        <div><a class="footer-brand" href="/">🌿 COOP<span>AGRI</span></a><p>Kết nối người trồng. Trao gửi mùa tươi.</p></div>
+        <span>© @DateTime.Now.Year COOPAGRI · Nông sản theo mùa</span>
     </footer>
 </div>
-
-<div id="blazor-error-ui" class="bg-danger text-white py-2 px-3 position-fixed bottom-0 start-0 end-0 shadow-lg text-center" style="display: none; z-index: 9999;">
-    Đã xảy ra lỗi hệ thống không mong muốn.
-    <a href="" class="reload text-warning fw-bold ms-2">Tải lại</a>
-    <a class="dismiss btn-close btn-close-white ms-3"></a>
+<div id="blazor-error-ui" style="display:none">
+    Kết nối bị gián đoạn. <a href="">Tải lại trang</a>
 </div>
+@code {
+    protected override async Task OnInitializedAsync() => await UserSession.InitializeAsync();
+}

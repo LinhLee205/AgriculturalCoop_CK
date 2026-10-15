@@ -11,5 +11,7 @@ namespace AgriculturalCoop.CoreBusiness.Entities
         public string Address { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Tier { get; set; } = "Bạc"; // Kim Cương, Vàng, Bạc, Tiêu chuẩn
+        public bool IsActive { get; set; } = true;
+        public bool HasAccount { get; set; }
     }
 }

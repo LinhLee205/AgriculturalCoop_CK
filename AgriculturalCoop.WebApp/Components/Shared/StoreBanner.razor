@@ -1,0 +1,16 @@
+<section class="store-banner" aria-label="Giới thiệu mùa vụ">
+    <img class="store-banner-image" src="@Banner.ImageUrl" alt=""
+         onerror="this.onerror=null;this.src='/images/banner-harvest.svg'" />
+    <div class="store-banner-shade"></div>
+    <div class="store-banner-content">
+        <span class="banner-eyebrow"><span></span> @Banner.Eyebrow</span>
+        <h1>@Banner.Title</h1>
+        <p>@Banner.Description</p>
+        <a class="banner-button" href="@Banner.ButtonUrl">
+            @Banner.ButtonText <span aria-hidden="true">↗</span>
+        </a>
+    </div>
+</section>
+@code {
+    [Parameter, EditorRequired] public HomeBanner Banner { get; set; } = new();
+}

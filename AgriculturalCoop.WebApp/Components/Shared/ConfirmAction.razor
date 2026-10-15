@@ -1,0 +1,14 @@
+<div class="editor-backdrop"><section class="editor-dialog compact" role="dialog" aria-modal="true" aria-labelledby="confirm-action-title">
+    <h2 id="confirm-action-title" class="h5">@Title</h2><p>@Message</p>
+    @if (Error != null) { <div class="alert alert-danger" role="alert">@Error</div> }
+    <div class="d-flex justify-content-end gap-2"><button class="btn btn-light" disabled="@Busy" @onclick="OnCancel">Quay lại</button><button class="btn btn-success" disabled="@Busy" @onclick="OnConfirm">@ConfirmText</button></div>
+</section></div>
+@code {
+    [Parameter] public string Title { get; set; } = "Xác nhận thao tác";
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public string ConfirmText { get; set; } = "Xác nhận";
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

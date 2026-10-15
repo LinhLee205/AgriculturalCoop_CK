@@ -1,0 +1,68 @@
+@page "/admin/dealers"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin")]
+@using AgriculturalCoop.WebApp.Models
+@inject IViewDealersUseCase ViewDealers
+@inject IViewAllPreOrdersUseCase ViewOrders
+@inject IManageDealersUseCase ManageDealers
+@inject ILogger<Dealers> Logger
+<PageTitle>Quản lý đại lý — COOPAGRI</PageTitle>
+<div class="page-heading"><div><span class="eyebrow">KHÁCH HÀNG BÁN SỈ</span><h1>Đại lý</h1><p>Quản lý liên hệ, trạng thái giao dịch và các đơn liên quan.</p></div><button class="btn btn-success" @onclick="() => Open(null)">+ Thêm hồ sơ đại lý</button></div>
+@if (message != null) { <div class="alert alert-success" role="status">@message</div> }
+@if (error != null && !editing && deleting == null) { <div class="alert alert-danger" role="alert">@error</div> }
+<section class="admin-card mb-4"><div class="row g-3"><div class="col-md-8"><label for="dealer-search" class="form-label">Tên, điện thoại hoặc email</label><input id="dealer-search" class="form-control" @bind="search" @bind:event="oninput" /></div><div class="col-md-4"><label for="dealer-filter" class="form-label">Giao dịch</label><select id="dealer-filter" class="form-select" @bind="filter"><option value="">Tất cả</option><option value="active">Đang hoạt động</option><option value="inactive">Đã ngừng</option></select></div></div></section>
+@if (loading) { <p role="status">Đang tải đại lý…</p> }
+else
+{
+    <section class="admin-card table-responsive"><table class="table align-middle"><thead><tr><th>Đại lý / người liên hệ</th><th>Liên hệ</th><th>Hạng / tài khoản</th><th>Giao dịch</th><th>Thao tác</th></tr></thead><tbody>
+    @foreach (var d in Filtered)
+    {
+        <tr><td><strong>@d.DealerName</strong><small class="d-block text-muted">@d.ContactPerson</small></td><td>@d.Phone<small class="d-block">@d.Email</small><small class="d-block text-muted">@d.Address</small></td><td>@d.Tier<small class="d-block text-muted">@(d.HasAccount ? "Đã có tài khoản website" : "Chưa có tài khoản website")</small></td><td><span class="badge @(d.IsActive ? "bg-success-subtle text-success" : "bg-secondary")">@(d.IsActive ? "Đang hoạt động" : "Đã ngừng")</span><a class="d-block small mt-2" href="/admin/orders?dealerId=@d.DealerId">@orders.Count(o => o.DealerId == d.DealerId) đơn · Xem đơn</a></td><td><div class="table-actions"><button class="btn btn-sm btn-outline-success" @onclick="() => Open(d)">Sửa / trạng thái</button>@if (!d.HasAccount && !orders.Any(o => o.DealerId == d.DealerId)) { <button class="btn btn-sm btn-outline-danger" @onclick="() => AskDelete(d)">Xóa hồ sơ trống</button> }</div></td></tr>
+    }
+    </tbody></table>@if (!Filtered.Any()) { <p class="text-muted">Không có đại lý phù hợp.</p> }</section>
+}
+@if (editing)
+{
+    <div class="editor-backdrop"><section class="editor-dialog" role="dialog" aria-modal="true" aria-labelledby="dealer-title"><div class="d-flex justify-content-between"><h2 id="dealer-title" class="h5">@(form.DealerId == 0 ? "Thêm hồ sơ đại lý" : "Sửa đại lý")</h2><button class="btn-close" aria-label="Đóng" disabled="@busy" @onclick="() => editing = false"></button></div>
+    <p class="small text-muted">Thêm hồ sơ không tạo tài khoản đăng nhập. Sửa email liên hệ không đổi email đăng nhập. Ngừng giao dịch chặn đăng nhập và đặt đơn mới, giữ nguyên lịch sử.</p>
+    <EditForm Model="form" OnValidSubmit="Save"><DataAnnotationsValidator />@if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }<fieldset disabled="@busy">
+    <div class="mb-3"><label for="dealer-name" class="form-label">Tên đại lý *</label><InputText id="dealer-name" class="form-control" @bind-Value="form.DealerName" maxlength="150" /><ValidationMessage For="() => form.DealerName" /></div>
+    <div class="mb-3"><label for="dealer-contact" class="form-label">Người liên hệ</label><InputText id="dealer-contact" class="form-control" @bind-Value="form.ContactPerson" maxlength="100" /><ValidationMessage For="() => form.ContactPerson" /></div>
+    <div class="row g-3"><div class="col-sm-6"><label for="dealer-phone" class="form-label">Điện thoại *</label><InputText id="dealer-phone" class="form-control" @bind-Value="form.Phone" type="tel" maxlength="20" /><ValidationMessage For="() => form.Phone" /></div><div class="col-sm-6"><label for="dealer-email" class="form-label">Email liên hệ</label><InputText id="dealer-email" class="form-control" @bind-Value="form.Email" maxlength="100" /><ValidationMessage For="() => form.Email" /></div></div>
+    <div class="my-3"><label for="dealer-address" class="form-label">Địa chỉ</label><InputTextArea id="dealer-address" class="form-control" @bind-Value="form.Address" maxlength="255" /><ValidationMessage For="() => form.Address" /></div>
+    <div class="mb-3"><label for="dealer-tier" class="form-label">Hạng đại lý</label><InputText id="dealer-tier" class="form-control" @bind-Value="form.Tier" maxlength="30" /><ValidationMessage For="() => form.Tier" /></div>
+    <label class="d-flex gap-2 mb-4"><InputCheckbox @bind-Value="form.IsActive" /> Cho phép đăng nhập và giao dịch mới</label><button type="submit" class="btn btn-success">Lưu đại lý</button></fieldset></EditForm></section></div>
+}
+@if (deleting != null) { <ConfirmDelete Name="@deleting.DealerName" Error="@error" Busy="busy" OnCancel="() => deleting = null" OnConfirm="Delete" /> }
+@code {
+    [SupplyParameterFromQuery(Name = "search")] public string? SearchQuery { get; set; }
+    private List<Dealer> dealers = new();
+    private List<PreOrder> orders = new();
+    private DealerForm form = new();
+    private Dealer? deleting;
+    private bool loading = true, editing, busy;
+    private string search = "", filter = "";
+    private string? error, message;
+    private IEnumerable<Dealer> Filtered => dealers.Where(d => (filter.Length == 0 || d.IsActive == (filter == "active")) &&
+        (search.Trim().Length == 0 || d.DealerName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || d.Phone.Contains(search.Trim()) || (d.Email?.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)));
+    protected override async Task OnInitializedAsync() { search = SearchQuery ?? ""; await Load(); }
+    private async Task Load() { dealers = (await ViewDealers.ExecuteAsync()).ToList(); orders = (await ViewOrders.ExecuteAsync()).ToList(); loading = false; }
+    private void Open(Dealer? d) { form = d == null ? new() : DealerForm.From(d); editing = true; error = null; }
+    private void AskDelete(Dealer d) { deleting = d; error = null; }
+    private async Task Save()
+    {
+        if (busy) return; busy = true; error = message = null;
+        try { await ManageDealers.SaveAsync(form.ToEntity()); editing = false; await Load(); message = "Đã lưu hồ sơ và trạng thái giao dịch đại lý."; }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) { Logger.LogError(ex, "Could not save dealer"); error = "Chưa lưu được đại lý. Vui lòng thử lại."; }
+        finally { busy = false; }
+    }
+    private async Task Delete()
+    {
+        if (busy || deleting == null) return; busy = true; error = null;
+        try { await ManageDealers.DeleteAsync(deleting.DealerId); deleting = null; await Load(); message = "Đã xóa hồ sơ chưa có giao dịch hoặc tài khoản."; }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) { Logger.LogError(ex, "Could not delete dealer"); error = "Chưa xóa được hồ sơ. Vui lòng thử lại."; }
+        finally { busy = false; }
+    }
+}

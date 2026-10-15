@@ -33,6 +33,8 @@ package "AgriculturalCoop.CoreBusiness.Entities" {
         +DateTime? ActualHarvestDate
         +decimal UnitPrice
         +HarvestBatchStatus Status
+        +bool IsArchived
+        +int LinkedOrderCount
         +decimal TotalOrderedQuantity
         +decimal RemainingQuantity
     }
@@ -45,6 +47,7 @@ package "AgriculturalCoop.CoreBusiness.Entities" {
         +string Address
         +string Email
         +string Tier
+        +bool IsActive
     }
 
     class PreOrder {
@@ -55,6 +58,11 @@ package "AgriculturalCoop.CoreBusiness.Entities" {
         +PreOrderStatus Status
         +decimal TotalAmount
         +string Notes
+        +string RecipientName
+        +string ContactPhone
+        +string DeliveryAddress
+        +string CancellationReason
+        +void RefreshAllocationStatus()
         +void RecalculateTotal()
     }
 
@@ -97,4 +105,19 @@ AllocationService ..> HarvestBatch : uses
 AllocationService ..> PreOrderLine : uses
 AllocationService ..> Allocation : produces
 
+class DealerNotification {
+    +int DealerNotificationId
+    +int DealerId
+    +int PreOrderLineId
+    +int HarvestBatchId
+    +int Kind
+    +string Subject
+    +string Body
+    +bool IsAiGenerated
+    +bool IsSuperseded
+    +DateTime UpdatedAt
+    +DateTime? ReadAt
+}
+Dealer "1" -- "0..*" DealerNotification : nhận trên web
+PreOrderLine "1" -- "0..2" DealerNotification : kết quả / bổ sung
 @enduml

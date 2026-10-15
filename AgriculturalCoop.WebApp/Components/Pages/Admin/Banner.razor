@@ -1,0 +1,133 @@
+@page "/admin/banner"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin")]
+@using AgriculturalCoop.UseCases.PluginInterfaces
+@using AgriculturalCoop.WebApp.Services
+@inject IHomeBannerUseCases Banners
+@inject IProductImageStore Images
+@inject ILogger<Banner> Logger
+
+<PageTitle>Banner trang chủ — COOPAGRI</PageTitle>
+<div class="page-heading">
+    <div><span class="eyebrow">GIAO DIỆN CỬA HÀNG</span><h1>Banner trang chủ</h1><p>Thay ảnh, thông điệp và nút khám phá hiển thị cho khách hàng.</p></div>
+    <a class="btn btn-outline-success" href="/" target="_blank" rel="noopener noreferrer">↗ Mở trang khách hàng</a>
+</div>
+@if (loading)
+{
+    <p role="status">Đang tải banner…</p>
+}
+else
+{
+    @if (message != null) { <div class="alert alert-success" role="status">@message</div> }
+    <div class="banner-editor-grid">
+        <section class="admin-card">
+            <EditForm Model="form" OnValidSubmit="Save">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                @if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }
+                <div class="mb-3">
+                    <label for="banner-eyebrow" class="form-label">Dòng giới thiệu</label>
+                    <InputText id="banner-eyebrow" class="form-control" @bind-Value="form.Eyebrow" maxlength="60" />
+                </div>
+                <div class="mb-3">
+                    <label for="banner-title" class="form-label">Tiêu đề</label>
+                    <InputText id="banner-title" class="form-control" @bind-Value="form.Title" maxlength="140" />
+                </div>
+                <div class="mb-3">
+                    <label for="banner-description" class="form-label">Mô tả</label>
+                    <InputTextArea id="banner-description" class="form-control" rows="3" @bind-Value="form.Description" maxlength="400" />
+                </div>
+                <div class="mb-3">
+                    <label for="banner-image" class="form-label">Ảnh banner</label>
+                    <InputFile @key="uploadKey" id="banner-image" class="form-control" OnChange="SelectImage"
+                               accept="image/png,image/jpeg,image/webp" disabled="@busy" />
+                    <small class="text-muted d-block mt-2">Ảnh ngang, gợi ý 1600 × 600 px. PNG, JPEG hoặc WebP, tối đa 5 MB.</small>
+                    @if (file != null) { <small class="text-success d-block mt-1">Đã chọn @file.Name. Ảnh sẽ cập nhật khi lưu.</small> }
+                    <button type="button" class="btn btn-link btn-sm px-0" disabled="@busy" @onclick="ResetImage">Dùng ảnh mặc định</button>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6"><label for="banner-button" class="form-label">Chữ trên nút</label><InputText id="banner-button" class="form-control" @bind-Value="form.ButtonText" maxlength="40" /></div>
+                    <div class="col-md-6"><label for="banner-link" class="form-label">Liên kết nút</label><InputText id="banner-link" class="form-control" @bind-Value="form.ButtonUrl" maxlength="200" /></div>
+                </div>
+                <small class="text-muted d-block mb-3">Ví dụ: /#nong-san hoặc /batches</small>
+                <button type="submit" class="btn btn-success" disabled="@busy">@(busy ? "Đang lưu…" : "Lưu banner")</button>
+            </EditForm>
+        </section>
+        <section class="banner-preview-panel">
+            <span class="eyebrow">XEM TRƯỚC NỘI DUNG</span>
+            <div class="mt-3"><StoreBanner Banner="form" /></div>
+            <p class="text-muted small mt-3">Sau khi lưu, tải lại tab khách hàng để xem thay đổi.</p>
+        </section>
+    </div>
+}
+@code {
+    private HomeBanner form = new();
+    private string previousImage = "";
+    private IBrowserFile? file;
+    private Guid uploadKey = Guid.NewGuid();
+    private bool loading = true, busy;
+    private string? message, error;
+    protected override async Task OnInitializedAsync()
+    {
+        form = await Banners.GetAsync();
+        previousImage = form.ImageUrl;
+        loading = false;
+    }
+    private void SelectImage(InputFileChangeEventArgs args)
+    {
+        file = args.File;
+        error = file.Size > ProductImageStore.MaxBytes ? "Ảnh vượt quá 5 MB." : null;
+        message = null;
+    }
+    private void ResetImage()
+    {
+        file = null;
+        uploadKey = Guid.NewGuid();
+        form.ImageUrl = "/images/banner-harvest.svg";
+        error = message = null;
+    }
+    private async Task Save()
+    {
+        if (busy) return;
+        busy = true;
+        message = error = null;
+        string? uploaded = null;
+        var saved = false;
+        var originalUrl = form.ImageUrl;
+        try
+        {
+            if (file != null)
+            {
+                if (file.Size > ProductImageStore.MaxBytes)
+                    throw new PreOrderDomainException("Ảnh vượt quá 5 MB.");
+                await using var stream = file.OpenReadStream(ProductImageStore.MaxBytes);
+                uploaded = await Images.SaveAsync(stream, file.Size);
+                form.ImageUrl = uploaded;
+            }
+            await Banners.SaveAsync(form);
+            saved = true;
+            if (previousImage != form.ImageUrl)
+                await Images.RemoveAsync(previousImage);
+            previousImage = form.ImageUrl;
+            file = null;
+            uploadKey = Guid.NewGuid();
+            message = "Đã cập nhật banner trang chủ.";
+        }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not save home banner");
+            error = saved ? "Banner đã lưu, nhưng chưa dọn được ảnh cũ." : "Chưa lưu được banner. Vui lòng thử lại.";
+        }
+        finally
+        {
+            if (!saved && uploaded != null)
+            {
+                form.ImageUrl = originalUrl;
+                try { await Images.RemoveAsync(uploaded); }
+                catch (IOException ex) { Logger.LogWarning(ex, "Could not remove unused banner upload"); }
+            }
+            busy = false;
+        }
+    }
+}

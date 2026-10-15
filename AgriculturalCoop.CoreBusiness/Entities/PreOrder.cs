@@ -22,10 +22,26 @@ namespace AgriculturalCoop.CoreBusiness.Entities
         public PreOrderStatus Status { get; set; } = PreOrderStatus.Confirmed;
         public decimal TotalAmount { get; set; }
         public string? Notes { get; set; }
+        public string? RecipientName { get; set; }
+        public string? ContactPhone { get; set; }
+        public string? DeliveryAddress { get; set; }
+        public string? CancellationReason { get; set; }
 
         // Navigation helpers
         public Dealer? Dealer { get; set; }
         public List<PreOrderLine> PreOrderLines { get; set; } = new();
+
+        public void RefreshAllocationStatus()
+        {
+            if (Status == PreOrderStatus.Cancelled || PreOrderLines.Count == 0) return;
+            if (!PreOrderLines.Any(l => l.Allocation != null))
+            {
+                if (Status is PreOrderStatus.PartiallyAllocated or PreOrderStatus.FullyAllocated) Status = PreOrderStatus.Confirmed;
+                return;
+            }
+            Status = PreOrderLines.All(l => l.Allocation != null && l.Allocation.AllocatedQuantity >= l.Quantity)
+                ? PreOrderStatus.FullyAllocated : PreOrderStatus.PartiallyAllocated;
+        }
 
         public void RecalculateTotal()
         {

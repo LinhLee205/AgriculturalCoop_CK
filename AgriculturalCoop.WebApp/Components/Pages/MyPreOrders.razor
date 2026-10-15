@@ -1,3 +1,4 @@
+@attribute [Authorize(Roles = "Dealer")]
 @page "/my-orders"
 @inject IViewPreOrdersByDealerUseCase ViewPreOrdersByDealerUseCase
 @inject UserSessionState UserSession
@@ -68,13 +69,15 @@
                             else
                             {
                                 <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
-                                    @order.Status
+                                    @(order.Status == PreOrderStatus.Cancelled ? "Đã hủy" : "Chờ xử lý")
                                 </span>
                             }
                         </div>
                     </div>
 
                     <div class="card-body p-4">
+                        <div class="mb-3"><OrderDeliverySummary Order="order" /></div>
+                        @if (order.Status == PreOrderStatus.Cancelled) { <p class="alert alert-secondary small">Lý do hủy: @order.CancellationReason</p> }
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light">
@@ -95,7 +98,7 @@
                                                 <small class="text-muted font-monospace">@line.HarvestBatch?.BatchCode</small>
                                             </td>
                                             <td class="fw-bold">
-                                                @line.Quantity.ToString("N0") kg
+                                                @line.Quantity.ToString("N2") kg
                                             </td>
                                             <td>
                                                 @line.UnitPrice.ToString("N0") đ/kg
@@ -107,7 +110,7 @@
                                                 @if (line.Allocation != null)
                                                 {
                                                     <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold">
-                                                        <i class="bi bi-box-seam me-1"></i> @line.Allocation.AllocatedQuantity.ToString("N0") kg
+                                                        <i class="bi bi-box-seam me-1"></i> @line.Allocation.AllocatedQuantity.ToString("N2") kg
                                                     </span>
                                                     <div class="small text-muted mt-1 fst-italic">
                                                         @line.Allocation.Reason
@@ -148,12 +151,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await UserSession.InitializeAsync();
         await LoadOrders();
-        UserSession.OnSessionChanged += async () =>
-        {
-            await LoadOrders();
-            StateHasChanged();
-        };
     }
 
     private async Task LoadOrders()

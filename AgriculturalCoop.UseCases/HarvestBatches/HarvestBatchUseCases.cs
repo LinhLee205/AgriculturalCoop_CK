@@ -95,9 +95,28 @@ namespace AgriculturalCoop.UseCases.HarvestBatches
             _batchRepository = batchRepository;
         }
 
-        public async Task ExecuteAsync(int batchId, decimal actualYield, DateTime harvestDate)
+        public async Task ExecuteAsync(
+    int batchId, decimal actualYield, DateTime harvestDate)
         {
-            await _batchRepository.UpdateBatchYieldAsync(batchId, actualYield, harvestDate);
+            if (actualYield < 0 ||
+                actualYield != decimal.Round(actualYield, 2))
+            {
+                throw new AgriculturalCoop.CoreBusiness.Exceptions.PreOrderDomainException(
+                    "Sản lượng không âm và có tối đa 2 chữ số thập phân.");
+            }
+
+            var batch = await _batchRepository.GetBatchByIdAsync(batchId)
+                ?? throw new AgriculturalCoop.CoreBusiness.Exceptions.PreOrderDomainException(
+                    "Lô không tồn tại.");
+
+            if (batch.IsArchived || batch.Status >= AgriculturalCoop.CoreBusiness.Entities.HarvestBatchStatus.Allocated)
+            {
+                throw new AgriculturalCoop.CoreBusiness.Exceptions.PreOrderDomainException(
+                    "Lô đã phân bổ. Không sửa sản lượng riêng lẻ; hãy chạy lại phân bổ nếu cần.");
+            }
+
+            await _batchRepository.UpdateBatchYieldAsync(
+                batchId, actualYield, harvestDate);
         }
     }
 }

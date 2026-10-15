@@ -38,11 +38,18 @@ namespace AgriculturalCoop.UseCases.Allocations
             var batch = await _batchRepository.GetBatchByIdAsync(batchId);
             if (batch == null)
                 throw new PreOrderDomainException($"Lô thu hoạch #{batchId} không tồn tại.");
+            if (batch.IsArchived || batch.Status == HarvestBatchStatus.Completed)
+                throw new PreOrderDomainException("Lô đã lưu trữ hoặc hoàn tất. Không thay đổi kết quả đã chốt.");
 
-            if (actualHarvestQuantity < 0)
-                throw new PreOrderDomainException("Sản lượng thực tế thu hoạch không được nhỏ hơn 0.");
+            if (actualHarvestQuantity < 0 ||
+    actualHarvestQuantity != decimal.Round(actualHarvestQuantity, 2))
+            {
+                throw new PreOrderDomainException(
+                    "Sản lượng thực tế không âm và có tối đa 2 chữ số thập phân.");
+            }
 
-            var lines = (await _preOrderRepository.GetLinesByBatchIdAsync(batchId)).ToList();
+            var lines = (await _preOrderRepository.GetLinesByBatchIdAsync(batchId))
+                .Where(l => l.PreOrder?.Status != PreOrderStatus.Cancelled).ToList();
             if (!lines.Any())
                 throw new PreOrderDomainException($"Lô [{batch.BatchCode}] chưa có bất kỳ đơn đặt trước nào để phân bổ.");
 
@@ -63,12 +70,22 @@ namespace AgriculturalCoop.UseCases.Allocations
                 Reason = r.Note
             }).ToList();
 
-            // Lưu vào CSDL trong 1 Transaction duy nhất (K2.2)
-            await _allocationRepository.SaveAllocationsTransactionAsync(batchId, allocationsToSave);
-
-            // Cập nhật trạng thái lô sang Harvested / Allocated
-            await _batchRepository.UpdateBatchYieldAsync(batchId, actualHarvestQuantity, DateTime.Now);
-            await _batchRepository.UpdateBatchStatusAsync(batchId, HarvestBatchStatus.Allocated);
+            var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+            string Number(decimal value) => value.ToString("N2", culture);
+            var notices = allocationsToSave.Select(a =>
+            {
+                var line = lines.Single(l => l.PreOrderLineId == a.PreOrderLineId);
+                return new DealerNotification
+                {
+                    DealerId = line.PreOrder?.DealerId ?? throw new PreOrderDomainException("Thiếu thông tin đại lý của đơn đặt."),
+                    HarvestBatchId = batchId, PreOrderLineId = a.PreOrderLineId,
+                    Subject = $"Kết quả phân bổ lô {batch.BatchCode}",
+                    Body = $"Hợp tác xã đã cập nhật kết quả phân bổ.\n\nLô: {batch.BatchCode} — {batch.Product?.ProductName}\nĐơn đặt trước: #{line.PreOrderId}\nSản lượng thực tế toàn lô: {Number(actualHarvestQuantity)} kg\nLượng đã đặt: {Number(a.RequestedQuantity)} kg\nLượng được phân bổ: {Number(a.AllocatedQuantity)} kg\n\n{a.Reason}\n\nXem mục Phân bổ nhận được để đối chiếu."
+                };
+            }).ToList();
+            // Results, batch state and deterministic web notices commit together.
+            await _allocationRepository.SaveAllocationsTransactionAsync(batchId, allocationsToSave,
+                actualHarvestQuantity, DateTime.Now, notices);
 
             return resultItems;
         }

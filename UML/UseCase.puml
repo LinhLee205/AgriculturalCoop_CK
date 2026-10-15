@@ -13,8 +13,14 @@ rectangle "Hệ Thống Đặt Trước Nông Sản Theo Mùa Vụ (Agricultural
     usecase "Đặt trước lô nông sản (Kiểm tra Luật 1)" as UC_PreOrder
     usecase "Xem lịch sử đơn đặt trước" as UC_MyOrders
     usecase "Theo dõi số lượng phân bổ thực tế" as UC_MyAllocations
+    usecase "Xem thông báo riêng và đánh dấu đã đọc" as UC_MyNotifications
+    usecase "Tạo thông báo kết quả trên web" as UC_AutoNotice
+    usecase "Duyệt và đăng nội dung bổ sung" as UC_PublishNotice
     
     ' Use Cases cho Admin HTX
+    usecase "Quản lý hồ sơ và trạng thái đại lý" as UC_ManageDealers
+    usecase "Xem chi tiết, xác nhận hoặc hủy đơn chưa phân bổ" as UC_ManageOrders
+    usecase "Lưu trữ / khôi phục lô, hoàn tất giao hàng" as UC_BatchLifecycle
     usecase "Quản lý hồ sơ xã viên (Member)" as UC_ManageMembers
     usecase "Quản lý danh mục nông sản (Product)" as UC_ManageProducts
     usecase "Tạo và quản lý lô thu hoạch (HarvestBatch)" as UC_ManageBatches
@@ -31,8 +37,13 @@ Dealer --> UC_AddToCart
 Dealer --> UC_PreOrder
 Dealer --> UC_MyOrders
 Dealer --> UC_MyAllocations
+Dealer --> UC_MyNotifications
+Admin --> UC_PublishNotice
 
 ' Quan hệ Admin
+Admin --> UC_ManageDealers
+Admin --> UC_ManageOrders
+Admin --> UC_BatchLifecycle
 Admin --> UC_ManageMembers
 Admin --> UC_ManageProducts
 Admin --> UC_ManageBatches
@@ -43,5 +54,6 @@ Admin --> UC_ViewReports
 
 UC_PreOrder ..> UC_ViewBatches : <<include>>
 UC_RunAllocation ..> UC_InputActualYield : <<include>>
+UC_RunAllocation ..> UC_AutoNotice : <<include>>
 UC_AiNotice ..> UC_RunAllocation : <<extend>>
 @enduml

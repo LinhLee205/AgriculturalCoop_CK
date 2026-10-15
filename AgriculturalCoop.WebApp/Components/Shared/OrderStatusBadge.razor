@@ -1,0 +1,8 @@
+<span class="badge @(Status == PreOrderStatus.Cancelled ? "bg-secondary" : "bg-success-subtle text-success")">@Text</span>
+@code {
+    [Parameter] public PreOrderStatus Status { get; set; }
+    private string Text => Status switch {
+        PreOrderStatus.Pending => "Chờ xác nhận", PreOrderStatus.Confirmed => "Đã xác nhận",
+        PreOrderStatus.PartiallyAllocated => "Phân bổ một phần", PreOrderStatus.FullyAllocated => "Đã phân bổ đủ",
+        PreOrderStatus.Cancelled => "Đã hủy", _ => "Chưa xác định" };
+}

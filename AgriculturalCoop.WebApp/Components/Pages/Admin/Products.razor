@@ -1,181 +1,305 @@
 @page "/admin/products"
-@using System.ComponentModel.DataAnnotations
-@inject UserSessionState UserSession
-@inject IViewProductsUseCase ViewProductsUseCase
-@inject IAddProductUseCase AddProductUseCase
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin")]
+@using AgriculturalCoop.WebApp.Models
+@using AgriculturalCoop.UseCases.PluginInterfaces
+@using AgriculturalCoop.WebApp.Services
+@inject IViewProductsUseCase ViewProducts
+@inject IManageProductsUseCase ManageProducts
+@inject IProductImageStore Images
 
-<PageTitle>Quản Lý Nông Sản - HTX Nông Nghiệp</PageTitle>
+<PageTitle>Nông sản - COOPAGRI</PageTitle>
 
-@if (!UserSession.IsAdmin)
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">DANH MỤC</span>
+        <h1>Nông sản</h1>
+        <p>Ảnh tải lên được lưu trên hệ thống.</p>
+    </div>
+    <button class="btn btn-success" @onclick="() => Open(null)">
+        + Thêm nông sản
+    </button>
+</div>
+
+@if (message != null)
 {
-    <div class="alert alert-danger p-4 rounded-4 text-center my-5">
-        <i class="bi bi-shield-lock-fill fs-1 text-danger mb-2 d-block"></i>
-        <h4 class="fw-bold">Truy cập bị từ chối (K4.2)</h4>
-        <p class="text-muted mb-3">Chỉ Ban Quản trị Hợp tác xã mới có quyền truy cập trang quản lý nông sản.</p>
-        <a href="/admin" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm">
-            <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập Quản trị viên
-        </a>
+    <div class="alert alert-success" role="status">@message</div>
+}
+
+<section class="admin-card table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Nông sản</th>
+                <th>Phân loại</th>
+                <th>Giá tiêu chuẩn</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>
+                        <div class="d-flex gap-3 align-items-center">
+                            <img class="product-thumbnail"
+                                 src="@product.ImageUrl"
+                                 alt="@product.ProductName"
+                                 onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
+                            <div>
+                                <strong>@product.ProductName</strong>
+                                <small class="d-block text-muted">
+                                    @product.Description
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>@product.Category</td>
+                    <td>@product.StandardPrice.ToString("N0") đ/@product.Unit</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-sm btn-outline-success"
+                                    @onclick="() => Open(product)">
+                                Sửa
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    @onclick="() => AskDelete(product)">
+                                Xóa
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (products.Count == 0)
+    {
+        <p class="text-muted">Chưa có nông sản.</p>
+    }
+</section>
+
+@if (editing)
+{
+    <div class="editor-backdrop">
+        <section class="editor-dialog"
+                 role="dialog" aria-modal="true"
+                 aria-labelledby="product-title">
+            <div class="d-flex justify-content-between">
+                <h2 id="product-title" class="h5">
+                    @(form.ProductId == 0 ? "Thêm nông sản" : "Sửa nông sản")
+                </h2>
+                <button class="btn-close" aria-label="Đóng"
+                        disabled="@busy"
+                        @onclick="() => editing = false">
+                </button>
+            </div>
+
+            <EditForm Model="form" OnValidSubmit="Save">
+                <DataAnnotationsValidator />
+
+                @if (error != null)
+                {
+                    <div class="alert alert-danger" role="alert">@error</div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label" for="product-name">Tên nông sản</label>
+                    <InputText id="product-name" class="form-control"
+                               @bind-Value="form.ProductName" />
+                    <ValidationMessage For="@(() => form.ProductName)" />
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="product-category">Phân loại</label>
+                        <InputSelect id="product-category" class="form-select"
+                                     @bind-Value="form.Category">
+                            <option>Trái cây đặc sản</option>
+                            <option>Rau củ quả</option>
+                            <option>Rau ăn lá</option>
+                            <option>Dược liệu</option>
+                            <option>Nông sản sạch</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => form.Category)" />
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label class="form-label" for="product-unit">Đơn vị tính</label>
+                        <InputText id="product-unit" class="form-control"
+                                   @bind-Value="form.Unit" />
+                        <ValidationMessage For="@(() => form.Unit)" />
+                    </div>
+                </div>
+
+                <div class="my-3">
+                    <label class="form-label" for="product-price">
+                        Giá tiêu chuẩn (đ)
+                    </label>
+                    <InputNumber id="product-price" class="form-control"
+                                 @bind-Value="form.StandardPrice" />
+                    <ValidationMessage For="@(() => form.StandardPrice)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="product-image">Ảnh nông sản</label>
+                    <InputFile @key="uploadKey"
+                               id="product-image"
+                               class="form-control"
+                               accept="image/png,image/jpeg,image/webp"
+                               OnChange="SelectImage" />
+
+                    <small class="d-block text-muted mt-1">
+                        PNG, JPEG hoặc WebP; tối đa 5 MB.
+                        @(file == null
+                            ? "Giữ ảnh hiện tại nếu không chọn ảnh mới."
+                            : "Đã chọn: " + file.Name)
+                    </small>
+
+                    <img class="product-preview mt-2"
+                         src="@form.ImageUrl"
+                         alt="Ảnh hiện tại"
+                         onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" for="product-description">Mô tả</label>
+                    <InputTextArea id="product-description"
+                                   class="form-control" rows="3"
+                                   @bind-Value="form.Description" />
+                    <ValidationMessage For="@(() => form.Description)" />
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-light"
+                            disabled="@busy"
+                            @onclick="() => editing = false">
+                        Hủy
+                    </button>
+                    <button type="submit" class="btn btn-success" disabled="@busy">
+                        Lưu nông sản
+                    </button>
+                </div>
+            </EditForm>
+        </section>
     </div>
 }
-else
+
+@if (deleting != null)
 {
-    <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-1">
-                        <li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-muted">Quản trị</a></li>
-                        <li class="breadcrumb-item active">Nông sản</li>
-                    </ol>
-                </nav>
-                <h2 class="fw-bold text-dark mb-0">Danh Mục Nông Sản Hợp Tác Xã</h2>
-            </div>
-            <button class="btn btn-success rounded-pill px-4 fw-semibold" @onclick="() => showAddModal = true">
-                <i class="bi bi-plus-circle me-1"></i> Thêm Nông Sản Mới
-            </button>
-        </div>
-
-        @if (!string.IsNullOrEmpty(alertMsg))
-        {
-            <div class="alert alert-success rounded-3 py-2 px-3 mb-3">@alertMsg</div>
-        }
-
-        <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Ảnh</th>
-                            <th>Tên Nông Sản</th>
-                            <th>Phân Loại</th>
-                            <th>Đơn Vị Tính</th>
-                            <th>Giá Chuẩn</th>
-                            <th>Mô Tả</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var p in products)
-                        {
-                            <tr>
-                                <td>
-                                    <img src="@p.ImageUrl" class="rounded-3 object-fit-cover shadow-xs" style="width: 50px; height: 50px;" alt="@p.ProductName" />
-                                </td>
-                                <td class="fw-bold text-dark">@p.ProductName</td>
-                                <td><span class="badge bg-light text-muted border">@p.Category</span></td>
-                                <td>@p.Unit</td>
-                                <td class="fw-semibold text-success">@p.StandardPrice.ToString("N0") VNĐ</td>
-                                <td class="text-muted small" style="max-width: 300px;">@p.Description</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    @if (showAddModal)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content rounded-4 border-0 shadow">
-                    <div class="modal-header border-bottom">
-                        <h5 class="modal-title fw-bold">Thêm Nông Sản Mới</h5>
-                        <button type="button" class="btn-close" @onclick="() => showAddModal = false"></button>
-                    </div>
-                    <EditForm Model="@newProduct" OnValidSubmit="HandleAddProduct">
-                        <DataAnnotationsValidator />
-                        <div class="modal-body p-4">
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold">Tên nông sản <span class="text-danger">*</span></label>
-                                <InputText @bind-Value="newProduct.ProductName" class="form-control" />
-                                <ValidationMessage For="@(() => newProduct.ProductName)" class="validation-message" />
-                            </div>
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
-                                    <label class="form-label small fw-semibold">Phân loại:</label>
-                                    <InputSelect @bind-Value="newProduct.Category" class="form-select">
-                                        <option value="Trái cây đặc sản">Trái cây đặc sản</option>
-                                        <option value="Rau củ quả">Rau củ quả</option>
-                                        <option value="Rau ăn lá">Rau ăn lá</option>
-                                        <option value="Dược liệu">Dược liệu</option>
-                                    </InputSelect>
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label small fw-semibold">Đơn vị tính:</label>
-                                    <InputText @bind-Value="newProduct.Unit" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold">Giá tiêu chuẩn (VNĐ):</label>
-                                <InputNumber @bind-Value="newProduct.StandardPrice" class="form-control" />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold">Ảnh minh họa (URL):</label>
-                                <InputText @bind-Value="newProduct.ImageUrl" class="form-control" />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold">Mô tả đặc điểm:</label>
-                                <InputTextArea @bind-Value="newProduct.Description" class="form-control" rows="2" />
-                            </div>
-                        </div>
-                        <div class="modal-footer border-top">
-                            <button type="button" class="btn btn-light rounded-pill px-4" @onclick="() => showAddModal = false">Hủy</button>
-                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">Lưu Nông Sản</button>
-                        </div>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-    }
+    <ConfirmDelete Name="@deleting.ProductName"
+                   Error="@error" Busy="busy"
+                   OnCancel="() => deleting = null"
+                   OnConfirm="Delete" />
 }
 
 @code {
     private List<Product> products = new();
-    private bool showAddModal = false;
-    private string? alertMsg;
+    private ProductForm form = new();
+    private Product? deleting;
+    private IBrowserFile? file;
+    private bool editing, busy;
+    private string? error, message;
+    private Guid uploadKey;
 
-    public class NewProductModel
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load() =>
+        products = (await ViewProducts.ExecuteAsync()).ToList();
+
+    private void Open(Product? product)
     {
-        [Required(ErrorMessage = "Tên nông sản không được để trống")]
-        public string ProductName { get; set; } = string.Empty;
-        public string Category { get; set; } = "Trái cây đặc sản";
-        public string Unit { get; set; } = "kg";
-        public decimal StandardPrice { get; set; } = 35000;
-        public string Description { get; set; } = string.Empty;
-        public string ImageUrl { get; set; } = "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80";
+        form = product == null ? new() : ProductForm.From(product);
+        file = null;
+        uploadKey = Guid.NewGuid();
+        editing = true;
+        error = null;
     }
 
-    private NewProductModel newProduct = new();
-
-    protected override async Task OnInitializedAsync()
+    private void AskDelete(Product product)
     {
-        if (UserSession.IsAdmin)
+        deleting = product;
+        error = null;
+    }
+
+    private void SelectImage(InputFileChangeEventArgs args)
+    {
+        file = args.File;
+        error = file.Size > ProductImageStore.MaxBytes
+            ? "Ảnh vượt quá 5 MB." : null;
+    }
+
+    private async Task Save()
+    {
+        if (busy) return;
+        busy = true;
+        error = null;
+
+        string? uploaded = null;
+        var oldImage = form.ImageUrl;
+        var saved = false;
+
+        try
         {
-            await LoadProducts();
+            if (file != null)
+            {
+                await using var stream =
+                    file.OpenReadStream(ProductImageStore.MaxBytes);
+
+                uploaded = await Images.SaveAsync(stream, file.Size);
+            }
+
+            var product = form.ToEntity();
+
+            if (uploaded != null)
+                product.ImageUrl = uploaded;
+
+            await ManageProducts.SaveAsync(product);
+            saved = true;
+
+            if (uploaded != null && form.ProductId > 0)
+                await Images.RemoveAsync(oldImage);
+
+            editing = false;
+            message = "Đã lưu nông sản và ảnh trên hệ thống.";
+            await Load();
+        }
+        catch (Exception ex)
+            when (ex is PreOrderDomainException or IOException)
+        {
+            if (!saved && uploaded != null)
+                await Images.RemoveAsync(uploaded);
+
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
         }
     }
 
-    private async Task LoadProducts()
+    private async Task Delete()
     {
-        products = (await ViewProductsUseCase.ExecuteAsync()).ToList();
-    }
+        if (busy || deleting == null) return;
+        busy = true;
+        error = null;
 
-    private async Task HandleAddProduct()
-    {
-        var product = new Product
+        try
         {
-            ProductName = newProduct.ProductName,
-            Category = newProduct.Category,
-            Unit = newProduct.Unit,
-            StandardPrice = newProduct.StandardPrice,
-            Description = newProduct.Description,
-            ImageUrl = newProduct.ImageUrl
-        };
+            await ManageProducts.DeleteAsync(deleting.ProductId);
+            await Images.RemoveAsync(deleting.ImageUrl);
 
-        await AddProductUseCase.ExecuteAsync(product);
-        showAddModal = false;
-        alertMsg = $"Đã thêm nông sản {product.ProductName} vào danh mục!";
-        newProduct = new();
-        await LoadProducts();
+            deleting = null;
+            message = "Đã xóa nông sản.";
+            await Load();
+        }
+        catch (PreOrderDomainException ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
     }
 }

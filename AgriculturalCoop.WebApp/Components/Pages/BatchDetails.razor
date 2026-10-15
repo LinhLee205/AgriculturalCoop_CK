@@ -1,7 +1,7 @@
 @page "/batches/{BatchId:int}"
 @using System.ComponentModel.DataAnnotations
 @inject IViewHarvestBatchByIdUseCase ViewHarvestBatchByIdUseCase
-@inject ICreatePreOrderUseCase CreatePreOrderUseCase
+@inject IValidatePreOrderUseCase ValidateOrder
 @inject IPreOrderCart Cart
 @inject UserSessionState UserSession
 @inject NavigationManager Nav
@@ -38,10 +38,12 @@ else
         <!-- Cột Trái: Ảnh và Thông tin Lô -->
         <div class="col-lg-7">
             <div class="card border-0 rounded-4 shadow-sm overflow-hidden mb-4 bg-white">
-                <img src="@(string.IsNullOrEmpty(batch.Product?.ImageUrl) ? "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80" : batch.Product.ImageUrl)" 
-                     class="img-fluid object-fit-cover w-100" 
-                     style="max-height: 380px;" 
-                     alt="@batch.Product?.ProductName" />
+                <img src="@(string.IsNullOrEmpty(batch.Product?.ImageUrl)
+        ? "/images/products/placeholder.svg"
+        : batch.Product.ImageUrl)"
+     class="batch-detail-image"
+     alt="@batch.Product?.ProductName"
+     onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
                 
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -143,7 +145,7 @@ else
                             <div class="alert alert-danger rounded-3 small py-2 px-3 mb-3 d-flex align-items-center gap-2">
                                 <i class="bi bi-shield-x fs-4 text-danger flex-shrink-0"></i>
                                 <div>
-                                    <strong class="d-block">Vi phạm Luật Nghiệp Vụ 1 (K1.3 / K3.3):</strong>
+                                    <strong class="d-block">Chưa thể đặt hàng:</strong>
                                     <span>@businessRuleErrorMessage</span>
                                 </div>
                             </div>
@@ -162,7 +164,7 @@ else
                                 Đại lý đặt hàng:
                             </label>
                             <input type="text" class="form-control bg-light" value="@UserSession.CurrentDealerName" readonly />
-                            <small class="text-muted">Đang đăng nhập với vai trò Đại lý (K4.1)</small>
+                            <small class="text-muted">Đăng nhập tài khoản đại lý để đặt trước nông sản.</small>
                         </div>
 
                         <div class="mb-3">
@@ -188,10 +190,10 @@ else
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success btn-lg fw-bold rounded-pill shadow-sm">
-                                <i class="bi bi-cart-check-fill me-1"></i> Xác nhận đặt trước ngay
+                                <i class="bi bi-cart-check-fill me-1"></i> Tiếp tục nhập thông tin nhận hàng
                             </button>
                             <button type="button" class="btn btn-outline-secondary rounded-pill" @onclick="AddToCartOnly">
-                                <i class="bi bi-cart-plus me-1"></i> Thêm vào giỏ tạm (Scoped)
+                                <i class="bi bi-cart-plus me-1"></i> Thêm vào giỏ
                             </button>
                         </div>
                     </EditForm>
@@ -213,14 +215,15 @@ else
     public class PreOrderInputModel
     {
         [Required(ErrorMessage = "Vui lòng nhập khối lượng muốn đặt trước.")]
-        [Range(1, 100000, ErrorMessage = "Khối lượng đặt phải lớn hơn 0 kg.")]
-        public decimal Quantity { get; set; } = 100;
+        [Range(typeof(decimal), "0.01", "100000", ErrorMessage = "Khối lượng đặt từ 0,01 kg đến 100.000 kg.")]
+        public decimal Quantity { get; set; } = 1;
     }
 
     private PreOrderInputModel orderModel = new();
 
     protected override async Task OnInitializedAsync()
     {
+        await UserSession.InitializeAsync();
         await LoadBatch();
     }
 
@@ -228,6 +231,7 @@ else
     {
         loading = true;
         batch = await ViewHarvestBatchByIdUseCase.ExecuteAsync(BatchId);
+        if (batch is not { Status: HarvestBatchStatus.OpenForPreOrder, IsArchived: false }) batch = null;
         loading = false;
     }
 
@@ -237,6 +241,18 @@ else
         successMessage = null;
 
         if (batch == null) return;
+        await UserSession.InitializeAsync();
+
+        if (!UserSession.IsDealer)
+        {
+            Nav.NavigateTo(
+                "/account/login?returnUrl=" +
+                Uri.EscapeDataString("/batches/" + BatchId),
+                forceLoad: true);
+
+            return;
+        }
+
 
         // Tạo đối tượng PreOrder với 1 dòng PreOrderLine
         var preOrder = new PreOrder
@@ -254,15 +270,14 @@ else
             UnitPrice = batch.UnitPrice
         };
         preOrder.PreOrderLines.Add(line);
+        preOrder.PreOrderLines.AddRange(Cart.Items.Select(i => new PreOrderLine { HarvestBatchId = i.HarvestBatchId, Quantity = i.Quantity }));
 
         try
         {
             // Gọi UseCase: Nơi LUẬT 1 (K1.3) và TRANSACTION (K2.2) được thực thi!
-            int orderId = await CreatePreOrderUseCase.ExecuteAsync(preOrder);
-            successMessage = $"Đặt trước thành công! Mã đơn: #{orderId}. Hệ thống đã ghi nhận {orderModel.Quantity:N0} kg trong 1 Transaction.";
-            
-            // Reload lại số lượng còn lại của lô
-            await LoadBatch();
+            await ValidateOrder.ValidateAsync(preOrder);
+            Cart.AddItem(batch, orderModel.Quantity);
+            Nav.NavigateTo("/checkout");
         }
         catch (ExceededExpectedYieldException ex)
         {
