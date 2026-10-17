@@ -1,41 +1,59 @@
-@inject UserSessionState UserSession
+﻿@inject UserSessionState UserSession
 @page "/batches"
 @inject IViewOpenBatchesUseCase ViewHarvestBatchesUseCase
 @inject IPreOrderCart Cart
 @inject NavigationManager Nav
 
-<PageTitle>Danh Mục Lô Nông Sản - HTX Nông Nghiệp</PageTitle>
+<PageTitle>Danh Mục Lô Nông Sản Thu Hoạch — COOPAGRI</PageTitle>
 
 <div class="mb-4">
-    <div class="row align-items-center g-3 mb-4">
-        <div class="col-md-6">
-            <h2 class="fw-bold text-dark mb-1">Danh Mục Lô Nông Sản Thu Hoạch</h2>
-            <p class="text-muted small mb-0">Theo dõi tiến độ mùa vụ và đặt trước trực tiếp từ các hộ xã viên</p>
+    <div class="page-heading">
+        <div>
+            <span class="eyebrow">MÙA VỤ THU HOẠCH</span>
+            <h1>Lô nông sản chuẩn bị thu hoạch</h1>
+            <p>Theo dõi tiến độ mùa vụ từng hộ xã viên và đặt trước sản lượng thực tế.</p>
         </div>
-        <div class="col-md-6">
-            <SearchBar @bind-SearchTerm="searchTerm" OnSearch="ApplyFilter" />
-        </div>
+        <a href="/products" class="btn btn-outline-success rounded-pill px-3">
+            <i class="bi bi-grid me-1"></i> Xem toàn bộ nông sản
+        </a>
     </div>
 
-    <!-- Category Filter Chips -->
-    <div class="d-flex flex-wrap gap-2 mb-4">
-        <button class="btn btn-sm rounded-pill px-3 @(selectedCategory == "All" ? "btn-success" : "btn-outline-secondary")" 
-                @onclick="@(() => SelectCategory("All"))">
-            Tất cả
-        </button>
-        <button class="btn btn-sm rounded-pill px-3 @(selectedCategory == "Trái cây đặc sản" ? "btn-success" : "btn-outline-secondary")" 
-                @onclick="@(() => SelectCategory("Trái cây đặc sản"))">
-            Trái cây đặc sản
-        </button>
-        <button class="btn btn-sm rounded-pill px-3 @(selectedCategory == "Rau củ quả" ? "btn-success" : "btn-outline-secondary")" 
-                @onclick="@(() => SelectCategory("Rau củ quả"))">
-            Rau củ quả
-        </button>
-        <button class="btn btn-sm rounded-pill px-3 @(selectedCategory == "Rau ăn lá" ? "btn-success" : "btn-outline-secondary")" 
-                @onclick="@(() => SelectCategory("Rau ăn lá"))">
-            Rau ăn lá
-        </button>
-    </div>
+    <!-- Khung bộ lọc lô mùa vụ với nền xanh lá nhạt và button bo tròn dạng pill -->
+    <section class="admin-card mb-4 product-filter-box" aria-label="Bộ lọc lô mùa vụ">
+        <div class="row align-items-center g-3 mb-3">
+            <div class="col-md-7">
+                <SearchBar @bind-SearchTerm="searchTerm" OnSearch="ApplyFilter" />
+            </div>
+            <div class="col-md-5 text-md-end">
+                <span class="small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>Chỉ hiển thị các <strong>lô thu hoạch</strong> đang mở đặt
+                </span>
+            </div>
+        </div>
+
+        <!-- Category Filter Chips bo tròn trên nền xanh lá nhạt -->
+        <div class="d-flex flex-wrap align-items-center gap-2 pt-2 border-top border-success-subtle">
+            <span class="small text-muted fw-semibold me-1">
+                <i class="bi bi-funnel me-1"></i>Danh mục:
+            </span>
+            <button class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(selectedCategory == "All" ? "btn-success shadow-sm" : "btn-filter-chip")" 
+                    @onclick="@(() => SelectCategory("All"))">
+                Tất cả (@allBatches.Count)
+            </button>
+            <button class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(selectedCategory == "Trái cây đặc sản" ? "btn-success shadow-sm" : "btn-filter-chip")" 
+                    @onclick="@(() => SelectCategory("Trái cây đặc sản"))">
+                Trái cây đặc sản
+            </button>
+            <button class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(selectedCategory == "Rau củ quả" ? "btn-success shadow-sm" : "btn-filter-chip")" 
+                    @onclick="@(() => SelectCategory("Rau củ quả"))">
+                Rau củ quả
+            </button>
+            <button class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(selectedCategory == "Rau ăn lá" ? "btn-success shadow-sm" : "btn-filter-chip")" 
+                    @onclick="@(() => SelectCategory("Rau ăn lá"))">
+                Rau ăn lá
+            </button>
+        </div>
+    </section>
 
     @if (loading)
     {
@@ -54,6 +72,10 @@
     }
     else
     {
+        <p class="small text-muted mb-3">
+            <i class="bi bi-check2-circle text-success me-1"></i>
+            Hiển thị <strong>@filteredBatches.Count</strong> lô mùa vụ đang tiếp nhận đơn đặt trước.
+        </p>
         <div class="catalog-grid">
             @foreach (var batch in filteredBatches)
             {
@@ -111,5 +133,4 @@
 
         Nav.NavigateTo("/batches/" + batch.HarvestBatchId);
     }
-
 }

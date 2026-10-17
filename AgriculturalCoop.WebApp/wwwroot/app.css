@@ -808,3 +808,304 @@ a:focus-visible, button:focus-visible { outline: 3px solid #87d8ab; outline-offs
 .notification-unread { border-left: 4px solid #498428; }
 .notification-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
 .customer-account { display: flex; align-items: center; gap: .6rem; }
+
+/* ========================================================
+   CẢI TIẾN GIAO DIỆN: BỘ LỌC NÔNG SẢN & THANH ĐIỀU HƯỚNG CHÍNH
+   ======================================================== */
+
+/* 1. Bộ lọc Nông sản & Lô mùa vụ: Nền xanh lá nhạt sang trọng, bo tròn */
+.product-filter-box {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%) !important;
+    border: 1px solid #bbf7d0 !important;
+    border-radius: 1.25rem !important;
+    padding: 1.25rem 1.5rem !important;
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.06) !important;
+    margin-bottom: 1.5rem;
+}
+
+.btn-filter-chip {
+    background: #ffffff !important;
+    color: #2e7d32 !important;
+    border: 1px solid #bbf7d0 !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-filter-chip:hover {
+    background: #dcfce7 !important;
+    color: #14532d !important;
+    border-color: #86efac !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(34, 197, 94, 0.15) !important;
+}
+
+/* 2. Thanh Menu chính: Hiện đại, gắn kết dạng Capsule, không bị thưa */
+.store-navbar {
+    background: linear-gradient(135deg, #1b4332 0%, #24583f 100%) !important;
+    box-shadow: 0 4px 24px rgba(15, 45, 25, 0.12) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    position: sticky !important;
+    top: 0;
+    z-index: 1030;
+    padding: 0 !important;
+}
+
+.store-navbar-inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1.5rem !important;
+    padding: 10px var(--store-gutter) !important;
+    width: min(var(--store-max-width), 100%) !important;
+    margin: 0 auto !important;
+}
+
+/* Brand Logo */
+.store-brand {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    text-decoration: none !important;
+    flex-shrink: 0 !important;
+}
+
+.store-brand-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+.store-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-title {
+    font-size: 1.35rem;
+    font-weight: 850;
+    letter-spacing: -0.02em;
+    color: #ffffff !important;
+    line-height: 1.1;
+}
+
+.brand-highlight {
+    color: #4ade80 !important;
+}
+
+.brand-tagline {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #bbf7d0 !important;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+/* Navigation Capsule Bar */
+.store-navigation {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+}
+
+.store-menu-links {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: auto !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    padding: 5px 8px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.store-menu-links .nav-item-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 7px 16px !important;
+    border-radius: 999px !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    color: #ecfdf5 !important;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    white-space: nowrap !important;
+}
+
+.store-menu-links .nav-item-link i {
+    font-size: 1rem;
+    opacity: 0.85;
+}
+
+.store-menu-links .nav-item-link:hover {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    transform: translateY(-1px);
+}
+
+.store-menu-links .nav-item-link.active {
+    background: #4ade80 !important;
+    color: #064e3b !important;
+    box-shadow: 0 2px 10px rgba(74, 222, 128, 0.35) !important;
+    font-weight: 750 !important;
+    text-decoration: none !important;
+}
+
+.store-menu-links .nav-item-link.active i {
+    opacity: 1;
+}
+
+/* Dealer Shortcut */
+.store-menu-links .dealer-shortcut {
+    border: 1px dashed rgba(255, 255, 255, 0.35);
+}
+
+/* Account tools & Header Cart */
+.store-account-tools {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-shrink: 0 !important;
+}
+
+.header-cart {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(8px) !important;
+    padding: 7px 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    font-weight: 650 !important;
+    font-size: 0.88rem !important;
+    text-decoration: none !important;
+    position: relative !important;
+    transition: all 0.2s ease !important;
+}
+
+.header-cart:hover {
+    background: rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+.header-cart .cart-badge {
+    position: static !important;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-size: 0.7rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5);
+}
+
+.account-trigger {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+}
+
+.account-trigger:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+}
+
+.account-avatar {
+    background: #4ade80 !important;
+    color: #064e3b !important;
+    border-color: #4ade80 !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 991px) {
+    .store-navbar-inner {
+        flex-wrap: wrap !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+    }
+    .store-navigation {
+        display: none !important;
+        flex-basis: 100% !important;
+        margin-top: 10px;
+        background: rgba(6, 78, 59, 0.95) !important;
+        border-radius: 16px !important;
+        padding: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+    .store-navigation.is-open {
+        display: block !important;
+    }
+    .store-menu-links {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        background: transparent !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        gap: 6px !important;
+    }
+    .store-menu-links .nav-item-link {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        padding: 10px 16px !important;
+    }
+}
+
+/* Logo ảnh tùy chỉnh trên thanh điều hướng */
+.store-brand-img {
+    height: 40px;
+    max-width: 140px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+    transition: transform 0.2s ease;
+}
+.store-brand:hover .store-brand-img {
+    transform: scale(1.04);
+}
+
+/* Cố định tuyệt đối kích thước logo thương hiệu trên mọi trang */
+.store-brand,
+a.store-brand {
+    max-height: 48px !important;
+    overflow: hidden !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+.store-brand img,
+.store-brand-img,
+img.store-brand-img {
+    height: 44px !important;
+    max-height: 44px !important;
+    width: auto !important;
+    max-width: 130px !important;
+    object-fit: contain !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    flex-shrink: 0 !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    padding: 2px 4px !important;
+    border-radius: 8px !important;
+}

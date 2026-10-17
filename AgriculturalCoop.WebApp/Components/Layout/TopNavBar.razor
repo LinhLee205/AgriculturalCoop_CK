@@ -1,27 +1,102 @@
-@inject IPreOrderCart Cart
+﻿@inject IPreOrderCart Cart
+@inject IHomeBannerUseCases Banners
 @implements IDisposable
-<nav class="store-navbar" aria-label="Điều hướng cửa hàng">
+
+<nav class="store-navbar" aria-label="Điều hướng chính website">
     <div class="store-navbar-inner">
-        <a class="store-brand" href="/" aria-label="COOPAGRI — Trang chủ">🌿 COOP<span>AGRI</span></a>
-        <button type="button" class="mobile-menu-button" aria-label="Mở menu" aria-expanded="@menuOpen" @onclick="() => menuOpen = !menuOpen">☰</button>
+        <!-- Logo thương hiệu HTX - Tự động cập nhật theo cấu hình trong Admin -->
+        <a class="store-brand" href="/" aria-label="@BrandTitle - Trang chủ" style="max-height: 48px !important; overflow: hidden !important; display: inline-flex !important; align-items: center !important;">
+            @if (!string.IsNullOrEmpty(banner?.LogoUrl))
+            {
+                <img src="@banner.LogoUrl" alt="@BrandTitle" class="store-brand-img"
+                     height="44"
+                     style="height: 44px !important; max-height: 44px !important; width: auto !important; max-width: 130px !important; object-fit: contain !important; display: inline-block !important; vertical-align: middle !important; flex-shrink: 0 !important; border-radius: 8px !important;"
+                     onerror="this.style.display='none'; document.getElementById('fallback-logo-icon').style.display='inline-block';" />
+                <span id="fallback-logo-icon" class="store-brand-icon" style="display:none;">🌿</span>
+            }
+            else
+            {
+                <span class="store-brand-icon">🌿</span>
+            }
+            <div class="store-brand-text">
+                <span class="brand-title">@BrandTitle</span>
+                <span class="brand-tagline">@BrandTagline</span>
+            </div>
+        </a>
+
+        <!-- Nút menu trên điện thoại -->
+        <button type="button" class="mobile-menu-button" aria-label="Mở danh mục điều hướng" aria-expanded="@menuOpen" @onclick="() => menuOpen = !menuOpen">
+            <i class="bi @(menuOpen ? "bi-x-lg" : "bi-list")"></i>
+        </button>
+
+        <!-- Thanh điều hướng dạng Capsule hiện đại, gắn kết, không bị thưa -->
         <div class="store-navigation @(menuOpen ? "is-open" : "")">
             <div class="store-menu-links">
-                <NavLink href="/" Match="NavLinkMatch.All">Trang chủ</NavLink>
-                <NavLink href="/products">Nông sản</NavLink>
-                <NavLink href="/batches">Lô mùa vụ</NavLink>
+                <NavLink href="/" Match="NavLinkMatch.All" class="nav-item-link" @onclick="CloseMenu">
+                    <i class="bi bi-house-door"></i>
+                    <span>Trang chủ</span>
+                </NavLink>
+                <NavLink href="/products" class="nav-item-link" @onclick="CloseMenu">
+                    <i class="bi bi-basket2"></i>
+                    <span>Nông sản</span>
+                </NavLink>
+                <NavLink href="/batches" class="nav-item-link" @onclick="CloseMenu">
+                    <i class="bi bi-calendar3-range"></i>
+                    <span>Lô mùa vụ</span>
+                </NavLink>
+
+                <!-- Dành riêng cho Đại lý khi đã đăng nhập -->
+                <AuthorizeView Roles="Dealer">
+                    <NavLink href="/my-orders" class="nav-item-link dealer-shortcut" @onclick="CloseMenu">
+                        <i class="bi bi-bag-check"></i>
+                        <span>Đơn đặt</span>
+                    </NavLink>
+                    <NavLink href="/my-allocations" class="nav-item-link dealer-shortcut" @onclick="CloseMenu">
+                        <i class="bi bi-pie-chart"></i>
+                        <span>Phân bổ</span>
+                    </NavLink>
+                </AuthorizeView>
             </div>
         </div>
+
+        <!-- Công cụ tài khoản & Giỏ hàng bên phải -->
         <div class="store-account-tools">
             <AuthorizeView Roles="Dealer">
-                <a href="/cart" class="header-cart" aria-label="Giỏ đặt trước"><i class="bi bi-bag" aria-hidden="true"></i>@if (Cart.TotalItemCount > 0) { <span>@Cart.TotalItemCount</span> }</a>
+                <a href="/cart" class="header-cart" aria-label="Giỏ đặt trước" title="Giỏ nông sản đặt trước">
+                    <i class="bi bi-bag" aria-hidden="true"></i>
+                    <span class="cart-label d-none d-lg-inline">Giỏ hàng</span>
+                    @if (Cart.TotalItemCount > 0)
+                    {
+                        <span class="cart-badge">@Cart.TotalItemCount</span>
+                    }
+                </a>
             </AuthorizeView>
             <CustomerAccountMenu />
         </div>
     </div>
 </nav>
+
 @code {
     private bool menuOpen;
-    protected override void OnInitialized() => Cart.OnChange += RefreshCart;
+    private HomeBanner? banner;
+
+    private string BrandTitle => string.IsNullOrWhiteSpace(banner?.BrandName) ? "COOPAGRI" : banner.BrandName;
+    private string BrandTagline => string.IsNullOrWhiteSpace(banner?.BrandTagline) ? "Nông sản sạch theo mùa" : banner.BrandTagline;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cart.OnChange += RefreshCart;
+        try
+        {
+            banner = await Banners.GetAsync();
+        }
+        catch
+        {
+            banner = new HomeBanner();
+        }
+    }
+
     private void RefreshCart() => _ = InvokeAsync(StateHasChanged);
+    private void CloseMenu() => menuOpen = false;
     public void Dispose() => Cart.OnChange -= RefreshCart;
 }

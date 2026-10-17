@@ -1,4 +1,4 @@
-@page "/admin/banner"
+﻿@page "/admin/banner"
 @layout AdminLayout
 @attribute [Authorize(Roles = "Admin")]
 @using AgriculturalCoop.UseCases.PluginInterfaces
@@ -7,78 +7,250 @@
 @inject IProductImageStore Images
 @inject ILogger<Banner> Logger
 
-<PageTitle>Banner trang chủ — COOPAGRI</PageTitle>
+<PageTitle>Banner & Logo Website — COOPAGRI</PageTitle>
+
 <div class="page-heading">
-    <div><span class="eyebrow">GIAO DIỆN CỬA HÀNG</span><h1>Banner trang chủ</h1><p>Thay ảnh, thông điệp và nút khám phá hiển thị cho khách hàng.</p></div>
-    <a class="btn btn-outline-success" href="/" target="_blank" rel="noopener noreferrer">↗ Mở trang khách hàng</a>
+    <div>
+        <span class="eyebrow">GIAO DIỆN CỬA HÀNG</span>
+        <h1>Banner & Logo Website</h1>
+        <p>Tùy chỉnh biểu tượng logo, tên thương hiệu, banner trang chủ và thông điệp hiển thị cho khách hàng.</p>
+    </div>
+    <a class="btn btn-outline-success rounded-pill px-3" href="/" target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-box-arrow-up-right me-1"></i> Xem website chính
+    </a>
 </div>
+
 @if (loading)
 {
-    <p role="status">Đang tải banner…</p>
+    <div class="text-center py-5">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted mt-2">Đang tải cấu hình giao diện…</p>
+    </div>
 }
 else
 {
-    @if (message != null) { <div class="alert alert-success" role="status">@message</div> }
-    <div class="banner-editor-grid">
-        <section class="admin-card">
-            <EditForm Model="form" OnValidSubmit="Save">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-                @if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }
-                <div class="mb-3">
-                    <label for="banner-eyebrow" class="form-label">Dòng giới thiệu</label>
-                    <InputText id="banner-eyebrow" class="form-control" @bind-Value="form.Eyebrow" maxlength="60" />
+    @if (message != null)
+    {
+        <div class="alert alert-success d-flex align-items-center mb-4" role="status">
+            <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+            <div>@message</div>
+        </div>
+    }
+
+    <EditForm Model="form" OnValidSubmit="Save">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @if (error != null)
+        {
+            <div class="alert alert-danger mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> @error
+            </div>
+        }
+
+        <div class="row g-4">
+            <!-- CỘT 1: FORM CẤU HÌNH LOGO VÀ BANNER -->
+            <div class="col-lg-7">
+                <!-- 1. CẤU HÌNH LOGO THƯƠNG HIỆU -->
+                <section class="admin-card mb-4" style="border-left: 4px solid #16a34a;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-award fs-4 text-success"></i>
+                        <h2 class="h5 mb-0 fw-bold">Logo & Thương hiệu Website</h2>
+                    </div>
+                    <p class="small text-muted mb-3">
+                        Logo và tên thương hiệu sẽ hiển thị tại thanh điều hướng chính (Top Navbar) và chân trang (Footer) trên toàn bộ website.
+                    </p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="brand-name" class="form-label small fw-semibold">Tên thương hiệu / HTX</label>
+                            <InputText id="brand-name" class="form-control" @bind-Value="form.BrandName" maxlength="100" placeholder="VD: COOPAGRI" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="brand-tagline" class="form-label small fw-semibold">Khẩu hiệu / Tagline</label>
+                            <InputText id="brand-tagline" class="form-control" @bind-Value="form.BrandTagline" maxlength="150" placeholder="VD: Nông sản sạch theo mùa" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="brand-logo-file" class="form-label small fw-semibold">Ảnh Logo (Tùy chọn)</label>
+                        <InputFile @key="logoUploadKey" id="brand-logo-file" class="form-control" OnChange="SelectLogo"
+                                   accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled="@busy" />
+                        <small class="text-muted d-block mt-1">Gợi ý logo ngang hoặc vuông nền trong suốt (PNG, SVG, WebP), tối đa 5 MB.</small>
+
+                        @if (logoFile != null)
+                        {
+                            <div class="small text-success mt-1">
+                                <i class="bi bi-check2"></i> Đã chọn file logo: <strong>@logoFile.Name</strong>. Ảnh sẽ cập nhật khi bấm Lưu.
+                            </div>
+                        }
+
+                        <div class="d-flex gap-2 mt-2">
+                            @if (!string.IsNullOrEmpty(form.LogoUrl) || logoFile != null)
+                            {
+                                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" disabled="@busy" @onclick="ResetLogo">
+                                    <i class="bi bi-trash me-1"></i>Dùng biểu tượng lá mặc định (🌿)
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. CẤU HÌNH BANNER TRANG CHỦ -->
+                <section class="admin-card mb-4" style="border-left: 4px solid #2563eb;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-image fs-4 text-primary"></i>
+                        <h2 class="h5 mb-0 fw-bold">Banner Trang chủ</h2>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="banner-eyebrow" class="form-label small fw-semibold">Dòng giới thiệu (Eyebrow)</label>
+                        <InputText id="banner-eyebrow" class="form-control" @bind-Value="form.Eyebrow" maxlength="60" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="banner-title" class="form-label small fw-semibold">Tiêu đề chính của banner</label>
+                        <InputText id="banner-title" class="form-control" @bind-Value="form.Title" maxlength="140" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="banner-description" class="form-label small fw-semibold">Đoạn mô tả</label>
+                        <InputTextArea id="banner-description" class="form-control" rows="3" @bind-Value="form.Description" maxlength="400" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="banner-image" class="form-label small fw-semibold">Ảnh nền Banner</label>
+                        <InputFile @key="uploadKey" id="banner-image" class="form-control" OnChange="SelectImage"
+                                   accept="image/png,image/jpeg,image/webp" disabled="@busy" />
+                        <small class="text-muted d-block mt-1">Ảnh ngang, gợi ý 1600 × 600 px. PNG, JPEG hoặc WebP, tối đa 5 MB.</small>
+                        @if (file != null)
+                        {
+                            <div class="small text-success mt-1">
+                                <i class="bi bi-check2"></i> Đã chọn file banner: <strong>@file.Name</strong>.
+                            </div>
+                        }
+                        <button type="button" class="btn btn-link btn-sm px-0 mt-1" disabled="@busy" @onclick="ResetImage">
+                            Dùng ảnh banner mẫu mặc định
+                        </button>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="banner-button" class="form-label small fw-semibold">Chữ trên nút</label>
+                            <InputText id="banner-button" class="form-control" @bind-Value="form.ButtonText" maxlength="40" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="banner-link" class="form-label small fw-semibold">Đường dẫn liên kết</label>
+                            <InputText id="banner-link" class="form-control" @bind-Value="form.ButtonUrl" maxlength="200" />
+                            <small class="text-muted">Ví dụ: /#nong-san hoặc /batches</small>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="mb-4">
+                    <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 shadow-sm" disabled="@busy">
+                        <i class="bi bi-floppy me-1"></i> @(busy ? "Đang lưu thay đổi…" : "Lưu thay đổi Logo & Banner")
+                    </button>
                 </div>
-                <div class="mb-3">
-                    <label for="banner-title" class="form-label">Tiêu đề</label>
-                    <InputText id="banner-title" class="form-control" @bind-Value="form.Title" maxlength="140" />
+            </div>
+
+            <!-- CỘT 2: KHUNG XEM TRƯỚC (PREVIEW PANEL) -->
+            <div class="col-lg-5">
+                <div class="sticky-top" style="top: 20px;">
+                    <!-- XEM TRƯỚC LOGO TRÊN NAVBAR -->
+                    <section class="admin-card mb-4">
+                        <span class="eyebrow text-success">XEM TRƯỚC LOGO TRÊN WEBSITE</span>
+                        <h3 class="h6 fw-bold mb-3">Hiển thị thực tế trên thanh Menu:</h3>
+
+                        <div class="p-3 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #1b4332 0%, #24583f 100%);">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                    @if (!string.IsNullOrEmpty(form.LogoUrl))
+                                    {
+                                        <img src="@form.LogoUrl" alt="Logo preview" style="height: 40px; max-width: 120px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.2); padding: 2px 4px;" />
+                                    }
+                                    else
+                                    {
+                                        <span style="font-size: 1.6rem;">🌿</span>
+                                    }
+                                    <div class="d-flex flex-column text-white">
+                                        <strong style="font-size: 1.15rem; font-weight: 850; line-height: 1.1;">
+                                            @(string.IsNullOrWhiteSpace(form.BrandName) ? "COOPAGRI" : form.BrandName)
+                                        </strong>
+                                        <small style="font-size: 0.65rem; color: #bbf7d0; text-transform: uppercase; letter-spacing: 0.05em;">
+                                            @(string.IsNullOrWhiteSpace(form.BrandTagline) ? "Nông sản sạch theo mùa" : form.BrandTagline)
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="badge rounded-pill bg-white text-dark px-2 py-1 small">
+                                    Menu Preview
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            Logo này sẽ hiển thị ở góc trên bên trái của toàn bộ trang người dùng.
+                        </small>
+                    </section>
+
+                    <!-- XEM TRƯỚC BANNER TRANG CHỦ -->
+                    <section class="admin-card">
+                        <span class="eyebrow text-primary">XEM TRƯỚC BANNER TRANG CHỦ</span>
+                        <h3 class="h6 fw-bold mb-2">Giao diện Banner:</h3>
+                        <div class="rounded-3 overflow-hidden shadow-sm">
+                            <StoreBanner Banner="form" />
+                        </div>
+                        <p class="text-muted small mt-2 mb-0">
+                            Sau khi lưu, làm mới (F5) trang website chính để thưởng thức giao diện mới!
+                        </p>
+                    </section>
                 </div>
-                <div class="mb-3">
-                    <label for="banner-description" class="form-label">Mô tả</label>
-                    <InputTextArea id="banner-description" class="form-control" rows="3" @bind-Value="form.Description" maxlength="400" />
-                </div>
-                <div class="mb-3">
-                    <label for="banner-image" class="form-label">Ảnh banner</label>
-                    <InputFile @key="uploadKey" id="banner-image" class="form-control" OnChange="SelectImage"
-                               accept="image/png,image/jpeg,image/webp" disabled="@busy" />
-                    <small class="text-muted d-block mt-2">Ảnh ngang, gợi ý 1600 × 600 px. PNG, JPEG hoặc WebP, tối đa 5 MB.</small>
-                    @if (file != null) { <small class="text-success d-block mt-1">Đã chọn @file.Name. Ảnh sẽ cập nhật khi lưu.</small> }
-                    <button type="button" class="btn btn-link btn-sm px-0" disabled="@busy" @onclick="ResetImage">Dùng ảnh mặc định</button>
-                </div>
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6"><label for="banner-button" class="form-label">Chữ trên nút</label><InputText id="banner-button" class="form-control" @bind-Value="form.ButtonText" maxlength="40" /></div>
-                    <div class="col-md-6"><label for="banner-link" class="form-label">Liên kết nút</label><InputText id="banner-link" class="form-control" @bind-Value="form.ButtonUrl" maxlength="200" /></div>
-                </div>
-                <small class="text-muted d-block mb-3">Ví dụ: /#nong-san hoặc /batches</small>
-                <button type="submit" class="btn btn-success" disabled="@busy">@(busy ? "Đang lưu…" : "Lưu banner")</button>
-            </EditForm>
-        </section>
-        <section class="banner-preview-panel">
-            <span class="eyebrow">XEM TRƯỚC NỘI DUNG</span>
-            <div class="mt-3"><StoreBanner Banner="form" /></div>
-            <p class="text-muted small mt-3">Sau khi lưu, tải lại tab khách hàng để xem thay đổi.</p>
-        </section>
-    </div>
+            </div>
+        </div>
+    </EditForm>
 }
+
 @code {
     private HomeBanner form = new();
-    private string previousImage = "";
+    private string previousBannerImage = "";
+    private string previousLogoImage = "";
     private IBrowserFile? file;
+    private IBrowserFile? logoFile;
     private Guid uploadKey = Guid.NewGuid();
+    private Guid logoUploadKey = Guid.NewGuid();
     private bool loading = true, busy;
     private string? message, error;
+
     protected override async Task OnInitializedAsync()
     {
         form = await Banners.GetAsync();
-        previousImage = form.ImageUrl;
+        previousBannerImage = form.ImageUrl;
+        previousLogoImage = form.LogoUrl ?? "";
         loading = false;
     }
+
+    private void SelectLogo(InputFileChangeEventArgs args)
+    {
+        logoFile = args.File;
+        error = logoFile.Size > ProductImageStore.MaxBytes ? "Ảnh logo vượt quá 5 MB." : null;
+        message = null;
+    }
+
+    private void ResetLogo()
+    {
+        logoFile = null;
+        logoUploadKey = Guid.NewGuid();
+        form.LogoUrl = null;
+        error = message = null;
+    }
+
     private void SelectImage(InputFileChangeEventArgs args)
     {
         file = args.File;
-        error = file.Size > ProductImageStore.MaxBytes ? "Ảnh vượt quá 5 MB." : null;
+        error = file.Size > ProductImageStore.MaxBytes ? "Ảnh banner vượt quá 5 MB." : null;
         message = null;
     }
+
     private void ResetImage()
     {
         file = null;
@@ -86,46 +258,85 @@ else
         form.ImageUrl = "/images/banner-harvest.svg";
         error = message = null;
     }
+
     private async Task Save()
     {
         if (busy) return;
         busy = true;
         message = error = null;
-        string? uploaded = null;
+        string? uploadedBanner = null;
+        string? uploadedLogo = null;
         var saved = false;
-        var originalUrl = form.ImageUrl;
+        var originalBannerUrl = form.ImageUrl;
+        var originalLogoUrl = form.LogoUrl;
+
         try
         {
+            // 1. Upload Logo mới nếu có chọn file
+            if (logoFile != null)
+            {
+                if (logoFile.Size > ProductImageStore.MaxBytes)
+                    throw new PreOrderDomainException("Ảnh logo vượt quá 5 MB.");
+                await using var logoStream = logoFile.OpenReadStream(ProductImageStore.MaxBytes);
+                uploadedLogo = await Images.SaveAsync(logoStream, logoFile.Size);
+                form.LogoUrl = uploadedLogo;
+            }
+
+            // 2. Upload Banner mới nếu có chọn file
             if (file != null)
             {
                 if (file.Size > ProductImageStore.MaxBytes)
-                    throw new PreOrderDomainException("Ảnh vượt quá 5 MB.");
+                    throw new PreOrderDomainException("Ảnh banner vượt quá 5 MB.");
                 await using var stream = file.OpenReadStream(ProductImageStore.MaxBytes);
-                uploaded = await Images.SaveAsync(stream, file.Size);
-                form.ImageUrl = uploaded;
+                uploadedBanner = await Images.SaveAsync(stream, file.Size);
+                form.ImageUrl = uploadedBanner;
             }
+
+            // 3. Lưu vào Database thông qua UseCase
             await Banners.SaveAsync(form);
             saved = true;
-            if (previousImage != form.ImageUrl)
-                await Images.RemoveAsync(previousImage);
-            previousImage = form.ImageUrl;
+
+            // 4. Dọn dẹp ảnh cũ nếu có thay đổi
+            if (previousBannerImage != form.ImageUrl && !previousBannerImage.StartsWith("/images/banner-harvest"))
+                await Images.RemoveAsync(previousBannerImage);
+            previousBannerImage = form.ImageUrl;
+
+            if (!string.IsNullOrEmpty(previousLogoImage) && previousLogoImage != form.LogoUrl)
+                await Images.RemoveAsync(previousLogoImage);
+            previousLogoImage = form.LogoUrl ?? "";
+
             file = null;
+            logoFile = null;
             uploadKey = Guid.NewGuid();
-            message = "Đã cập nhật banner trang chủ.";
+            logoUploadKey = Guid.NewGuid();
+
+            message = "Đã cập nhật banner và logo thương hiệu website thành công!";
         }
-        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (PreOrderDomainException ex)
+        {
+            error = ex.Message;
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Could not save home banner");
-            error = saved ? "Banner đã lưu, nhưng chưa dọn được ảnh cũ." : "Chưa lưu được banner. Vui lòng thử lại.";
+            Logger.LogError(ex, "Could not save home banner and logo");
+            error = saved ? "Đã lưu thông tin, nhưng chưa dọn được ảnh cũ." : "Chưa lưu được banner & logo. Vui lòng thử lại.";
         }
         finally
         {
-            if (!saved && uploaded != null)
+            if (!saved)
             {
-                form.ImageUrl = originalUrl;
-                try { await Images.RemoveAsync(uploaded); }
-                catch (IOException ex) { Logger.LogWarning(ex, "Could not remove unused banner upload"); }
+                form.ImageUrl = originalBannerUrl;
+                form.LogoUrl = originalLogoUrl;
+                if (uploadedBanner != null)
+                {
+                    try { await Images.RemoveAsync(uploadedBanner); }
+                    catch (IOException ex) { Logger.LogWarning(ex, "Could not remove unused banner upload"); }
+                }
+                if (uploadedLogo != null)
+                {
+                    try { await Images.RemoveAsync(uploadedLogo); }
+                    catch (IOException ex) { Logger.LogWarning(ex, "Could not remove unused logo upload"); }
+                }
             }
             busy = false;
         }

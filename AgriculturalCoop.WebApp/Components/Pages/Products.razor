@@ -1,44 +1,196 @@
-@page "/products"
+﻿@page "/products"
 @inject IViewProductsUseCase ViewProducts
 @inject IViewOpenBatchesUseCase ViewOpenBatches
+
 <PageTitle>Danh mục nông sản — COOPAGRI</PageTitle>
-<div class="page-heading"><div><span class="eyebrow">DANH MỤC NÔNG SẢN</span><h1>Chọn nông sản cho đại lý</h1><p>Tìm theo tên, danh mục và mức giá của các lô đang mở đặt.</p></div><a href="/batches" class="btn btn-outline-success">Xem theo lô mùa vụ</a></div>
-<section class="admin-card mb-4" aria-label="Bộ lọc nông sản">
-    <div class="row g-3"><div class="col-md-6"><label for="catalog-search" class="form-label">Tìm nông sản</label><input id="catalog-search" class="form-control" placeholder="Nhập tên hoặc mô tả…" @bind="search" @bind:event="oninput" /></div>
-    <div class="col-md-3"><label for="catalog-category" class="form-label">Danh mục</label><select id="catalog-category" class="form-select" @bind="category"><option value="">Tất cả danh mục</option>@foreach (var c in products.Select(p => p.Category).Distinct().OrderBy(c => c)) { <option value="@c">@c</option> }</select></div>
-    <div class="col-md-3"><label for="catalog-sort" class="form-label">Sắp xếp</label><select id="catalog-sort" class="form-select" @bind="sort"><option value="name">Tên A–Z</option><option value="price">Giá thấp đến cao</option><option value="price-desc">Giá cao đến thấp</option><option value="harvest">Gần ngày thu hoạch</option></select></div></div>
+
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">DANH MỤC NÔNG SẢN</span>
+        <h1>Toàn bộ nông sản Hợp tác xã</h1>
+        <p>Danh mục nông sản canh tác chuẩn VietGAP & Hữu cơ từ các hộ xã viên. Xem thông tin mùa vụ và đợt mở đặt trước.</p>
+    </div>
+    <a href="/batches" class="btn btn-outline-success rounded-pill px-3">
+        <i class="bi bi-calendar-event me-1"></i> Xem theo lô mùa vụ
+    </a>
+</div>
+
+<!-- Bộ lọc nông sản với nền xanh lá nhạt và button bo tròn mềm mại -->
+<section class="admin-card mb-4 product-filter-box" aria-label="Bộ lọc nông sản">
+    <!-- Hàng 1: Tìm kiếm, Danh mục Dropdown & Sắp xếp -->
+    <div class="row g-3 align-items-center mb-3">
+        <div class="col-md-5">
+            <label for="catalog-search" class="form-label small text-muted fw-semibold mb-1">
+                <i class="bi bi-search me-1"></i>Tìm kiếm nông sản
+            </label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 rounded-start-pill text-success ps-3">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input id="catalog-search" class="form-control border-start-0 rounded-end-pill py-2" 
+                       placeholder="Nhập tên hoặc mô tả nông sản…" 
+                       @bind="search" @bind:event="oninput" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label for="catalog-category" class="form-label small text-muted fw-semibold mb-1">
+                <i class="bi bi-funnel me-1"></i>Danh mục
+            </label>
+            <select id="catalog-category" class="form-select rounded-pill py-2" @bind="category">
+                <option value="">Tất cả danh mục (@products.Count)</option>
+                @foreach (var c in categories)
+                {
+                    <option value="@c">@c</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="catalog-sort" class="form-label small text-muted fw-semibold mb-1">
+                <i class="bi bi-arrow-down-up me-1"></i>Sắp xếp
+            </label>
+            <select id="catalog-sort" class="form-select rounded-pill py-2 shadow-sm" @bind="sort">
+                <option value="name">Tên A–Z</option>
+                <option value="price">Giá thấp đến cao</option>
+                <option value="price-desc">Giá cao đến thấp</option>
+                <option value="harvest">Gần ngày thu hoạch</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Hàng 2: Các button lọc danh mục bo tròn dạng pill trên nền xanh lá nhạt -->
+    <div class="d-flex flex-wrap align-items-center gap-2 pt-2 border-top border-success-subtle">
+        <span class="small text-muted fw-semibold me-1">
+            <i class="bi bi-tags me-1"></i>Lọc nhanh:
+        </span>
+        <button type="button" 
+                class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(string.IsNullOrEmpty(category) ? "btn-success shadow-sm" : "btn-filter-chip")"
+                @onclick="@(() => category = "")">
+            Tất cả nông sản (@products.Count)
+        </button>
+        @foreach (var c in categories)
+        {
+            var catCount = products.Count(p => p.Category == c);
+            <button type="button" 
+                    class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(category == c ? "btn-success shadow-sm" : "btn-filter-chip")"
+                    @onclick="@(() => category = c)">
+                @c (@catCount)
+            </button>
+        }
+    </div>
 </section>
-@if (loading) { <p role="status">Đang tải danh mục…</p> }
+
+@if (loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted mt-2">Đang tải danh mục nông sản…</p>
+    </div>
+}
 else
 {
-    <p class="small text-muted">@Filtered.Count() nông sản phù hợp · Chỉ hiển thị sản phẩm có lô đang mở đặt.</p>
-    @if (!Filtered.Any()) { <div class="store-empty">Không có nông sản phù hợp. Hãy thử tên hoặc danh mục khác.</div> }
-    <div class="catalog-grid">@foreach (var product in Filtered) { <ProductCard Product="product" OpenBatch="Representative(product.ProductId)" /> }</div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="small text-muted mb-0">
+            <i class="bi bi-check2-circle text-success me-1"></i>
+            Hiển thị <strong>@Filtered.Count()</strong> nông sản phù hợp · Toàn bộ nông sản có trong hệ thống hợp tác xã.
+        </p>
+        @if (!string.IsNullOrEmpty(category) || !string.IsNullOrEmpty(search))
+        {
+            <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted p-0" @onclick="ResetFilters">
+                <i class="bi bi-x-circle me-1"></i>Xóa bộ lọc
+            </button>
+        }
+    </div>
+
+    @if (!Filtered.Any())
+    {
+        <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white my-3">
+            <i class="bi bi-basket text-muted fs-1 mb-3"></i>
+            <h5 class="fw-bold text-dark">Không có nông sản nào phù hợp</h5>
+            <p class="text-muted small mb-3">Hãy thử tìm theo tên khác hoặc chọn "Tất cả nông sản".</p>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" @onclick="ResetFilters">
+                    Xem toàn bộ nông sản
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="catalog-grid">
+            @foreach (var product in Filtered)
+            {
+                <ProductCard @key="product.ProductId" Product="product" OpenBatch="Representative(product.ProductId)" />
+            }
+        </div>
+    }
 }
+
 @code {
     private List<Product> products = new();
     private List<HarvestBatch> batches = new();
-    private string search = "", category = "", sort = "name";
+    private List<string> categories = new();
+    private string search = "";
+    private string category = "";
+    private string sort = "name";
     private bool loading = true;
-    private HarvestBatch Representative(int id) => batches.Where(b => b.ProductId == id)
-        .OrderByDescending(b => b.RemainingQuantity > 0).ThenBy(b => b.ExpectedHarvestDate).ThenBy(b => b.UnitPrice).First();
+
+    // Tìm lô đại diện tốt nhất đang mở đặt trước, hoặc null nếu nông sản chưa có lô mở bán
+    private HarvestBatch? Representative(int id) => batches
+        .Where(b => b.ProductId == id)
+        .OrderByDescending(b => b.RemainingQuantity > 0)
+        .ThenBy(b => b.ExpectedHarvestDate)
+        .ThenBy(b => b.UnitPrice)
+        .FirstOrDefault();
+
     private IEnumerable<Product> Filtered
     {
         get
         {
-            var list = products.Where(p => (category.Length == 0 || p.Category == category) &&
-                (string.IsNullOrWhiteSpace(search) || p.ProductName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || (p.Description?.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)));
-            return sort switch { "price" => list.OrderBy(p => Representative(p.ProductId).UnitPrice),
-                "price-desc" => list.OrderByDescending(p => Representative(p.ProductId).UnitPrice),
-                "harvest" => list.OrderBy(p => batches.Where(b => b.ProductId == p.ProductId).Min(b => b.ExpectedHarvestDate)),
-                _ => list.OrderBy(p => p.ProductName) };
+            var list = products.Where(p =>
+                (string.IsNullOrWhiteSpace(category) || p.Category.Equals(category, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(search) || 
+                 p.ProductName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || 
+                 (p.Description?.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)));
+
+            return sort switch
+            {
+                "price" => list.OrderBy(p => Representative(p.ProductId)?.UnitPrice ?? p.StandardPrice),
+                "price-desc" => list.OrderByDescending(p => Representative(p.ProductId)?.UnitPrice ?? p.StandardPrice),
+                "harvest" => list.OrderBy(p =>
+                {
+                    var productBatches = batches.Where(b => b.ProductId == p.ProductId).ToList();
+                    return productBatches.Count > 0 
+                        ? productBatches.Min(b => b.ExpectedHarvestDate) 
+                        : DateTime.MaxValue;
+                }),
+                _ => list.OrderBy(p => p.ProductName)
+            };
         }
     }
+
     protected override async Task OnInitializedAsync()
     {
+        // 1. Lấy toàn bộ nông sản có trong admin/hệ thống
+        products = (await ViewProducts.ExecuteAsync()).ToList();
+
+        // 2. Lấy danh sách các lô đang mở đặt để xác định lô đại diện (nếu có)
         batches = (await ViewOpenBatches.ExecuteAsync()).ToList();
-        var ids = batches.Select(b => b.ProductId).ToHashSet();
-        products = (await ViewProducts.ExecuteAsync()).Where(p => ids.Contains(p.ProductId)).ToList();
+
+        // 3. Danh sách các danh mục duy nhất để tạo filter chips
+        categories = products
+            .Select(p => p.Category)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+
         loading = false;
+    }
+
+    private void ResetFilters()
+    {
+        search = "";
+        category = "";
+        sort = "name";
     }
 }

@@ -1,17 +1,45 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @inject UserSessionState UserSession
+@inject IHomeBannerUseCases Banners
 
 <div class="store-shell">
     <TopNavBar />
     <main class="store-main">@Body</main>
     <footer class="store-footer">
-        <div><a class="footer-brand" href="/">🌿 COOP<span>AGRI</span></a><p>Kết nối người trồng. Trao gửi mùa tươi.</p></div>
-        <span>© @DateTime.Now.Year COOPAGRI · Nông sản theo mùa</span>
+        <div>
+            <a class="footer-brand" href="/" aria-label="@BrandTitle">
+                @if (!string.IsNullOrEmpty(banner?.LogoUrl))
+                {
+                    <img src="@banner.LogoUrl" alt="@BrandTitle" style="height: 32px; max-width: 100px; object-fit: contain; margin-right: 8px; vertical-align: middle;" />
+                }
+                else
+                {
+                    <span class="me-1">🌿</span>
+                }
+                <span>@BrandTitle</span>
+            </a>
+            <p>@(string.IsNullOrWhiteSpace(banner?.BrandTagline) ? "Kết nối người trồng. Trao gửi mùa tươi." : banner.BrandTagline)</p>
+        </div>
+        <span>© @DateTime.Now.Year @BrandTitle · Nông sản theo mùa</span>
     </footer>
 </div>
 <div id="blazor-error-ui" style="display:none">
     Kết nối bị gián đoạn. <a href="">Tải lại trang</a>
 </div>
 @code {
-    protected override async Task OnInitializedAsync() => await UserSession.InitializeAsync();
+    private HomeBanner? banner;
+    private string BrandTitle => string.IsNullOrWhiteSpace(banner?.BrandName) ? "COOPAGRI" : banner.BrandName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        try
+        {
+            banner = await Banners.GetAsync();
+        }
+        catch
+        {
+            banner = new HomeBanner();
+        }
+    }
 }
