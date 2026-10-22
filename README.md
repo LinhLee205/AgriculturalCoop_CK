@@ -91,6 +91,8 @@ Menu tài khoản chỉ hiện khi bấm biểu tượng người dùng; đại 
 
 Chạy `Database/006_AdminLifecycle.sql` khi triển khai trên database khác. Script chỉ bổ sung trạng thái lưu trữ lô, hoạt động đại lý và lý do hủy đơn; không xóa dữ liệu. Database AgriculturalCoopDB trên máy phát triển đã được bổ sung.
 
+Chạy `Database/008_SeasonalProductsAndBatches.sql` trên database đã có dữ liệu để thêm 12 nông sản và các lô mùa vụ từ 05/11/2026 đến 08/12/2026. Script có thể chạy lại mà không nhân bản sản phẩm hoặc lô, và cập nhật ảnh 4 nông sản ban đầu sang hình minh họa nền trắng.
+
 Trang `/` giới thiệu mùa vụ và tối đa bốn sản phẩm gợi ý. `/products` là danh mục riêng có tìm kiếm, lọc và sắp xếp, không lặp banner. `/batches` xem theo từng lô. Tiêu đề banner không còn khung viền.
 
 Admin quản lý đại lý tại `/admin/dealers`, xem đơn liên quan và trạng thái giao dịch. Hồ sơ đại lý và tài khoản đăng nhập được giữ riêng: thêm hồ sơ không tạo mật khẩu, sửa email liên hệ không đổi email đăng nhập. Ngừng giao dịch chặn đăng nhập và đặt đơn mới, giữ đơn cũ.

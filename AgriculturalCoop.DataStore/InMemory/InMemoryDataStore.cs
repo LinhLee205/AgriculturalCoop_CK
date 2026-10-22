@@ -195,10 +195,26 @@ namespace AgriculturalCoop.DataStore.InMemory
             // 2. Seed Nông sản
             _products.AddRange(new[]
             {
-                new Product { ProductId = _nextProductId++, ProductName = "Thanh trà Thủy Biều (Đặc sản Huế)", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 38000, Description = "Thanh trà vỏ mỏng, tép mọng nước, vị ngọt thanh mát nức tiếng Cố Đô.", ImageUrl = "https://images.unsplash.com/photo-1557800636-894a64c1696f?auto=format&fit=crop&w=600&q=80" },
-                new Product { ProductId = _nextProductId++, ProductName = "Cà chua bi hữu cơ VietGAP", Category = "Rau củ quả", Unit = "kg", StandardPrice = 28000, Description = "Trồng trong nhà kính công nghệ cao, vị chua ngọt đậm đà, giàu lycopene.", ImageUrl = "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80" },
-                new Product { ProductId = _nextProductId++, ProductName = "Bưởi da xanh ruột hồng", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 45000, Description = "Bưởi da xanh ngọt đậm, ráo múi, đạt tiêu chuẩn hữu cơ xuất khẩu.", ImageUrl = "https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?auto=format&fit=crop&w=600&q=80" },
-                new Product { ProductId = _nextProductId++, ProductName = "Rau cải thìa thủy canh", Category = "Rau ăn lá", Unit = "kg", StandardPrice = 22000, Description = "Rau xanh giòn ngọt, tuyệt đối không dư lượng thuốc BVTV, thu hoạch trong ngày.", ImageUrl = "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80" }
+                new Product { ProductId = _nextProductId++, ProductName = "Thanh trà Thủy Biều (Đặc sản Huế)", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 38000, Description = "Thanh trà vỏ mỏng, tép mọng nước, vị ngọt thanh mát nức tiếng Cố Đô.", ImageUrl = "/images/products/thanhtra.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Cà chua bi hữu cơ VietGAP", Category = "Rau củ quả", Unit = "kg", StandardPrice = 28000, Description = "Trồng trong nhà kính công nghệ cao, vị chua ngọt đậm đà, giàu lycopene.", ImageUrl = "/images/products/cachua.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Bưởi da xanh ruột hồng", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 45000, Description = "Bưởi da xanh ngọt đậm, ráo múi, đạt tiêu chuẩn hữu cơ xuất khẩu.", ImageUrl = "/images/products/buoi.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Rau cải thìa thủy canh", Category = "Rau ăn lá", Unit = "kg", StandardPrice = 22000, Description = "Rau xanh giòn ngọt, tuyệt đối không dư lượng thuốc BVTV, thu hoạch trong ngày.", ImageUrl = "/images/products/caithia.svg" }
+            });
+
+            _products.AddRange(new[]
+            {
+                new Product { ProductId = _nextProductId++, ProductName = "Xoài cát chu", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 52000, Description = "Xoài chín thơm, thịt vàng ngọt đậm, tuyển chọn từ vườn xã viên.", ImageUrl = "/images/products/xoaicat.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Dâu tây", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 145000, Description = "Dâu tây đỏ mọng, trồng theo quy trình an toàn.", ImageUrl = "/images/products/dautay.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Cam sành", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 36000, Description = "Cam sành mọng nước, vị chua ngọt tự nhiên.", ImageUrl = "/images/products/camsanh.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Cà rốt", Category = "Rau củ quả", Unit = "kg", StandardPrice = 24000, Description = "Cà rốt tươi giòn, giàu màu sắc và dinh dưỡng.", ImageUrl = "/images/products/carot.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Dưa lưới", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 68000, Description = "Dưa lưới thơm ngọt, thu hoạch khi đạt độ chín phù hợp.", ImageUrl = "/images/products/dualuoi.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Khoai lang", Category = "Rau củ quả", Unit = "kg", StandardPrice = 26000, Description = "Khoai lang bở ngọt, canh tác tại vườn xã viên.", ImageUrl = "/images/products/khoailang.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Măng tây", Category = "Rau củ quả", Unit = "kg", StandardPrice = 78000, Description = "Măng tây non, xanh giòn, thu hoạch theo đơn đặt trước.", ImageUrl = "/images/products/mangtay.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Nấm hương", Category = "Rau củ quả", Unit = "kg", StandardPrice = 95000, Description = "Nấm hương thơm tự nhiên, được sơ tuyển sau thu hoạch.", ImageUrl = "/images/products/namhuong.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Ổi nữ hoàng", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 32000, Description = "Ổi giòn, thơm nhẹ, chăm sóc theo quy trình an toàn.", ImageUrl = "/images/products/oinuhoang.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Sầu riêng", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 115000, Description = "Sầu riêng tuyển chọn từ vườn, dự kiến thu hoạch theo mùa.", ImageUrl = "/images/products/saurieng.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Xà lách", Category = "Rau ăn lá", Unit = "kg", StandardPrice = 30000, Description = "Xà lách xanh tươi, trồng sạch và thu hoạch trong ngày.", ImageUrl = "/images/products/xalach.svg" },
+                new Product { ProductId = _nextProductId++, ProductName = "Bơ sáp", Category = "Trái cây đặc sản", Unit = "kg", StandardPrice = 62000, Description = "Bơ sáp dẻo bùi, dự kiến thu hoạch vào vụ cuối năm.", ImageUrl = "/images/products/bosap.svg" }
             });
 
             // 3. Seed Đại lý
@@ -257,6 +273,22 @@ namespace AgriculturalCoop.DataStore.InMemory
             };
 
             _batches.AddRange(new[] { batch1, batch2, batch3 });
+
+            var seasonalPrices = new[] { 52000m, 145000m, 36000m, 24000m, 68000m, 26000m, 78000m, 95000m, 32000m, 115000m, 30000m, 62000m };
+            for (var i = 0; i < seasonalPrices.Length; i++)
+            {
+                _batches.Add(new HarvestBatch
+                {
+                    HarvestBatchId = _nextBatchId++,
+                    BatchCode = $"LO-MUA-VU-{i + 4:000}",
+                    MemberId = i % 3 + 1,
+                    ProductId = i + 5,
+                    ExpectedQuantity = 500 + i * 75,
+                    ExpectedHarvestDate = new DateTime(2026, 11, 5).AddDays(i * 3),
+                    UnitPrice = seasonalPrices[i],
+                    Status = HarvestBatchStatus.OpenForPreOrder
+                });
+            }
 
             // 5. Seed Đơn đặt trước cho Lô 1 (Ví dụ chuẩn của đề tài: A đặt 400kg, B đặt 300kg, C đặt 200kg => Tổng 900kg)
             var order1 = new PreOrder

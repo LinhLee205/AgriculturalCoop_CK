@@ -1,0 +1,30 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <rect width="600" height="450" fill="#ffffff"/>
+  <ellipse cx="300" cy="375" rx="180" ry="22" fill="#e2e8f0"/>
+  <defs>
+    <radialGradient id="orangeSkin" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#9ccc65"/>
+      <stop offset="40%" stop-color="#689f38"/>
+      <stop offset="80%" stop-color="#33691e"/>
+      <stop offset="100%" stop-color="#1b5e20"/>
+    </radialGradient>
+    <radialGradient id="orangePulp" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe082"/>
+      <stop offset="50%" stop-color="#ffa726"/>
+      <stop offset="85%" stop-color="#fb8c00"/>
+      <stop offset="100%" stop-color="#e65100"/>
+    </radialGradient>
+  </defs>
+  <!-- Whole Orange (Left) -->
+  <circle cx="225" cy="255" r="115" fill="url(#orangeSkin)"/>
+  <ellipse cx="185" cy="205" rx="35" ry="50" transform="rotate(-30 185 205)" fill="#ffffff" opacity="0.25"/>
+  <!-- Stem & Leaf -->
+  <path d="M225 140 Q225 110 230 100" stroke="#4e342e" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <path d="M228 115 C260 85, 305 100, 320 125 C290 140, 250 135, 228 115 Z" fill="#2e7d32"/>
+  <!-- Sliced Orange Half (Right) -->
+  <circle cx="385" cy="275" r="95" fill="#33691e"/>
+  <circle cx="385" cy="275" r="88" fill="#fff9c4"/>
+  <circle cx="385" cy="275" r="76" fill="url(#orangePulp)"/>
+  <path d="M385 275 L385 205 M385 275 L440 230 M385 275 L455 285 M385 275 L425 340 M385 275 L350 345 M385 275 L320 310 M385 275 L320 240 Z" stroke="#fff9c4" stroke-width="3" opacity="0.75"/>
+  <circle cx="385" cy="275" r="10" fill="#fff9c4"/>
+</svg>

@@ -1,0 +1,24 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <rect width="600" height="450" fill="#ffffff"/>
+  <ellipse cx="300" cy="375" rx="170" ry="22" fill="#e2e8f0"/>
+  <ellipse cx="300" cy="370" rx="130" ry="15" fill="#cbd5e1"/>
+  <defs>
+    <radialGradient id="shroomCap" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#8d6e63"/>
+      <stop offset="50%" stop-color="#5d4037"/>
+      <stop offset="90%" stop-color="#3e2723"/>
+      <stop offset="100%" stop-color="#27140f"/>
+    </radialGradient>
+  </defs>
+  <!-- Big Center Mushroom -->
+  <!-- Stem -->
+  <path d="M280 270 C280 340, 275 365, 300 365 C325 365, 320 340, 320 270 Z" fill="#efebe9" stroke="#d7ccc8" stroke-width="2"/>
+  <!-- Cap -->
+  <path d="M180 270 C180 160, 420 160, 420 270 C420 290, 180 290, 180 270 Z" fill="url(#shroomCap)"/>
+  <!-- Distinct Shiitake Flower Pattern Cracks -->
+  <path d="M300 175 L300 240 M250 200 L350 200 M265 185 L335 225 M335 185 L265 225" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+  <!-- Small Baby Mushroom on Left -->
+  <path d="M210 320 C210 360, 205 375, 220 375 C235 375, 230 360, 230 320 Z" fill="#efebe9"/>
+  <path d="M160 320 C160 250, 280 250, 280 320 Z" fill="url(#shroomCap)"/>
+  <path d="M220 270 L220 300 M195 285 L245 285" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+</svg>

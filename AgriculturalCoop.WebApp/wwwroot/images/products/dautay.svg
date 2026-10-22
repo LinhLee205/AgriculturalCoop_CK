@@ -1,0 +1,35 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <rect width="600" height="450" fill="#ffffff"/>
+  <ellipse cx="300" cy="380" rx="160" ry="22" fill="#e2e8f0"/>
+  <ellipse cx="300" cy="375" rx="120" ry="14" fill="#cbd5e1"/>
+  <defs>
+    <radialGradient id="berryGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff5252"/>
+      <stop offset="40%" stop-color="#e53935"/>
+      <stop offset="80%" stop-color="#b71c1c"/>
+      <stop offset="100%" stop-color="#7f0000"/>
+    </radialGradient>
+  </defs>
+  <!-- Main Strawberry Body -->
+  <path d="M300 160 C390 160, 420 220, 380 300 C350 360, 310 385, 300 385 C290 385, 250 360, 220 300 C180 220, 210 160, 300 160 Z" fill="url(#berryGrad)"/>
+  <!-- Highlight -->
+  <ellipse cx="255" cy="225" rx="35" ry="50" transform="rotate(-25 255 225)" fill="#ffffff" opacity="0.35"/>
+  <circle cx="240" cy="200" r="14" fill="#ffffff" opacity="0.6"/>
+  <!-- Seeds -->
+  <g fill="#ffe082">
+    <ellipse cx="270" cy="230" rx="3" ry="5" transform="rotate(15 270 230)"/>
+    <ellipse cx="320" cy="220" rx="3" ry="5" transform="rotate(-10 320 220)"/>
+    <ellipse cx="350" cy="250" rx="3" ry="5" transform="rotate(-20 350 250)"/>
+    <ellipse cx="290" cy="270" rx="3" ry="5" transform="rotate(5 290 270)"/>
+    <ellipse cx="330" cy="290" rx="3" ry="5" transform="rotate(-15 330 290)"/>
+    <ellipse cx="260" cy="300" rx="3" ry="5" transform="rotate(20 260 300)"/>
+    <ellipse cx="300" cy="335" rx="3" ry="5"/>
+    <ellipse cx="280" cy="355" rx="2.5" ry="4" transform="rotate(10 280 355)"/>
+    <ellipse cx="320" cy="345" rx="2.5" ry="4" transform="rotate(-10 320 345)"/>
+  </g>
+  <!-- Stem & Calyx (Leaves on top) -->
+  <g transform="translate(300, 160)">
+    <path d="M0 0 L-40 -15 L-10 -5 L-55 -40 L-15 -15 L0 -60 L15 -15 L55 -40 L10 -5 L40 -15 L5 0 L25 15 L0 5 L-25 15 Z" fill="#2e7d32"/>
+    <path d="M0 -30 Q-5 -65 10 -75" stroke="#43a047" stroke-width="8" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>

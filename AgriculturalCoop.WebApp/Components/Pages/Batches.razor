@@ -40,18 +40,14 @@
                     @onclick="@(() => SelectCategory("All"))">
                 Tất cả (@allBatches.Count)
             </button>
-            <button class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(selectedCategory == "Trái cây đặc sản" ? "btn-success shadow-sm" : "btn-filter-chip")" 
-                    @onclick="@(() => SelectCategory("Trái cây đặc sản"))">
-                Trái cây đặc sản
-            </button>
-            <button class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(selectedCategory == "Rau củ quả" ? "btn-success shadow-sm" : "btn-filter-chip")" 
-                    @onclick="@(() => SelectCategory("Rau củ quả"))">
-                Rau củ quả
-            </button>
-            <button class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(selectedCategory == "Rau ăn lá" ? "btn-success shadow-sm" : "btn-filter-chip")" 
-                    @onclick="@(() => SelectCategory("Rau ăn lá"))">
-                Rau ăn lá
-            </button>
+            @foreach (var category in Categories)
+            {
+                var count = allBatches.Count(b => b.Product?.Category == category);
+                <button class="btn btn-sm rounded-pill px-3 py-1-5 transition-all @(selectedCategory == category ? "btn-success shadow-sm" : "btn-filter-chip")"
+                        @onclick="@(() => SelectCategory(category))">
+                    @category (@count)
+                </button>
+            }
         </div>
     </section>
 
@@ -93,11 +89,13 @@
     private string searchTerm = string.Empty;
     private string selectedCategory = "All";
     private bool loading = true;
+    private IEnumerable<string> Categories => allBatches.Select(b => b.Product?.Category)
+        .Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => c!).Distinct().OrderBy(c => c);
 
     protected override async Task OnInitializedAsync()
     {
         var batches = await ViewHarvestBatchesUseCase.ExecuteAsync();
-        allBatches = batches.ToList();
+        allBatches = batches.OrderBy(b => b.ExpectedHarvestDate).ToList();
         filteredBatches = allBatches;
         loading = false;
     }

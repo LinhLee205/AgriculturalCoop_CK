@@ -1,0 +1,34 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <rect width="600" height="450" fill="#ffffff"/>
+  <ellipse cx="300" cy="375" rx="180" ry="22" fill="#e2e8f0"/>
+  <ellipse cx="300" cy="370" rx="140" ry="15" fill="#cbd5e1"/>
+  <!-- Whole Avocado (Left) -->
+  <defs>
+    <radialGradient id="avoSkin" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#33691e"/>
+      <stop offset="60%" stop-color="#1b5e20"/>
+      <stop offset="100%" stop-color="#0a320d"/>
+    </radialGradient>
+    <radialGradient id="avoFlesh" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff59d"/>
+      <stop offset="50%" stop-color="#dce775"/>
+      <stop offset="85%" stop-color="#8bc34a"/>
+      <stop offset="100%" stop-color="#33691e"/>
+    </radialGradient>
+    <radialGradient id="avoSeed" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#a1887f"/>
+      <stop offset="50%" stop-color="#6d4c41"/>
+      <stop offset="100%" stop-color="#3e2723"/>
+    </radialGradient>
+  </defs>
+  <!-- Long 034 Whole Avocado -->
+  <path d="M210 90 C235 90, 245 130, 245 190 C245 250, 280 300, 270 345 C260 380, 160 380, 150 345 C140 300, 175 250, 175 190 C175 130, 185 90, 210 90 Z" fill="url(#avoSkin)"/>
+  <path d="M210 90 L212 75" stroke="#4e342e" stroke-width="7" stroke-linecap="round"/>
+  <!-- Sliced Half with Seed (Right) -->
+  <path d="M380 95 C405 95, 415 135, 415 195 C415 255, 450 305, 440 350 C430 385, 330 385, 320 350 C310 305, 345 255, 345 195 C345 135, 355 95, 380 95 Z" fill="#1b5e20"/>
+  <!-- Flesh -->
+  <path d="M380 105 C400 105, 405 140, 405 195 C405 255, 438 300, 428 340 C420 372, 340 372, 332 340 C322 300, 355 255, 355 195 C355 140, 360 105, 380 105 Z" fill="url(#avoFlesh)"/>
+  <!-- Big Seed -->
+  <circle cx="380" cy="290" r="42" fill="url(#avoSeed)"/>
+  <ellipse cx="368" cy="275" rx="14" ry="18" fill="#ffffff" opacity="0.3"/>
+</svg>

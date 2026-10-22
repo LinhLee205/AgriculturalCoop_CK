@@ -1,0 +1,31 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <rect width="600" height="450" fill="#ffffff"/>
+  <ellipse cx="300" cy="385" rx="160" ry="20" fill="#e2e8f0"/>
+  <ellipse cx="300" cy="380" rx="120" ry="14" fill="#cbd5e1"/>
+  <defs>
+    <radialGradient id="carrotGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff9800"/>
+      <stop offset="50%" stop-color="#f57c00"/>
+      <stop offset="90%" stop-color="#e65100"/>
+      <stop offset="100%" stop-color="#bf360c"/>
+    </radialGradient>
+  </defs>
+  <!-- Green leaves bushy top -->
+  <g stroke="#2e7d32" stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M300 130 C270 90, 240 70, 220 50 M250 80 L230 70 M265 100 L250 95"/>
+    <path d="M300 130 C300 80, 300 50, 300 35 M300 80 L285 70 M300 95 L315 85"/>
+    <path d="M300 130 C330 90, 360 70, 380 50 M350 80 L370 70 M335 100 L350 95"/>
+  </g>
+  <!-- Main Carrot Cone Body -->
+  <path d="M260 140 C280 135, 320 135, 340 140 C345 200, 315 340, 300 380 C285 340, 255 200, 260 140 Z" fill="url(#carrotGrad)"/>
+  <!-- Highlight -->
+  <ellipse cx="280" cy="180" rx="10" ry="30" transform="rotate(-10 280 180)" fill="#ffffff" opacity="0.4"/>
+  <!-- Ridges -->
+  <g stroke="#e65100" stroke-width="2" stroke-linecap="round" opacity="0.6">
+    <path d="M275 170 Q290 175 305 170"/>
+    <path d="M295 210 Q310 215 325 210"/>
+    <path d="M280 250 Q295 255 310 250"/>
+    <path d="M290 290 Q300 295 310 290"/>
+    <path d="M295 330 Q300 333 305 330"/>
+  </g>
+</svg>

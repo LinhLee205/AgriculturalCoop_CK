@@ -14,8 +14,8 @@
     <div class="catalog-heading">
         <div>
             <span class="eyebrow">TỪ NHỮNG KHU VƯỜN TẬN TÂM</span>
-            <h2>Nông sản đang vào mùa</h2>
-            <p>Gợi ý từ các lô đang nhận đặt trước, được sắp theo ngày thu hoạch gần nhất.</p>
+            <h2>Nông sản & mùa vụ</h2>
+            <p>Thông tin sản phẩm và các lô thu hoạch sắp tới của hợp tác xã.</p>
         </div>
         <a class="catalog-more" href="/products">Xem tất cả nông sản <span aria-hidden="true">→</span></a>
     </div>
@@ -47,9 +47,10 @@
     {
         banner = await Banners.GetAsync();
         openBatches = (await ViewOpenBatches.ExecuteAsync()).ToList();
-        var visibleProductIds = openBatches.Select(b => b.ProductId).ToHashSet();
-        products = (await ViewProducts.ExecuteAsync()).Where(p => visibleProductIds.Contains(p.ProductId))
-            .OrderBy(p => openBatches.Where(b => b.ProductId == p.ProductId).Min(b => b.ExpectedHarvestDate)).Take(4).ToList();
+        products = (await ViewProducts.ExecuteAsync())
+            .OrderBy(p => openBatches.Where(b => b.ProductId == p.ProductId)
+                .Select(b => b.ExpectedHarvestDate).DefaultIfEmpty(DateTime.MaxValue).Min())
+            .ThenBy(p => p.ProductName).Take(8).ToList();
         loading = false;
     }
 }

@@ -1,0 +1,19 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <rect width="600" height="450" fill="#ffffff"/>
+  <ellipse cx="300" cy="380" rx="160" ry="20" fill="#e2e8f0"/>
+  <!-- Spear 1 (Left) -->
+  <path d="M250 375 L250 140 L260 90 L270 140 L270 375 Z" fill="#43a047"/>
+  <polygon points="260,90 250,115 270,115" fill="#2e7d32"/>
+  <polygon points="260,115 250,135 270,135" fill="#2e7d32"/>
+  <!-- Spear 2 (Center tall) -->
+  <path d="M290 375 L290 110 L300 65 L310 110 L310 375 Z" fill="#4caf50"/>
+  <polygon points="300,65 290,90 310,90" fill="#1b5e20"/>
+  <polygon points="300,90 290,115 310,115" fill="#2e7d32"/>
+  <polygon points="300,115 290,140 310,140" fill="#2e7d32"/>
+  <!-- Spear 3 (Right) -->
+  <path d="M330 375 L330 140 L340 95 L350 140 L350 375 Z" fill="#43a047"/>
+  <polygon points="340,95 330,120 350,120" fill="#2e7d32"/>
+  <polygon points="340,120 330,140 350,140" fill="#2e7d32"/>
+  <!-- Raffia tie bundle in center -->
+  <rect x="235" y="260" width="130" height="24" rx="8" fill="#d7ccc8" stroke="#8d6e63" stroke-width="2"/>
+</svg>

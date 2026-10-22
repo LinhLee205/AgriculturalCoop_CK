@@ -1109,3 +1109,34 @@ img.store-brand-img {
     padding: 2px 4px !important;
     border-radius: 8px !important;
 }
+
+/* Consistent rounded controls and aligned admin rows */
+.account-panel { border-radius: 26px !important; }
+.account-panel .form-control, .account-panel .btn { border-radius: 14px !important; }
+.admin-content .btn:not(.btn-close), .store-main .btn:not(.btn-close) { border-radius: 14px; }
+.admin-content .form-control, .admin-content .form-select,
+.store-main .form-control, .store-main .form-select { border-radius: 12px; }
+.admin-card, .admin-content .card { border-radius: 20px; }
+.admin-card.table-responsive { overflow: auto; }
+.admin-card table { vertical-align: top; }
+.admin-card th { vertical-align: middle; }
+.admin-card td { vertical-align: top; line-height: 1.45; }
+.table-actions { display: grid; grid-template-columns: repeat(2, minmax(135px, 1fr)); min-width: 278px; align-items: stretch; gap: 8px; }
+.table-actions .btn { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+.dashboard-grid { align-items: stretch; }
+.stat-card { min-height: 156px; justify-content: space-between; }
+.editor-dialog { border-radius: 24px; }
+.product-filter-box { border-radius: 24px; }
+.produce-card.batch-card { height: 100%; }
+.batch-card .produce-body { display: flex; flex-direction: column; flex: 1; }
+.batch-card .batch-availability { margin-top: auto; padding-top: 14px; }
+.store-main .card, .store-main .admin-card, .store-main .store-empty { border-radius: 22px; }
+.store-main .order-card, .store-main .allocation-card { border-radius: 22px !important; overflow: hidden; }
+.store-main .table-responsive { border-radius: 18px; }
+
+@media (max-width: 767px) {
+    .admin-content { padding: 18px 14px; }
+    .admin-card { padding: 18px; }
+    .table-actions .btn { white-space: normal; }
+    .account-panel { margin: 12px; padding: 24px !important; }
+}

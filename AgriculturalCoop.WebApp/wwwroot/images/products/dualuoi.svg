@@ -1,0 +1,34 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <rect width="600" height="450" fill="#ffffff"/>
+  <ellipse cx="300" cy="380" rx="180" ry="24" fill="#e2e8f0"/>
+  <ellipse cx="300" cy="375" rx="140" ry="16" fill="#cbd5e1"/>
+  <defs>
+    <radialGradient id="melonGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fff59d"/>
+      <stop offset="30%" stop-color="#ffee58"/>
+      <stop offset="75%" stop-color="#fdd835"/>
+      <stop offset="100%" stop-color="#c0ca33"/>
+    </radialGradient>
+    <radialGradient id="orangeMeat" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe0b2"/>
+      <stop offset="40%" stop-color="#ffb74d"/>
+      <stop offset="85%" stop-color="#fb8c00"/>
+      <stop offset="100%" stop-color="#e65100"/>
+    </radialGradient>
+  </defs>
+  <!-- Whole Melon (Left) -->
+  <circle cx="230" cy="250" r="115" fill="url(#melonGrad)"/>
+  <!-- Netting pattern -->
+  <g stroke="#ffffff" stroke-width="2.5" fill="none" opacity="0.6">
+    <ellipse cx="230" cy="250" rx="95" ry="115"/>
+    <ellipse cx="230" cy="250" rx="60" ry="115"/>
+    <ellipse cx="230" cy="250" rx="25" ry="115"/>
+    <ellipse cx="230" cy="250" rx="115" ry="80"/>
+    <ellipse cx="230" cy="250" rx="115" ry="40"/>
+  </g>
+  <!-- T-shaped Stem -->
+  <path d="M230 135 L230 105 M205 105 L255 105" stroke="#795548" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- Sliced Orange Wedge (Right) -->
+  <path d="M340 340 C380 345, 450 310, 460 210 C420 250, 360 300, 340 340 Z" fill="#c0ca33"/>
+  <path d="M346 332 C382 336, 442 295, 448 215 C415 252, 362 298, 346 332 Z" fill="url(#orangeMeat)"/>
+</svg>

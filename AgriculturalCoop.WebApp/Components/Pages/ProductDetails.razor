@@ -97,7 +97,7 @@ else
         <div class="catalog-heading"><div><span class="eyebrow">THEO DÕI MÙA THU HOẠCH</span><h2>Lô thu hoạch của sản phẩm</h2></div></div>
         @if (batches.Count == 0)
         {
-            <div class="store-empty">Nông sản này chưa có lô mở bán. Hãy quay lại khi mùa vụ mới bắt đầu.</div>
+            <div class="store-empty">Nông sản này chưa có lô thu hoạch. Thông tin sản phẩm vẫn được hiển thị; các lô mùa vụ sẽ xuất hiện tại đây khi được cập nhật.</div>
         }
         else
         {
@@ -134,7 +134,6 @@ else
         product = (await ViewProducts.ExecuteAsync()).FirstOrDefault(p => p.ProductId == ProductId);
         var all = (await ViewBatches.ExecuteAsync()).ToList();
         batches = all.Where(b => b.ProductId == ProductId).OrderByDescending(b => b.Status == HarvestBatchStatus.OpenForPreOrder).ThenBy(b => b.ExpectedHarvestDate).ToList();
-        if (batches.Count == 0) product = null;
         openBatches = batches.Where(b => b.Status == HarvestBatchStatus.OpenForPreOrder && b.RemainingQuantity > 0).ToList();
         selectedBatch = openBatches.FirstOrDefault();
         selectedBatchId = selectedBatch?.HarvestBatchId ?? 0;

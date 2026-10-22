@@ -1,0 +1,42 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <rect width="600" height="450" fill="#ffffff"/>
+  <ellipse cx="300" cy="380" rx="180" ry="24" fill="#e2e8f0"/>
+  <!-- Durian Body with Spikes -->
+  <defs>
+    <radialGradient id="durianShell" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#c0ca33"/>
+      <stop offset="50%" stop-color="#9e9d24"/>
+      <stop offset="85%" stop-color="#687817"/>
+      <stop offset="100%" stop-color="#33691e"/>
+    </radialGradient>
+    <radialGradient id="durianMeat" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff9c4"/>
+      <stop offset="35%" stop-color="#fff176"/>
+      <stop offset="75%" stop-color="#fbc02d"/>
+      <stop offset="100%" stop-color="#f57f17"/>
+    </radialGradient>
+  </defs>
+  <!-- Durian Stem -->
+  <path d="M230 120 Q235 85 240 75" stroke="#4e342e" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <!-- Left Spiky Fruit -->
+  <ellipse cx="230" cy="250" rx="100" ry="125" fill="url(#durianShell)"/>
+  <!-- Spikes pattern -->
+  <g fill="#558b2f" stroke="#33691e" stroke-width="1.5">
+    <polygon points="135,220 120,225 135,235"/>
+    <polygon points="140,260 122,268 142,275"/>
+    <polygon points="150,180 135,175 155,190"/>
+    <polygon points="170,140 160,125 180,145"/>
+    <polygon points="210,125 215,110 225,128"/>
+    <polygon points="255,128 265,112 270,130"/>
+    <polygon points="300,150 318,140 305,165"/>
+    <polygon points="325,195 345,195 328,212"/>
+    <polygon points="328,245 348,252 328,262"/>
+    <polygon points="310,295 328,308 305,315"/>
+    <polygon points="270,350 280,370 260,360"/>
+    <polygon points="220,370 225,388 210,372"/>
+    <polygon points="175,345 160,360 170,335"/>
+  </g>
+  <!-- Sliced Open Durian Pulp Segment on Right -->
+  <path d="M330 200 C390 180, 440 220, 430 290 C420 340, 360 360, 320 330 C300 290, 305 230, 330 200 Z" fill="url(#durianMeat)" stroke="#fbc02d" stroke-width="3"/>
+  <ellipse cx="365" cy="265" rx="35" ry="45" fill="#ffffff" opacity="0.35"/>
+</svg>

@@ -3,7 +3,7 @@
         <img src="@(string.IsNullOrEmpty(Product.ImageUrl) ? "/images/products/placeholder.svg" : Product.ImageUrl)"
              alt="" loading="lazy" onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
         <span class="produce-status @(OpenBatch == null ? "is-upcoming" : "")">
-            @(OpenBatch == null ? "Sắp mở đợt đặt" : OpenBatch.RemainingQuantity <= 0 ? "Đã đủ lượng đặt" : "Đang mở đặt trước")
+            @(OpenBatch == null ? "Chưa có lô thu hoạch" : OpenBatch.RemainingQuantity <= 0 ? "Đã đủ lượng đặt" : "Đang mở đặt trước")
         </span>
     </a>
     <div class="produce-body">
