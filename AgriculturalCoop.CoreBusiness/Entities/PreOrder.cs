@@ -26,6 +26,9 @@ namespace AgriculturalCoop.CoreBusiness.Entities
         public string? ContactPhone { get; set; }
         public string? DeliveryAddress { get; set; }
         public string? CancellationReason { get; set; }
+        public string PaymentMethod { get; set; } = "COD";
+        public string PaymentStatus { get; set; } = "Chưa thanh toán";
+        public string? TransferContent { get; set; }
 
         // Navigation helpers
         public Dealer? Dealer { get; set; }

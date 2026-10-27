@@ -2,6 +2,12 @@
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData"
                             DefaultLayout="typeof(Layout.MainLayout)">
+            <Authorizing>
+                <div class="text-center py-5">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="text-muted small mt-2">Đang xác thực thông tin tài khoản...</p>
+                </div>
+            </Authorizing>
             <NotAuthorized>
                 <RedirectToLogin />
             </NotAuthorized>

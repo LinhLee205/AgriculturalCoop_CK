@@ -29,6 +29,7 @@ namespace AgriculturalCoop.WebApp.State
         event Action? OnChange;
 
         void AddItem(HarvestBatch batch, decimal quantity);
+        void SetOrAddItem(HarvestBatch batch, decimal quantity);
         void UpdateQuantity(int batchId, decimal quantity);
         void RemoveItem(int batchId);
         void Clear();
@@ -56,6 +57,38 @@ namespace AgriculturalCoop.WebApp.State
             if (existing != null)
             {
                 existing.Quantity += quantity;
+            }
+            else
+            {
+                _items.Add(new PreOrderCartItem
+                {
+                    HarvestBatchId = batch.HarvestBatchId,
+                    BatchCode = batch.BatchCode,
+                    ProductName = batch.Product?.ProductName ?? $"Lô #{batch.HarvestBatchId}",
+                    Category = batch.Product?.Category ?? "Nông sản",
+                    Unit = batch.Product?.Unit ?? "kg",
+                    UnitPrice = batch.UnitPrice,
+                    Quantity = quantity,
+                    ExpectedQuantity = batch.ExpectedQuantity,
+                    CurrentOrderedQuantity = batch.TotalOrderedQuantity,
+                    ImageUrl = batch.Product?.ImageUrl ?? "/images/products/placeholder.svg"
+                });
+            }
+
+            NotifyStateChanged();
+        }
+
+        public void SetOrAddItem(HarvestBatch batch, decimal quantity)
+        {
+            if (batch == null || quantity <= 0) return;
+
+            var existing = _items.FirstOrDefault(i => i.HarvestBatchId == batch.HarvestBatchId);
+            if (existing != null)
+            {
+                existing.Quantity = quantity;
+                existing.ExpectedQuantity = batch.ExpectedQuantity;
+                existing.CurrentOrderedQuantity = batch.TotalOrderedQuantity;
+                existing.UnitPrice = batch.UnitPrice;
             }
             else
             {

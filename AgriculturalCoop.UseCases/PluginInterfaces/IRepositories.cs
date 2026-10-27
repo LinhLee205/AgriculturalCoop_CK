@@ -68,6 +68,8 @@ namespace AgriculturalCoop.UseCases.PluginInterfaces
     {
         Task<bool> ConfirmOrderAsync(int orderId);
         Task<bool> CancelOrderAsync(int orderId, string reason);
+        Task<bool> UpdatePaymentStatusAsync(int orderId, string paymentStatus);
+        Task<bool> UpdateOrderStatusAsync(int orderId, PreOrderStatus status);
     }
 
     public interface IUserAccountRepository

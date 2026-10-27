@@ -19,4 +19,7 @@ public class CheckoutContactForm
 
     [StringLength(500, ErrorMessage = "Ghi chú không quá 500 ký tự.")]
     public string? Notes { get; set; }
+
+    [Required(ErrorMessage = "Vui lòng chọn phương thức thanh toán.")]
+    public string PaymentMethod { get; set; } = "COD";
 }

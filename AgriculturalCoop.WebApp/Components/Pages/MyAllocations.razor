@@ -6,14 +6,16 @@
 <PageTitle>Sản Lượng Phân Bổ Thực Tế - Đại Lý</PageTitle>
 
 <div class="mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h2 class="fw-bold text-dark mb-1">Sản Lượng Phân Bổ Nhận Được</h2>
-            <a href="/my-notifications" class="btn btn-sm btn-outline-success my-2">Xem thông báo từ hợp tác xã</a>
             <p class="text-muted small mb-0">
                 Kết quả phân bổ thực tế sau thu hoạch đối với các đơn của: <strong class="text-success">@UserSession.CurrentDealerName</strong>
             </p>
         </div>
+        <a href="/my-notifications" class="btn btn-outline-success rounded-pill px-4 py-2 btn-sm fw-semibold shadow-xs">
+            <i class="bi bi-bell-fill me-1"></i> Xem tất cả thông báo (@allocations.Count)
+        </a>
     </div>
 
     @if (loading)
@@ -25,12 +27,12 @@
     }
     else if (!allocations.Any())
     {
-        <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white">
+        <div class="card border-0 shadow-sm p-5 text-center bg-white" style="border-radius: 28px !important;">
             <i class="bi bi-pie-chart text-muted fs-1 mb-3"></i>
             <h4 class="fw-bold text-dark">Chưa có kết quả phân bổ nào</h4>
             <p class="text-muted small">Các lô nông sản đại lý đặt trước đang trong quá trình chăm sóc và chưa đến đợt thu hoạch.</p>
             <div class="mt-2">
-                <a href="/batches" class="btn btn-outline-success rounded-pill px-4">Xem các lô đang mở</a>
+                <a href="/batches" class="btn btn-outline-success rounded-pill px-4 py-2">Xem các lô đang mở</a>
             </div>
         </div>
     }
@@ -40,40 +42,67 @@
             @foreach (var alloc in allocations)
             {
                 <div class="col">
-                    <div class="card border-0 rounded-4 shadow-sm p-4 bg-white h-100">
+                    <div class="card border-0 shadow-sm p-4 bg-white h-100 d-flex flex-column" 
+                         style="border-radius: 28px !important; border: 1.5px solid #edf2f7 !important; box-shadow: 0 6px 24px rgba(0,0,0,0.04) !important;">
+                        
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-light text-muted border font-monospace">
-                                @alloc.HarvestBatch?.BatchCode
+                            <span class="badge bg-light text-muted border font-monospace px-3 py-1-5 rounded-pill" style="border-radius: 50px !important;">
+                                <i class="bi bi-upc-scan me-1"></i>@alloc.HarvestBatch?.BatchCode
                             </span>
-                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">
-                                <i class="bi bi-calendar-check me-1"></i> @alloc.AllocationDate.ToString("dd/MM/yyyy")
+                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-1-5 fw-semibold" style="border-radius: 50px !important;">
+                                <i class="bi bi-calendar-check me-1 text-success"></i> @alloc.AllocationDate.ToString("dd/MM/yyyy")
                             </span>
                         </div>
 
-                        <h5 class="fw-bold text-dark mb-1">
-                            @(alloc.HarvestBatch?.Product?.ProductName ?? "Nông sản")
-                        </h5>
-                        <div class="small text-muted mb-3">
-                            Đơn đặt trước #@alloc.PreOrderLine?.PreOrderId
+                        <!-- Thông tin sản phẩm kèm thumbnail hình ảnh nền trắng -->
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="rounded-4 border bg-white p-1 d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" 
+                                 style="width: 60px; height: 60px; min-width: 60px; overflow: hidden; border-radius: 18px !important;">
+                                <img src="@(string.IsNullOrEmpty(alloc.HarvestBatch?.Product?.ImageUrl) ? "/images/products/placeholder.svg" : alloc.HarvestBatch.Product.ImageUrl)" 
+                                     alt="@alloc.HarvestBatch?.Product?.ProductName" 
+                                     style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0 fs-5">
+                                    @(alloc.HarvestBatch?.Product?.ProductName ?? "Nông sản")
+                                </h5>
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-receipt me-1"></i>Đơn đặt trước #@alloc.PreOrderLine?.PreOrderId
+                                </div>
+                            </div>
                         </div>
 
+                        <!-- Khung so sánh đặt trước vs thực tế nhận được bo tròn rõ nét -->
                         <div class="row g-2 mb-3 text-center">
                             <div class="col-6">
-                                <div class="bg-light p-3 rounded-3 border">
-                                    <small class="text-muted d-block">Đặt trước ban đầu</small>
+                                <div class="bg-light p-3 border" style="border-radius: 20px !important;">
+                                    <small class="text-muted d-block mb-1">Đặt trước ban đầu</small>
                                     <strong class="text-dark fs-5">@alloc.RequestedQuantity.ToString("N2") kg</strong>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="bg-success-subtle p-3 rounded-3 border border-success-subtle">
-                                    <small class="text-success d-block fw-semibold">Thực tế nhận được</small>
+                                <div class="bg-success-subtle p-3 border border-success-subtle" style="border-radius: 20px !important;">
+                                    <small class="text-success d-block fw-semibold mb-1">Thực tế nhận được</small>
                                     <strong class="text-success fs-5">@alloc.AllocatedQuantity.ToString("N2") kg</strong>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="p-3 rounded-3 bg-light border small text-muted">
-                            <i class="bi bi-info-circle me-1 text-primary"></i> <strong>Lý do phân bổ:</strong> @alloc.Reason
+                        <!-- Khung lý do phân bổ bo tròn rõ nét -->
+                        <div class="p-3 bg-light border small text-muted mb-3" style="border-radius: 20px !important;">
+                            <i class="bi bi-info-circle-fill me-1 text-primary"></i> <strong>Lý do phân bổ:</strong> @alloc.Reason
+                        </div>
+
+                        <!-- Liên kết trực tiếp đến chính thông báo phân bổ của đơn hàng đó -->
+                        <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <span class="small text-muted">
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>Đã chốt phân bổ
+                            </span>
+                            <a href="/my-notifications?batchId=@alloc.HarvestBatchId" 
+                               class="btn btn-sm btn-success rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1 shadow-xs"
+                               style="border-radius: 50px !important;">
+                                <i class="bi bi-envelope-open-fill"></i> Xem thông báo của đơn này →
+                            </a>
                         </div>
                     </div>
                 </div>

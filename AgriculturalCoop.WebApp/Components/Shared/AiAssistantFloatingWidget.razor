@@ -1,0 +1,298 @@
+@using System.Text.Json
+@inject IViewProductsUseCase ViewProducts
+@inject IViewOpenBatchesUseCase ViewOpenBatches
+@inject IServiceProvider ServiceProvider
+@inject IJSRuntime JS
+
+<!-- Floating Action Button at Bottom Right -->
+<div class="ai-assistant-floating-root" style="position: fixed; bottom: 28px; right: 28px; z-index: 1060;">
+    @if (!isOpen)
+    {
+        <button type="button" class="btn rounded-pill shadow-lg d-flex align-items-center gap-2 px-3 py-2-5 border-0 ai-cta-button"
+                style="background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%); color: #ffffff; box-shadow: 0 8px 24px rgba(45, 106, 79, 0.45) !important; transition: all 0.3s ease;"
+                @onclick="ToggleChat">
+            <div class="ai-avatar-pulse d-flex align-items-center justify-content-center rounded-circle bg-white text-success shadow-xs"
+                 style="width: 38px; height: 38px; font-size: 18px;">
+                <i class="bi bi-stars"></i>
+            </div>
+            <div class="text-start d-none d-sm-block pe-1">
+                <span class="d-block fw-bold" style="font-size: 0.92rem; line-height: 1.2;">Trợ lý AI Mùa Vụ</span>
+                <small class="text-white-50" style="font-size: 0.72rem;">Hỏi đáp thông minh 24/7</small>
+            </div>
+        </button>
+    }
+    else
+    {
+        <!-- Chat Panel Window: Fixed layout with Flexbox so input is ALWAYS at the bottom -->
+        <div class="card border-0 shadow-lg bg-white overflow-hidden ai-chat-panel animate-fade-in"
+             style="width: 390px; max-width: calc(100vw - 32px); height: 560px; max-height: calc(100vh - 85px); display: flex !important; flex-direction: column !important; border-radius: 26px !important; box-shadow: 0 20px 48px rgba(0,0,0,0.22) !important; border: 1.5px solid #edf2f7 !important;">
+            
+            <!-- 1. Chat Header (Fixed at top) -->
+            <div class="p-3 text-white d-flex align-items-center justify-content-between flex-shrink-0"
+                 style="background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center shadow-xs"
+                         style="width: 38px; height: 38px; font-size: 20px;">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div>
+                        <strong class="d-block text-white" style="font-size: 0.95rem; line-height: 1.2;">Trợ Lý AI COOPAGRI</strong>
+                        <small class="text-white-50 d-flex align-items-center gap-1" style="font-size: 0.72rem;">
+                            <span class="badge bg-success rounded-circle p-1" style="width: 6px; height: 6px; display: inline-block;"></span>
+                            Hiểu rõ mùa vụ & quy tắc bao tiêu
+                        </small>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-link text-white text-decoration-none fs-5 p-0 opacity-75 hover-opacity-100"
+                        aria-label="Đóng chat" @onclick="ToggleChat">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <!-- 2. Chat Messages Body (Scrolls up and down smoothly) -->
+            <div class="p-3 d-flex flex-column gap-3 bg-light"
+                 style="flex: 1 1 0 !important; min-height: 0 !important; overflow-y: auto !important; scroll-behavior: smooth; font-size: 0.88rem;"
+                 id="ai-chat-messages">
+                @foreach (var msg in messages)
+                {
+                    <div class="d-flex @(msg.IsUser ? "justify-content-end" : "justify-content-start") gap-2">
+                        @if (!msg.IsUser)
+                        {
+                            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                                 style="width: 28px; height: 28px; font-size: 13px;">
+                                <i class="bi bi-stars"></i>
+                            </div>
+                        }
+                        <div class="p-3 rounded-4 shadow-xs" 
+                             style="max-width: 84%; line-height: 1.55; white-space: pre-line; @(msg.IsUser ? "background: #2d6a4f; color: #ffffff; border-bottom-right-radius: 4px !important;" : "background: #ffffff; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px !important;")">
+                            @msg.Text
+                        </div>
+                    </div>
+                }
+
+                @if (isThinking)
+                {
+                    <div class="d-flex justify-content-start gap-2">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 13px;">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                        <div class="p-3 rounded-4 bg-white border shadow-xs d-flex align-items-center gap-2 text-muted">
+                            <span class="spinner-border spinner-border-sm text-success" role="status"></span>
+                            <small>Đang tra cứu dữ liệu COOPAGRI…</small>
+                        </div>
+                    </div>
+                }
+
+                <!-- Gợi ý câu hỏi thông dụng (Có thể mở rộng hoặc thu gọn) -->
+                <div class="pt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                            <i class="bi bi-lightbulb-fill text-warning me-1"></i>Câu hỏi gợi ý:
+                        </span>
+                        @if (messages.Count > 1)
+                        {
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted p-0" style="font-size: 0.72rem;"
+                                    @onclick="() => showSuggestions = !showSuggestions">
+                                @(showSuggestions ? "Thu gọn ▲" : "Xem thêm ▼")
+                            </button>
+                        }
+                    </div>
+                    
+                    @if (showSuggestions)
+                    {
+                        <div class="d-flex flex-column gap-1-5">
+                            @foreach (var suggestion in suggestedQuestions)
+                            {
+                                <button type="button" class="btn btn-sm btn-white border text-start rounded-pill px-3 py-1-5 shadow-xs text-dark hover-bg-light"
+                                        style="font-size: 0.8rem; background: #ffffff; transition: all 0.2s ease;"
+                                        @onclick="() => AskQuestion(suggestion)">
+                                    <i class="bi bi-chat-left-dots text-success me-1"></i> @suggestion
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 3. Chat Input Footer (ALWAYS FIXED AT THE BOTTOM) -->
+            <div class="p-3 bg-white border-top flex-shrink-0" style="box-shadow: 0 -4px 12px rgba(0,0,0,0.03);">
+                <form class="d-flex align-items-center gap-2" @onsubmit="SendMessage" @onsubmit:preventDefault>
+                    <input class="form-control rounded-pill px-3 shadow-none border"
+                           style="border-radius: 50px !important; font-size: 0.88rem; height: 42px;"
+                           placeholder="Nhập câu hỏi riêng của bạn..."
+                           @bind="currentInput"
+                           @bind:event="oninput"
+                           @onkeydown="HandleKeyDown"
+                           disabled="@isThinking" />
+                    <button type="submit" class="btn btn-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                            style="width: 42px; height: 42px; background: #2d6a4f; border-color: #2d6a4f;"
+                            disabled="@(isThinking || string.IsNullOrWhiteSpace(currentInput))"
+                            title="Gửi câu hỏi">
+                        <i class="bi bi-send-fill text-white" style="font-size: 15px; transform: translate(1px, -1px);"></i>
+                    </button>
+                </form>
+                <div class="text-center mt-1">
+                    <small class="text-muted" style="font-size: 0.68rem;">Gõ câu hỏi riêng hoặc nhấn câu hỏi gợi ý bên trên</small>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isOpen = false;
+    private bool isThinking = false;
+    private bool showSuggestions = true;
+    private Microsoft.Extensions.AI.IChatClient? ChatClient => ServiceProvider.GetService<Microsoft.Extensions.AI.IChatClient>();
+    private string currentInput = "";
+
+    private record ChatMsg(string Text, bool IsUser);
+    private List<ChatMsg> messages = new();
+
+    private readonly List<string> suggestedQuestions = new()
+    {
+        "Quy trình đặt trước nông sản diễn ra như thế nào?",
+        "Khi thu hoạch thực tế bị thiếu thì phân bổ ra sao?",
+        "Hiện có những lô nông sản nào đang mở nhận đặt?",
+        "Thanh toán chuyển khoản VietQR hoạt động thế nào?",
+        "Đại lý đối tác nhận được chiết khấu bao nhiêu?"
+    };
+
+    private void ToggleChat()
+    {
+        isOpen = !isOpen;
+        if (isOpen && messages.Count == 0)
+        {
+            messages.Add(new ChatMsg(
+                "Xin chào! Tôi là Trợ lý AI của Hợp tác xã COOPAGRI. 🌿\n\nTôi có thể giải đáp mọi thông tin về các lô nông sản mùa vụ, quy tắc đặt trước, thuật toán phân bổ tỷ lệ công bằng, chính sách chiết khấu đại lý và thanh toán chuyển khoản VietQR.\n\nBạn có thể tự nhập câu hỏi ở ô bên dưới hoặc nhấn vào các gợi ý!",
+                false
+            ));
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task AskQuestion(string question)
+    {
+        currentInput = question;
+        showSuggestions = false;
+        await SendMessage();
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(currentInput) || isThinking) return;
+
+        var userText = currentInput.Trim();
+        messages.Add(new ChatMsg(userText, true));
+        currentInput = "";
+        isThinking = true;
+        showSuggestions = false;
+        StateHasChanged();
+        await ScrollToBottom();
+
+        try
+        {
+            await Task.Delay(350);
+            var answer = await GenerateAiAnswer(userText);
+            messages.Add(new ChatMsg(answer, false));
+        }
+        catch
+        {
+            messages.Add(new ChatMsg(GetFallbackAnswer(userText), false));
+        }
+        finally
+        {
+            isThinking = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", "setTimeout(function() { var el = document.getElementById('ai-chat-messages'); if (el) el.scrollTop = el.scrollHeight; }, 50);");
+        }
+        catch { }
+    }
+
+    private async Task<string> GenerateAiAnswer(string question)
+    {
+        if (ChatClient != null)
+        {
+            try
+            {
+                var systemPrompt = @"Bạn là trợ lý AI thông minh của Hợp tác xã Nông nghiệp COOPAGRI. 
+Website chuyên về ĐẶT TRƯỚC NÔNG SẢN THEO MÙA VỤ giữa các hộ nông dân xã viên và hệ thống siêu thị, đại lý.
+Kiến thức hệ thống:
+1. Sản phẩm tiêu biểu: Thanh trà Thủy Biều (9.000đ/kg), Cà chua bi VietGAP (25.000đ/kg), Bưởi da xanh (45.000đ/kg), Cải thìa thủy canh (18.000đ/kg), Xoài cát Hòa Lộc (75.000đ/kg), Sầu riêng Ri6 (135.000đ/kg), Cà chua beef Đà Lạt, Cải xoăn Kale, Nấm mối đen, v.v.
+2. Hai luật nghiệp vụ chính của đề án:
+   - Luật 1: Tổng khối lượng đặt trước của một lô không được vượt quá sản lượng dự kiến của lô đó.
+   - Luật 2: Khi thu hoạch thực tế thiếu sản lượng (thực tế < tổng đặt), hợp tác xã áp dụng thuật toán phân bổ tỷ lệ minh bạch, công bằng cho các đại lý; làm tròn không vượt sản lượng thực tế.
+3. Thanh toán: Hỗ trợ 2 phương thức: COD (tiền mặt khi nhận hàng) và Chuyển khoản VietQR đến Vietcombank STK 1041586535, Chủ TK LE THI LINH, nội dung tự động sinh CK kèm SĐT khách.
+4. Chính sách đại lý: Chiết khấu sỉ 15% - 25%, cam kết bao tiêu cố định giá, vận chuyển xe lạnh 24h.
+Hãy trả lời người dùng bằng tiếng Việt ngắn gọn, niềm nở, lịch sự, đầy đủ thông tin hữu ích trong 2-3 đoạn ngắn.";
+
+                var res = await ChatClient.GetResponseAsync(new[]
+                {
+                    new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.System, systemPrompt),
+                    new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.User, question)
+                }, new Microsoft.Extensions.AI.ChatOptions { MaxOutputTokens = 800 });
+
+                if (!string.IsNullOrWhiteSpace(res.Text))
+                    return res.Text.Trim();
+            }
+            catch
+            {
+                // Fall back to built-in knowledge matcher
+            }
+        }
+
+        return GetFallbackAnswer(question);
+    }
+
+    private string GetFallbackAnswer(string question)
+    {
+        var q = question.ToLowerInvariant();
+
+        if (q.Contains("quy trình") || q.Contains("bước") || q.Contains("đặt trước") || q.Contains("làm sao") || q.Contains("mua hàng"))
+        {
+            return "Quy trình đặt trước nông sản tại COOPAGRI gồm 4 bước minh bạch:\n\n1️⃣ **Chọn Lô Mùa Vụ:** Theo dõi thông tin xã viên canh tác, tiêu chuẩn VietGAP và ngày thu hoạch dự kiến.\n2️⃣ **Đặt Trước & Chốt Giá:** Đặt số lượng cần mua, cố định đơn giá sỉ ưu đãi.\n3️⃣ **Thu Hoạch & Phân Bổ:** Khi thu hoạch thực tế, HTX kiểm định chất lượng và phân bổ sản lượng theo tỷ lệ công bằng.\n4️⃣ **Giao Hàng Tận Nơi:** Vận chuyển xe lạnh chuyên dụng trong 24h đến kho hoặc cửa hàng đại lý.";
+        }
+
+        if (q.Contains("phân bổ") || q.Contains("thiếu") || q.Contains("tỷ lệ") || q.Contains("thực tế") || q.Contains("luật"))
+        {
+            return "⚖️ **Quy tắc Phân Bổ Sản Lượng Thực Tế:**\n\nKhi sản lượng thu hoạch thực tế thấp hơn tổng số lượng các đại lý đã đặt trước, COOPAGRI áp dụng **thuật toán phân bổ theo tỷ lệ**:\n\n• Số lượng phân bổ của mỗi đại lý = (Số lượng đặt của đại lý ÷ Tổng lượng đã đặt) × Sản lượng thực tế.\n• Thuật toán làm tròn đảm bảo tổng lượng phân bổ bằng đúng sản lượng thực tế thu hoạch, đảm bảo tính công bằng và minh bạch tuyệt đối giữa các bên.";
+        }
+
+        if (q.Contains("thanh toán") || q.Contains("vietqr") || q.Contains("ngân hàng") || q.Contains("tiền") || q.Contains("chuyển khoản"))
+        {
+            return "💳 **Phương thức Thanh toán tại COOPAGRI:**\n\nWebsite hỗ trợ 2 hình thức thanh toán thuận tiện:\n1. **Thanh toán khi nhận hàng (COD):** Thanh toán tiền mặt trực tiếp cho nhân viên vận chuyển.\n2. **Chuyển khoản VietQR:** Hệ thống tự động sinh mã QR với số tiền chính xác.\n• Ngân hàng: **Vietcombank (VCB)**\n• Số tài khoản: **1041586535**\n• Chủ tài khoản: **LE THI LINH**\n• Nội dung chuyển khoản: Hệ thống tự động tạo mã cố định `CK + Số điện thoại khách`.";
+        }
+
+        if (q.Contains("chiết khấu") || q.Contains("đại lý") || q.Contains("quyền lợi") || q.Contains("sỉ") || q.Contains("hợp tác"))
+        {
+            return "🤝 **Quyền lợi khi đăng ký làm Đại lý COOPAGRI:**\n\n• **Chiết khấu sỉ hấp dẫn từ 15% - 25%** trực tiếp tại vườn của xã viên.\n• **Bảo đảm bao tiêu ổn định giá:** Đơn giá được cố định ngay khi chốt đơn, không lo biến động thị trường.\n• **Vận chuyển xe lạnh chuyên dụng trong 24h** giữ nông sản luôn tươi giòn.\n• **Cung cấp mã QR truy xuất nguồn gốc** và hồ sơ chứng nhận VietGAP/Hữu cơ đầy đủ.";
+        }
+
+        if (q.Contains("sản phẩm") || q.Contains("lô") || q.Contains("mở") || q.Contains("mùa vụ") || q.Contains("giá") || q.Contains("bán") || q.Contains("rau") || q.Contains("quả") || q.Contains("trái cây"))
+        {
+            return "🌾 **Nông sản mùa vụ nổi bật đang mở đặt trước:**\n\n• **Trái cây đặc sản:** Xoài cát Hòa Lộc (75k/kg), Sầu riêng Ri6 Bến Tre (135k/kg), Thanh trà Thủy Biều Huế (9k/kg), Bưởi da xanh (45k/kg), Dưa hấu không hạt (28k/kg).\n• **Rau củ quả sạch:** Cà chua bi VietGAP (25k/kg), Cà chua beef Đà Lạt (35k/kg), Bí ngô mật Nhật Bản, Bắp ngọt hữu cơ.\n• **Rau ăn lá & Nấm:** Cải xoăn Kale hữu cơ, Cải bó xôi, Nấm mối đen hữu cơ, Nấm đùi gà baby, Tỏi cô đơn Lý Sơn.\n\nBạn có thể vào mục **Lô mùa vụ** trên thanh menu để chọn mua ngay!";
+        }
+
+        if (q.Contains("xin chào") || q.Contains("chào") || q.Contains("hi") || q.Contains("hello"))
+        {
+            return "Xin chào bạn! 🌿 Rất vui được hỗ trợ bạn. Bạn đang muốn tìm hiểu về sản phẩm nông sản nào, quy trình đặt trước theo mùa vụ hay thông tin thanh toán chuyển khoản VietQR?";
+        }
+
+        return "Cảm ơn bạn đã nhắn tin cho COOPAGRI! 🌿\n\nChúng tôi chuyên cung cấp nông sản sạch theo mùa vụ với cam kết bao tiêu và phân bổ minh bạch. Bạn có thể hỏi tôi bất kỳ thông tin nào về: sản phẩm, giá sỉ bao tiêu, chính sách đại lý, quy tắc phân bổ hụt mùa vụ hoặc quét mã chuyển khoản VietQR!";
+    }
+}

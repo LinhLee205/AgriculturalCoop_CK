@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 280" width="100%" height="100%">
+  <defs>
+    <!-- Background & Shadow Gradients -->
+    <radialGradient id="floorShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#0f172a" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="tomatoGlow" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff7b72"/>
+      <stop offset="40%" stop-color="#e53935"/>
+      <stop offset="85%" stop-color="#b71c1c"/>
+      <stop offset="100%" stop-color="#5f0909"/>
+    </radialGradient>
+    <radialGradient id="tomatoSmall" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff8a80"/>
+      <stop offset="45%" stop-color="#ef5350"/>
+      <stop offset="90%" stop-color="#c62828"/>
+    </radialGradient>
+    <linearGradient id="kaleGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#66bb6a"/>
+      <stop offset="50%" stop-color="#2e7d32"/>
+      <stop offset="100%" stop-color="#1b5e20"/>
+    </linearGradient>
+    <linearGradient id="kaleStem" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8f5e9"/>
+      <stop offset="100%" stop-color="#a5d6a7"/>
+    </linearGradient>
+    <radialGradient id="orangeGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffe082"/>
+      <stop offset="35%" stop-color="#ffa726"/>
+      <stop offset="80%" stop-color="#f57c00"/>
+      <stop offset="100%" stop-color="#e65100"/>
+    </radialGradient>
+    <radialGradient id="avocadoGrad" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#81c784"/>
+      <stop offset="50%" stop-color="#388e3c"/>
+      <stop offset="90%" stop-color="#1b5e20"/>
+      <stop offset="100%" stop-color="#0d3b13"/>
+    </radialGradient>
+    <linearGradient id="carrotGrad" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#ff9800"/>
+      <stop offset="50%" stop-color="#f57c00"/>
+      <stop offset="100%" stop-color="#d84315"/>
+    </linearGradient>
+    <linearGradient id="crateGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c89666"/>
+      <stop offset="50%" stop-color="#a67244"/>
+      <stop offset="100%" stop-color="#825228"/>
+    </linearGradient>
+    <linearGradient id="cratePlank" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b07d4f"/>
+      <stop offset="20%" stop-color="#d2a070"/>
+      <stop offset="80%" stop-color="#ba8656"/>
+      <stop offset="100%" stop-color="#8a582e"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#81c784"/>
+      <stop offset="100%" stop-color="#2e7d32"/>
+    </linearGradient>
+    <radialGradient id="berryGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff5252"/>
+      <stop offset="50%" stop-color="#d50000"/>
+      <stop offset="100%" stop-color="#880e4f"/>
+    </radialGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Ground Soft Shadows -->
+  <ellipse cx="320" cy="242" rx="280" ry="26" fill="url(#floorShadow)"/>
+  <ellipse cx="145" cy="236" rx="90" ry="18" fill="url(#floorShadow)"/>
+  <ellipse cx="485" cy="238" rx="100" ry="20" fill="url(#floorShadow)"/>
+
+  <!-- BACK LAYER: Big Leaves & Kale Greens -->
+  <g id="background-greens">
+    <!-- Big romaine lettuce leaf left -->
+    <path d="M70,220 C60,140 100,70 145,50 C165,100 160,170 150,225 Z" fill="url(#kaleGrad)" opacity="0.95"/>
+    <path d="M110,65 Q135,130 145,220" stroke="url(#kaleStem)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    
+    <!-- Big curly kale center-left -->
+    <path d="M140,210 C130,120 180,40 230,25 C260,70 250,150 220,215 Z" fill="url(#kaleGrad)"/>
+    <path d="M190,40 Q210,120 205,210" stroke="url(#kaleStem)" stroke-width="5" fill="none" stroke-linecap="round"/>
+    
+    <!-- Crisp cabbage fan center -->
+    <path d="M220,215 C230,130 300,55 350,50 C380,95 360,170 330,225 Z" fill="url(#kaleGrad)" opacity="0.9"/>
+    <path d="M290,60 Q320,135 315,220" stroke="url(#kaleStem)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Herb sprigs right -->
+    <path d="M480,220 C500,145 470,80 435,55 C420,100 435,165 460,225 Z" fill="url(#kaleGrad)"/>
+    <path d="M455,68 Q450,135 465,220" stroke="url(#kaleStem)" stroke-width="4" fill="none"/>
+  </g>
+
+  <!-- MID LAYER: Wooden Farm Crate / Rustic Basket -->
+  <g id="farm-crate">
+    <path d="M120,185 L520,185 L490,248 L150,248 Z" fill="url(#crateGrad)"/>
+    <!-- Crate slats -->
+    <rect x="135" y="190" width="370" height="15" rx="3" fill="url(#cratePlank)"/>
+    <rect x="142" y="210" width="356" height="15" rx="3" fill="url(#cratePlank)"/>
+    <rect x="150" y="230" width="340" height="14" rx="3" fill="url(#cratePlank)"/>
+    <!-- Crate corner posts -->
+    <rect x="130" y="185" width="18" height="63" rx="2" fill="#75471e"/>
+    <rect x="492" y="185" width="18" height="63" rx="2" fill="#75471e"/>
+    <rect x="305" y="186" width="16" height="62" rx="2" fill="#75471e"/>
+    <!-- HTX Organic Stamp on Crate -->
+    <rect x="200" y="211" width="100" height="13" rx="2" fill="#3e2712" opacity="0.45"/>
+    <text x="250" y="221" font-size="8.5" font-weight="900" font-family="system-ui, -apple-system, sans-serif" fill="#d2a070" text-anchor="middle" letter-spacing="1">COOPAGRI · VIETGAP</text>
+  </g>
+
+  <!-- FOREGROUND LAYER: Luscious Ripe Farm Produce -->
+  <g id="foreground-produce">
+    <!-- 1. Crisp Carrots leaning right -->
+    <g transform="translate(420, 110) rotate(35)">
+      <!-- Carrot greens -->
+      <path d="M0,0 C-10,-35 15,-60 5,-80 C-5,-50 -25,-30 0,0" fill="#43a047"/>
+      <path d="M5,-10 C25,-40 45,-65 35,-85 C15,-55 5,-35 5,-10" fill="#2e7d32"/>
+      <!-- Body -->
+      <polygon points="-12,0 12,0 0,135" fill="url(#carrotGrad)"/>
+      <ellipse cx="0" cy="0" rx="12" ry="4" fill="#ffb74d"/>
+      <!-- Ridges -->
+      <path d="M-8,25 Q0,28 8,24" stroke="#bf360c" stroke-width="1.2" fill="none" opacity="0.6"/>
+      <path d="M-6,55 Q0,58 6,54" stroke="#bf360c" stroke-width="1.2" fill="none" opacity="0.6"/>
+      <path d="M-4,85 Q0,87 4,84" stroke="#bf360c" stroke-width="1.2" fill="none" opacity="0.6"/>
+    </g>
+
+    <!-- 2. Ripe Golden Orange / Thanh Trà Citrus -->
+    <g transform="translate(385, 185)">
+      <circle cx="0" cy="0" r="38" fill="url(#orangeGrad)"/>
+      <!-- Glossy highlight -->
+      <ellipse cx="-12" cy="-14" rx="14" ry="7" transform="rotate(-30, -12, -14)" fill="#ffffff" opacity="0.38"/>
+      <!-- Tiny stem + leaf -->
+      <path d="M0,-36 Q8,-44 4,-48" stroke="#5d4037" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M2,-40 C14,-50 28,-42 24,-34 C16,-34 6,-36 2,-40 Z" fill="#43a047"/>
+    </g>
+
+    <!-- 3. Fresh Hass Avocado / Bơ sáp -->
+    <g transform="translate(145, 195) rotate(-18)">
+      <path d="M0,-38 C-18,-38 -32,-10 -34,18 C-36,44 -18,54 0,54 C18,54 36,44 34,18 C32,-10 18,-38 0,-38 Z" fill="url(#avocadoGrad)"/>
+      <ellipse cx="-9" cy="0" rx="8" ry="24" transform="rotate(-15, -9, 0)" fill="#ffffff" opacity="0.2"/>
+      <circle cx="0" cy="-36" r="3.5" fill="#2e1c0c"/>
+    </g>
+
+    <!-- 4. King Vine Beef Tomato (Center piece) -->
+    <g transform="translate(265, 175)">
+      <!-- Drop shadow inside crate -->
+      <ellipse cx="0" cy="46" rx="42" ry="12" fill="#000000" opacity="0.25"/>
+      <!-- Tomato Body -->
+      <ellipse cx="0" cy="0" rx="48" ry="43" fill="url(#tomatoGlow)"/>
+      <!-- Realistic highlight curved -->
+      <path d="M-28,-18 C-20,-32 -2,-34 10,-32 C-2,-26 -16,-16 -24,-2 Z" fill="#ffffff" opacity="0.45"/>
+      <ellipse cx="-20" cy="-12" rx="10" ry="6" transform="rotate(-25, -20, -12)" fill="#ffffff" opacity="0.6"/>
+      <circle cx="-10" cy="8" r="2.5" fill="#ffffff" opacity="0.4"/>
+      <!-- Green Sepal / Calyx Star -->
+      <g transform="translate(0, -40)">
+        <path d="M0,0 C-10,-4 -20,4 -28,8 C-18,6 -8,4 0,0" fill="#2e7d32"/>
+        <path d="M0,0 C-4,-10 -6,-22 -8,-30 C-2,-18 0,-8 0,0" fill="#43a047"/>
+        <path d="M0,0 C8,-10 16,-18 24,-24 C16,-14 6,-6 0,0" fill="#388e3c"/>
+        <path d="M0,0 C12,-2 22,6 30,12 C18,8 8,4 0,0" fill="#2e7d32"/>
+        <path d="M0,0 C-8,4 -16,14 -20,22 C-14,14 -6,6 0,0" fill="#388e3c"/>
+        <!-- Stem curving up -->
+        <path d="M0,0 Q-4,-14 2,-20" stroke="#2e7d32" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- 5. Sweet Vine Cherry Tomato (Front right) -->
+    <g transform="translate(325, 205)">
+      <circle cx="0" cy="0" r="22" fill="url(#tomatoSmall)"/>
+      <ellipse cx="-7" cy="-7" rx="6" ry="3.5" transform="rotate(-30, -7, -7)" fill="#ffffff" opacity="0.55"/>
+      <!-- Calyx -->
+      <path d="M0,-21 L-6,-26 L-1,-21 L6,-27 L2,-20 L8,-16 L1,-19 L-4,-15 Z" fill="#388e3c"/>
+    </g>
+
+    <!-- 6. Fresh Strawberry / Dâu tây Đà Lạt (Front left) -->
+    <g transform="translate(205, 215) rotate(12)">
+      <path d="M-15,-10 C-18,10 -6,22 0,28 C6,22 18,10 15,-10 C10,-14 -10,-14 -15,-10 Z" fill="url(#berryGrad)"/>
+      <!-- Seeds -->
+      <circle cx="-6" cy="-2" r="1.2" fill="#ffe082"/>
+      <circle cx="4" cy="-3" r="1.2" fill="#ffe082"/>
+      <circle cx="-2" cy="7" r="1.2" fill="#ffe082"/>
+      <circle cx="5" cy="12" r="1.2" fill="#ffe082"/>
+      <circle cx="-5" cy="16" r="1.2" fill="#ffe082"/>
+      <circle cx="0" cy="22" r="1" fill="#ffe082"/>
+      <!-- Green cap -->
+      <path d="M0,-12 L-8,-16 L-4,-11 L-14,-12 L-6,-9 L0,-12 L6,-9 L14,-12 L4,-11 L8,-16 Z" fill="#43a047"/>
+    </g>
+
+    <!-- 7. Baby cucumber / Dưa leo baby right -->
+    <g transform="translate(480, 205) rotate(25)">
+      <path d="M-8,-32 C-14,0 -12,30 -6,45 C-1,52 10,50 12,42 C15,25 12,-10 6,-34 C3,-40 -5,-38 -8,-32 Z" fill="#2e7d32"/>
+      <ellipse cx="2" cy="0" rx="3" ry="25" fill="#81c784" opacity="0.4"/>
+      <circle cx="-1" cy="-35" r="2" fill="#fbc02d"/>
+    </g>
+
+    <!-- Crisp Water Dewdrops on Front Fruit -->
+    <g id="dewdrops">
+      <ellipse cx="282" cy="180" rx="3" ry="2" fill="#ffffff" opacity="0.8"/>
+      <ellipse cx="284" cy="181" rx="1.5" ry="1" fill="#b71c1c" opacity="0.5"/>
+      <circle cx="370" cy="188" r="2" fill="#ffffff" opacity="0.85"/>
+      <circle cx="395" cy="165" r="2.2" fill="#ffffff" opacity="0.75"/>
+    </g>
+  </g>
+</svg>
+

@@ -1,65 +1,217 @@
 @page "/admin/integrations"
 @layout AdminLayout
 @attribute [Authorize(Roles = "Admin")]
+@using System.Text.Json
+@using System.Text.Json.Nodes
 @inject IGenerateAllocationNoticeUseCase GenerateNotice
 @inject ISendAllocationNoticeUseCase SendNotice
 @inject AgriculturalCoop.WebApp.Services.INoticeAiStatus AiConnection
-<PageTitle>AI & thông báo — COOPAGRI</PageTitle>
-<div class="page-heading"><div><span class="eyebrow">THÔNG BÁO CHO ĐẠI LÝ</span><h1>AI & thông báo trên web</h1><p>Thông báo kết quả ngay trong ứng dụng; AI là lựa chọn bổ sung qua Internet.</p></div></div>
-<section class="admin-card mb-4">
-    <h2 class="h5">Bạn có thể dùng ngay mà chưa cần cấu hình</h2>
-    <p>Khi lưu phân bổ, ứng dụng tự tạo thông báo kết quả trên web cho từng đại lý. Đại lý mở biểu tượng chuông → <strong>Thông báo của tôi</strong> để xem. Không cần AI hoặc email cho bước này.</p>
-    <p>Muốn giải thích thêm, admin bấm <strong>Soạn thông báo</strong>, chọn mẫu hoặc AI, kiểm tra và bấm <strong>Duyệt và đăng trên web</strong>. Nội dung AI chưa duyệt không được lưu thành thông báo.</p>
-    <dl class="mb-3">
-        <dt>API và khóa API là gì?</dt><dd>API là đường kết nối để ứng dụng nhờ dịch vụ AI bên ngoài viết lời văn. Khóa API giống mật khẩu riêng cho đường kết nối đó, do nhà cung cấp cấp cho tài khoản của bạn.</dd>
-        <dt>SMTP là gì?</dt><dd>SMTP là cách ứng dụng chuyển thư qua nhà cung cấp email. Chỉ cần cấu hình khi bạn muốn bấm gửi thư trực tiếp trong ứng dụng.</dd>
-        <dt>Manage User Secrets là gì?</dt><dd>Đây là nơi Visual Studio lưu riêng thông tin bí mật của ứng dụng trên tài khoản Windows đang dùng. Khi triển khai, thông tin này được đặt ở máy chủ.</dd>
-    </dl>
-    <p class="small mb-0">Theo đề tài 16 trong PDF: AI soạn thông báo là mở rộng tùy chọn. Đề không bắt buộc email/SMTP. Luồng hiện tại dùng thông báo trên web.</p>
-</section>
-<div class="row g-4 mb-4">
-    <div class="col-md-6"><section class="admin-card"><h2 class="h5">AI hỗ trợ soạn thư</h2><span class="badge @(GenerateNotice.IsAiAvailable ? "bg-success" : "bg-secondary")">@(GenerateNotice.IsAiAvailable ? "Đã có cấu hình" : "Chưa cấu hình / đã tắt")</span><p class="small mt-3 mb-1"><strong>Nhà cung cấp:</strong> @AiConnection.DisplayName</p><p class="small"><strong>Mô hình:</strong> @(string.IsNullOrEmpty(AiConnection.Model) ? "Chưa chọn" : AiConnection.Model)</p><p class="small text-muted mb-0">AI xử lý lời văn. Số liệu thật do ứng dụng điền; ứng dụng không tự gửi tên, email, địa chỉ hoặc điện thoại đại lý tới AI. Trạng thái trên chỉ xác nhận đủ cấu hình, chưa kiểm tra khóa hoặc gói miễn phí của tài khoản.</p></section></div>
-    <div class="col-md-6"><section class="admin-card"><h2 class="h5">Thông báo trên website</h2><span class="badge bg-success-subtle text-success">Không cần email / SMTP</span><p class="small text-muted mt-3">Lưu phân bổ sẽ tạo thông báo riêng cho từng đại lý. Đại lý xem qua biểu tượng chuông và đánh dấu đã đọc. Nội dung AI chỉ được đăng sau khi admin duyệt.</p></section></div>
+@inject IConfiguration Configuration
+@inject IWebHostEnvironment Environment
+@inject ILogger<Integrations> Logger
+
+<PageTitle>AI & Thông Báo — COOPAGRI</PageTitle>
+
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">CẤU HÌNH HỆ THỐNG</span>
+        <h1>AI & Thông Báo Phân Bổ</h1>
+        <p>Quản lý kết nối dịch vụ trí tuệ nhân tạo (Google Gemini / Ollama) và cài đặt thông báo cho đại lý.</p>
+    </div>
 </div>
+
+@if (saveSuccess != null)
+{
+    <div class="alert alert-success d-flex align-items-center mb-4 rounded-4 shadow-xs" role="status">
+        <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+        <div>@saveSuccess</div>
+    </div>
+}
+
+@if (saveError != null)
+{
+    <div class="alert alert-danger d-flex align-items-center mb-4 rounded-4 shadow-xs" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+        <div>@saveError</div>
+    </div>
+}
+
+<!-- 1. FORM CẤU HÌNH NHANH GOOGLE GEMINI / OLLAMA TRỰC TIẾP -->
+<section class="admin-card mb-4" style="border-left: 4px solid #16a34a;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;">
+                <i class="bi bi-robot fs-5"></i>
+            </div>
+            <div>
+                <h2 class="h5 mb-0 fw-bold">Cấu hình kết nối Google Gemini AI</h2>
+                <small class="text-muted">Nhập API Key để kích hoạt tính năng "Soạn bằng AI" trong quản lý phân bổ mùa vụ</small>
+            </div>
+        </div>
+        <span class="badge @(GenerateNotice.IsAiAvailable ? "bg-success" : "bg-warning text-dark") rounded-pill px-3 py-2 fs-6">
+            <i class="bi @(GenerateNotice.IsAiAvailable ? "bi-check-circle" : "bi-exclamation-circle") me-1"></i>
+            @(GenerateNotice.IsAiAvailable ? "AI Đang Hoạt Động" : "AI Chưa Có API Key")
+        </span>
+    </div>
+
+    <form @onsubmit="SaveAiConfig" class="mt-4">
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label for="ai-provider" class="form-label small fw-semibold">Nhà cung cấp AI (Provider)</label>
+                <select id="ai-provider" class="form-select rounded-pill" @bind="selectedProvider">
+                    <option value="Gemini">Google Gemini (Khuyên dùng)</option>
+                    <option value="Ollama">Ollama Local (Chạy máy tính cục bộ)</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label for="ai-model" class="form-label small fw-semibold">Mô hình AI (Model)</label>
+                <select id="ai-model" class="form-select rounded-pill" @bind="selectedModel">
+                    @if (selectedProvider == "Gemini")
+                    {
+                        <option value="gemini-1.5-flash">gemini-1.5-flash (Nhanh & Tối ưu)</option>
+                        <option value="gemini-1.5-pro">gemini-1.5-pro (Mạnh mẽ)</option>
+                    }
+                    else
+                    {
+                        <option value="llama3">llama3</option>
+                        <option value="mistral">mistral</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="ai-key" class="form-label small fw-semibold">
+                    Google Gemini API Key
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="small text-decoration-none ms-1">
+                        (Lấy key miễn phí ↗)
+                    </a>
+                </label>
+                <div class="input-group">
+                    <input id="ai-key" type="@(showKey ? "text" : "password")" class="form-control rounded-start-pill"
+                           placeholder="Dán mã khóa AIzaSy... tại đây"
+                           @bind="apiKey" disabled="@(selectedProvider == "Ollama")" />
+                    <button type="button" class="btn btn-outline-secondary rounded-end-pill px-3" @onclick="() => showKey = !showKey">
+                        <i class="bi @(showKey ? "bi-eye-slash" : "bi-eye")"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 mt-4 flex-wrap">
+            <button type="submit" class="btn btn-success rounded-pill px-4 py-2 fw-semibold shadow-xs" disabled="@isSaving">
+                <i class="bi bi-floppy me-1"></i> @(isSaving ? "Đang lưu cấu hình…" : "Lưu & Kích hoạt AI ngay")
+            </button>
+            <span class="small text-muted">
+                <i class="bi bi-shield-lock me-1 text-success"></i>
+                Khóa được lưu bảo mật trong tệp cấu hình của ứng dụng.
+            </span>
+        </div>
+    </form>
+</section>
+
+<!-- 2. TRẠNG THÁI HIỆN TẠI VÀ THÔNG BÁO CHO ĐẠI LÝ -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <section class="admin-card h-100">
+            <h2 class="h5 fw-bold mb-3">AI Hỗ Trợ Soạn Thư Phân Bổ</h2>
+            <div class="p-3 bg-light rounded-4 mb-3">
+                <p class="small mb-1"><strong>Nhà cung cấp hiện hành:</strong> @AiConnection.DisplayName</p>
+                <p class="small mb-0"><strong>Mô hình đang chọn:</strong> @(string.IsNullOrEmpty(AiConnection.Model) ? "Chưa chọn" : AiConnection.Model)</p>
+            </div>
+            <p class="small text-muted mb-0">
+                AI chỉ hỗ trợ diễn đạt lời mở đầu và lời kết lịch sự. Toàn bộ số liệu sản lượng dự kiến, sản lượng thực tế và đơn giá được ứng dụng điền chính xác từ CSDL, đảm bảo nguyên tắc an toàn thông tin theo yêu cầu đề án.
+            </p>
+        </section>
+    </div>
+    
+    <div class="col-md-6">
+        <section class="admin-card h-100">
+            <h2 class="h5 fw-bold mb-3">Thông Báo Trên Website</h2>
+            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1-5 mb-3">Không cần SMTP / Email</span>
+            <p class="small text-muted mb-0">
+                Khi admin lưu kết quả phân bổ sản lượng mùa vụ, hệ thống tự động sinh thông báo trên web cho từng đại lý. Đại lý nhận thông báo tức thì qua biểu tượng chuông và xem chi tiết sản lượng được chia.
+            </p>
+        </section>
+    </div>
+</div>
+
+<!-- 3. HƯỚNG DẪN CHI TIẾT TẠO KHÓA GOOGLE GEMINI FREE TIER -->
 <section class="admin-card mb-4">
-    <h2 class="h5">Dùng Gemini với hạn mức miễn phí</h2>
+    <h2 class="h5 fw-bold mb-3">Hướng dẫn 3 bước lấy khóa Gemini API miễn phí (Free Tier)</h2>
     <ol class="integration-steps">
-        <li>Mở <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio</a>, đăng nhập tài khoản Google rồi chọn <strong>Get API key</strong>.</li>
-        <li>Chọn dự án ở <strong>Free tier</strong>, chưa liên kết tài khoản thanh toán. Kiểm tra mô hình có Free tier trong <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener noreferrer">bảng giá của Google</a>.</li>
-        <li>Trong Visual Studio: bấm phải <strong>AgriculturalCoop.WebApp → Manage User Secrets</strong>. Thêm mục AI theo mẫu dưới đây, thay phần khóa bằng khóa Gemini của bạn; giữ các cấu hình khác đang có.</li>
-        <li>Khởi động lại app. Lưu phân bổ → Soạn thông báo → Soạn bằng AI → kiểm tra → Duyệt và đăng trên web.</li>
+        <li>Truy cập <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio</a> và đăng nhập bằng tài khoản Google của bạn.</li>
+        <li>Bấm vào nút <strong>Get API key</strong> ở góc trên bên trái, sau đó chọn <strong>Create API key</strong>.</li>
+        <li>Sao chép chuỗi ký tự khóa (bắt đầu bằng <code>AIzaSy...</code>), dán vào ô <strong>Google Gemini API Key</strong> ở khung cấu hình phía trên và bấm <strong>Lưu & Kích hoạt AI ngay</strong>.</li>
     </ol>
-    <pre class="integration-config">@GeminiExample</pre>
-    <p class="small">Khi hết hạn mức, ứng dụng báo lỗi để bạn chờ hoặc dùng bản nháp theo mẫu; không tự thử lại hay chuyển sang OpenAI. Nếu Google báo “Your project has been denied access”, hãy kiểm tra dự án trong AI Studio và liên hệ hỗ trợ Google; thay SMTP không giải quyết lỗi này. Ứng dụng không kiểm tra được trạng thái thanh toán của dự án Google.</p>
-    <p class="small text-muted mb-0">Google có thể dùng nội dung ở Free tier để cải thiện sản phẩm. Khi demo, dùng dữ liệu giả; không nhập thông tin cá nhân hoặc bí mật vào ô lý do mùa vụ. Xem <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer">điều khoản Google</a>. Không cần cài mô hình AI trên máy.</p>
+    <p class="small text-muted mb-0">
+        Khóa Gemini Free Tier hoàn toàn miễn phí, không yêu cầu thẻ tín dụng, cho phép gọi thoải mái để thử nghiệm và demo đồ án.
+    </p>
 </section>
-<section class="admin-card">
-    <details><summary class="fw-bold">Email mở rộng — không dùng trong luồng thông báo hiện tại</summary>
-    <p class="mt-3">Adapter email được giữ trong mã nguồn để mở rộng sau. Nút duyệt hiện tại đăng lên website, không gửi email. Bạn không cần điền các cấu hình dưới đây.</p>
-    <ol class="integration-steps">
-        <li>Gemini dùng mẫu ở trên. Nếu muốn dùng OpenAI, chủ động đổi Provider thành OpenAI và điền cấu hình OpenAI riêng theo tài liệu của dự án; ứng dụng không tự chuyển nhà cung cấp.</li>
-        <li>Chuẩn bị tài khoản SMTP của nhà cung cấp email. Nếu dùng Gmail, dùng mật khẩu ứng dụng do Google cấp; không nhập mật khẩu đăng nhập thông thường.</li>
-        <li>Trong Visual Studio, bấm phải dự án <strong>AgriculturalCoop.WebApp → Manage User Secrets</strong>, điền cấu hình mẫu bên dưới bằng thông tin thật. Giữ nguyên phần ConnectionStrings nếu đang có.</li>
-        <li>Việc cấu hình chỉ chuẩn bị adapter, chưa bật một luồng gửi email trong giao diện hiện tại.</li>
-    </ol>
-    <pre class="integration-config">@Example</pre>
-    <p class="text-muted small mb-0">Không đưa khóa API hoặc mật khẩu thật vào Git hay gửi qua chat. Ứng dụng không gửi thư thử tự động.</p>
-    </details>
-</section>
+
 @code {
-    private const string Example = @"{
-  ""Email"": {
-    ""Host"": ""SMTP_CUA_NHA_CUNG_CAP"",
-    ""Port"": 587,
-    ""EnableSsl"": true,
-    ""Username"": ""TAI_KHOAN_SMTP"",
-    ""Password"": ""MAT_KHAU_UNG_DUNG_HOAC_SMTP"",
-    ""FromAddress"": ""EMAIL_GUI_CUA_BAN"",
-    ""FromName"": ""COOPAGRI""
-  }
-}";
-    private static string GeminiExample => System.Text.Json.JsonSerializer.Serialize(new
+    private string selectedProvider = "Gemini";
+    private string selectedModel = "gemini-1.5-flash";
+    private string apiKey = "";
+    private bool showKey = false;
+    private bool isSaving = false;
+    private string? saveSuccess;
+    private string? saveError;
+
+    protected override void OnInitialized()
     {
-        AI = new { Provider = "Gemini", Gemini = new { ApiKey = "DAN_KHOA_GEMINI_CUA_BAN_TAI_DAY", Model = AgriculturalCoop.WebApp.Services.NoticeAiConnection.DefaultGeminiModel } }
-    }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        var provider = Configuration["AI:Provider"];
+        if (!string.IsNullOrWhiteSpace(provider)) selectedProvider = provider;
+
+        var model = Configuration["AI:Gemini:Model"];
+        if (!string.IsNullOrWhiteSpace(model)) selectedModel = model;
+
+        var key = Configuration["AI:Gemini:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(key)) apiKey = key;
+    }
+
+    private async Task SaveAiConfig()
+    {
+        isSaving = true;
+        saveSuccess = saveError = null;
+
+        try
+        {
+            var configPath = Path.Combine(Environment.ContentRootPath, "appsettings.json");
+            if (!File.Exists(configPath))
+            {
+                throw new FileNotFoundException("Không tìm thấy tệp appsettings.json.");
+            }
+
+            var jsonString = await File.ReadAllTextAsync(configPath);
+            var jsonNode = JsonNode.Parse(jsonString);
+
+            if (jsonNode is JsonObject root)
+            {
+                var aiNode = root["AI"] as JsonObject ?? new JsonObject();
+                aiNode["Provider"] = selectedProvider;
+
+                var geminiNode = aiNode["Gemini"] as JsonObject ?? new JsonObject();
+                geminiNode["Model"] = selectedModel;
+                geminiNode["ApiKey"] = apiKey.Trim();
+                aiNode["Gemini"] = geminiNode;
+
+                root["AI"] = aiNode;
+
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                await File.WriteAllTextAsync(configPath, root.ToJsonString(options));
+
+                saveSuccess = "Đã lưu cấu hình AI thành công vào hệ thống! Bạn có thể sử dụng tính năng 'Soạn bằng AI' trong trang phân bổ mùa vụ ngay bây giờ.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not save AI configuration");
+            saveError = "Lỗi khi lưu cấu hình: " + ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
 }

@@ -270,13 +270,15 @@ else
             UnitPrice = batch.UnitPrice
         };
         preOrder.PreOrderLines.Add(line);
-        preOrder.PreOrderLines.AddRange(Cart.Items.Select(i => new PreOrderLine { HarvestBatchId = i.HarvestBatchId, Quantity = i.Quantity }));
+        preOrder.PreOrderLines.AddRange(Cart.Items
+            .Where(i => i.HarvestBatchId != batch.HarvestBatchId)
+            .Select(i => new PreOrderLine { HarvestBatchId = i.HarvestBatchId, Quantity = i.Quantity }));
 
         try
         {
             // Gọi UseCase: Nơi LUẬT 1 (K1.3) và TRANSACTION (K2.2) được thực thi!
             await ValidateOrder.ValidateAsync(preOrder);
-            Cart.AddItem(batch, orderModel.Quantity);
+            Cart.SetOrAddItem(batch, orderModel.Quantity);
             Nav.NavigateTo("/checkout");
         }
         catch (ExceededExpectedYieldException ex)
@@ -299,7 +301,7 @@ else
             return;
         }
 
-        Cart.AddItem(batch, orderModel.Quantity);
+        Cart.SetOrAddItem(batch, orderModel.Quantity);
         Nav.NavigateTo("/cart");
     }
 }

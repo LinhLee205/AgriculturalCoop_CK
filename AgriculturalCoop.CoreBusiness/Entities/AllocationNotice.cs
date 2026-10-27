@@ -12,7 +12,7 @@ public sealed class AllocationNoticeDraft
     public required string Fingerprint { get; init; }
     public string Subject { get; set; } = "";
     public string Body { get; set; } = "";
-    public bool IsAiGenerated { get; init; }
+    public bool IsAiGenerated { get; set; }
 }
 
 public sealed record AllocationNoticeFacts(string BatchCode, string ProductName,

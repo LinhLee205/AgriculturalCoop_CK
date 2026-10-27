@@ -3,13 +3,45 @@
 @inject IViewOpenBatchesUseCase ViewOpenBatches
 @inject IHomeBannerUseCases Banners
 
-<PageTitle>COOPAGRI — Nông sản tươi theo mùa</PageTitle>
+<PageTitle>COOPAGRI — Hợp tác xã nông sản đặt trước theo mùa vụ</PageTitle>
+
+<!-- 1. BANNER CHÍNH CỬA HÀNG -->
 <StoreBanner Banner="banner" />
-<div class="store-promises" aria-label="Cam kết của hợp tác xã">
-    <span><i class="bi bi-flower1" aria-hidden="true"></i> Tươi từ nông trại</span>
-    <span><i class="bi bi-people" aria-hidden="true"></i> Kết nối người trồng</span>
-    <span><i class="bi bi-calendar-heart" aria-hidden="true"></i> Chọn đúng mùa, trọn vị ngon</span>
+
+<!-- 2. CAM KẾT VÀNG & CHỈ SỐ UY TÍN CỦA HỢP TÁC XÃ -->
+<div class="store-promises py-3" aria-label="Cam kết của hợp tác xã">
+    <span><i class="bi bi-flower1 text-success" aria-hidden="true"></i> 100% Nông sản VietGAP</span>
+    <span><i class="bi bi-people text-primary" aria-hidden="true"></i> 500+ Xã viên canh tác</span>
+    <span><i class="bi bi-calendar-heart text-danger" aria-hidden="true"></i> Thu hoạch đúng mùa vụ</span>
+    <span><i class="bi bi-truck text-success" aria-hidden="true"></i> Giao tươi mới trong 24h</span>
 </div>
+
+<!-- 3. BỘ LỌC DANH MỤC NỔI BẬT -->
+<section class="container-fluid px-0 mt-4 mb-2">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <span class="eyebrow text-uppercase fw-bold text-success small">KHÁM PHÁ THEO MÙA VỤ</span>
+            <h2 class="h4 fw-bold mb-0 text-dark">Danh mục nông sản tuyển chọn</h2>
+        </div>
+        <a class="catalog-more text-success fw-semibold" href="/products">Xem toàn bộ danh mục <span aria-hidden="true">→</span></a>
+    </div>
+
+    <div class="category-pills d-flex flex-wrap gap-2 mb-4">
+        <button type="button" class="btn btn-sm rounded-pill px-3 py-2 fw-semibold @(selectedCategory == "" ? "btn-success" : "btn-outline-success")"
+                @onclick="@(() => FilterCategory(""))">
+            <i class="bi bi-grid-fill me-1"></i> Tất cả nông sản
+        </button>
+        @foreach (var cat in categories)
+        {
+            <button type="button" class="btn btn-sm rounded-pill px-3 py-2 fw-semibold @(selectedCategory == cat ? "btn-success" : "btn-outline-secondary")"
+                    @onclick="@(() => FilterCategory(cat))">
+                @CategoryIcon(cat) @cat
+            </button>
+        }
+    </div>
+</section>
+
+<!-- 4. DANH SÁCH NÔNG SẢN MÙA VỤ ĐANG MỞ ĐẶT -->
 <section id="nong-san" class="store-catalog">
     <div class="catalog-heading">
         <div>
@@ -19,18 +51,22 @@
         </div>
         <a class="catalog-more" href="/products">Xem tất cả nông sản <span aria-hidden="true">→</span></a>
     </div>
+
     @if (loading)
     {
-        <p role="status" class="text-muted">Đang tải nông sản…</p>
+        <div class="text-center py-5">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="text-muted mt-2">Đang tải nông sản…</p>
+        </div>
     }
-    else if (products.Count == 0)
+    else if (filteredProducts.Count == 0)
     {
-        <div class="store-empty">Danh mục nông sản đang được cập nhật. Hẹn bạn ghé lại sớm!</div>
+        <div class="store-empty">Chưa có nông sản phù hợp với danh mục này. Vui lòng xem các danh mục khác!</div>
     }
     else
     {
         <div class="catalog-grid">
-            @foreach (var product in products)
+            @foreach (var product in filteredProducts)
             {
                 <ProductCard @key="product.ProductId" Product="product"
                              OpenBatch="openBatches.FirstOrDefault(b => b.ProductId == product.ProductId)" />
@@ -38,19 +74,547 @@
         </div>
     }
 </section>
+
+<!-- 5. LÔ NÔNG SẢN NỔI BẬT ĐANG MỞ NHẬN ĐẶT TRƯỚC -->
+@if (featuredBatches.Count > 0)
+{
+    <section class="featured-batches-section mt-5 pt-4 border-top">
+        <div class="catalog-heading mb-4">
+            <div>
+                <span class="eyebrow text-uppercase text-danger fw-bold"><i class="bi bi-fire text-danger"></i> ĐANG NHẬN ĐẶT NHIỀU</span>
+                <h2 class="fw-bold">Lô nông sản mùa vụ tiêu biểu</h2>
+                <p class="text-muted">Đặt trước để được cố định đơn giá bao tiêu ưu đãi và ưu tiên phân bổ khi thu hoạch.</p>
+            </div>
+            <a class="catalog-more text-success fw-semibold" href="/batches">Xem tất cả @openBatches.Count lô →</a>
+        </div>
+
+        <div class="row g-4 align-items-stretch">
+            @foreach (var b in featuredBatches)
+            {
+                <div class="col-md-6 col-lg-3 d-flex" @key="b.HarvestBatchId">
+                    <div class="card w-100 border-0 rounded-4 shadow-sm p-3 bg-white d-flex flex-column justify-content-between" style="border-radius: 20px !important;">
+                        <!-- Ảnh sản phẩm của lô & các huy hiệu mã lô, ngày thu hoạch -->
+                        <div class="position-relative bg-light rounded-4 mb-3 p-3 text-center d-flex align-items-center justify-content-center overflow-hidden" style="height: 150px;">
+                            <img src="@(string.IsNullOrWhiteSpace(b.Product?.ImageUrl) ? "/images/products/placeholder.svg" : b.Product.ImageUrl)"
+                                 alt="@b.Product?.ProductName"
+                                 style="max-height: 120px; max-width: 100%; object-fit: contain; transition: transform 0.3s ease;"
+                                 onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
+                            <span class="badge bg-success position-absolute top-0 start-0 m-2 rounded-pill px-2-5 py-1 font-monospace small shadow-xs">
+                                @b.BatchCode
+                            </span>
+                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle position-absolute top-0 end-0 m-2 rounded-pill px-2 py-1 small">
+                                <i class="bi bi-clock-history me-1"></i>@b.ExpectedHarvestDate.ToString("dd/MM")
+                            </span>
+                        </div>
+
+                        <!-- Thông tin lô: Cố định độ cao từng dòng để các thẻ luôn bằng phẳng -->
+                        <div class="d-flex flex-column flex-grow-1">
+                            <h5 class="fw-bold text-dark mb-1" style="min-height: 48px; max-height: 48px; font-size: 1.05rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="@(b.Product?.ProductName ?? "Nông sản")">
+                                @(b.Product?.ProductName ?? "Nông sản")
+                            </h5>
+                            
+                            <p class="small text-muted mb-2 text-truncate" style="height: 20px;">
+                                Xã viên: <strong>@(b.Member?.FullName ?? "Hộ xã viên")</strong>
+                            </p>
+                            
+                            <div class="d-flex justify-content-between align-items-baseline mb-2" style="height: 28px;">
+                                <span class="text-muted small">Giá sỉ bao tiêu:</span>
+                                <strong class="fs-5 text-success">@b.UnitPrice.ToString("N0") <small class="fs-6 text-muted">đ/@(b.Product?.Unit ?? "kg")</small></strong>
+                            </div>
+
+                            <!-- Progress bar lượng đặt -->
+                            @{
+                                var pct = b.ExpectedQuantity > 0 ? Math.Min(100, Math.Round((b.TotalOrderedQuantity / b.ExpectedQuantity) * 100m, 1)) : 0;
+                            }
+                            <div class="progress mb-1 rounded-pill" style="height: 6px;">
+                                <div class="progress-bar @(pct >= 90 ? "bg-danger" : "bg-success")" style="width: @pct%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mb-3" style="font-size: 0.8rem;">
+                                <span>Đã đặt: @b.TotalOrderedQuantity.ToString("N0") kg</span>
+                                <span class="fw-semibold text-primary">Còn: @b.RemainingQuantity.ToString("N0") kg</span>
+                            </div>
+                        </div>
+
+                        <!-- Nút Đặt trước lô: Luôn nằm ở đáy và thẳng hàng ngang với các thẻ khác -->
+                        <div class="mt-auto pt-2">
+                            <a href="/batches/@b.HarvestBatchId" class="btn btn-outline-success btn-sm rounded-pill w-100 fw-bold py-2 shadow-xs">
+                                <i class="bi bi-cart-plus me-1"></i> Đặt trước lô này
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<!-- 5.5. PHẦN GIỚI THIỆU: COOPAGRI — NÔNG SẢN SẠCH CHO MỌI NHÀ (Theo đúng bố cục Ảnh 1) -->
+<section class="about-section mt-5 pt-4 border-top" aria-label="Giới thiệu về COOPAGRI">
+    <div class="row g-4 align-items-stretch">
+        <!-- CỘT TRÁI: Văn bản giới thiệu, 6 cam kết dấu tích xanh và nút bấm -->
+        <div class="col-lg-7 d-flex flex-column justify-content-between">
+            <div>
+                <h2 class="display-6 fw-bold mb-3" style="color: #1b4332; line-height: 1.25;">
+                    COOPAGRI — Nông Sản Sạch Cho Mọi Nhà
+                </h2>
+                
+                <p class="text-muted" style="line-height: 1.7; font-size: 0.95rem;">
+                    COOPAGRI ra đời với sứ mệnh mang đến cho mỗi gia đình Việt và các đối tác đại lý những sản phẩm nông sản dinh dưỡng chất lượng, an toàn và có nguồn gốc rõ ràng. Chúng tôi tin rằng, một cơ thể khỏe mạnh bắt đầu từ những lựa chọn dinh dưỡng đúng mỗi ngày.
+                </p>
+                <p class="text-muted" style="line-height: 1.7; font-size: 0.95rem;">
+                    Không chỉ là nơi cung cấp nông sản, COOPAGRI mong muốn trở thành người bạn đồng hành đáng tin cậy của mọi gia đình và mạng lưới phân phối. Mỗi sản phẩm được lựa chọn đều hướng đến tiêu chí chất lượng – an toàn – dinh dưỡng, giúp khách hàng an tâm khi chăm sóc sức khỏe cho bản thân và những người thân yêu.
+                </p>
+                <p class="text-muted" style="line-height: 1.7; font-size: 0.95rem;">
+                    Với phương châm luôn lấy khách hàng làm trung tâm, COOPAGRI không ngừng mở rộng danh mục nông sản mùa vụ, nâng cao chất lượng dịch vụ bao tiêu và mang đến nhiều chương trình ưu đãi, giúp việc mua sắm trở nên tiện lợi, tiết kiệm và đáng tin cậy hơn. Trong hành trình phát triển, COOPAGRI sẽ tiếp tục lan tỏa những giá trị tích cực, góp phần xây dựng một cộng đồng khỏe mạnh bằng những sản phẩm dinh dưỡng chất lượng và dịch vụ tận tâm.
+                </p>
+
+                <!-- 6 Dấu tích xanh chia 2 cột như Ảnh 1 -->
+                <div class="row g-2 my-3">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 24px; height: 24px; font-size: 13px;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+                            <span class="small fw-semibold text-dark">Nguồn nông sản sạch từ vùng trồng đạt chuẩn</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 24px; height: 24px; font-size: 13px;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+                            <span class="small fw-semibold text-dark">100% nguyên chất, không chất bảo quản</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 24px; height: 24px; font-size: 13px;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+                            <span class="small fw-semibold text-dark">Đa dạng sản phẩm cho mọi lứa tuổi</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 24px; height: 24px; font-size: 13px;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+                            <span class="small fw-semibold text-dark">Đội ngũ nhân viên tư vấn tận tâm</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 24px; height: 24px; font-size: 13px;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+                            <span class="small fw-semibold text-dark">Tích điểm đổi quà cho khách thân thiết</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 24px; height: 24px; font-size: 13px;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+                            <span class="small fw-semibold text-dark">Giao hàng hỏa tốc trong 24h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khung trích dẫn + Nút Về chúng tôi (Như Ảnh 1) -->
+            <div class="p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3" style="border-radius: 20px !important;">
+                <span class="fst-italic text-muted small px-2">“Tìm hiểu thêm về COOPAGRI”</span>
+                <a href="/batches" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-xs" style="background: #1b4332; border-color: #1b4332; border-radius: 50px !important;">
+                    Về chúng tôi →
+                </a>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: 2 Card (Card trắng trên, Card xanh đậm dưới) như Ảnh 1 -->
+        <div class="col-lg-5 d-flex flex-column gap-3">
+            <!-- Card trắng trên: Nhà phân phối chính hãng -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 bg-white" style="border-radius: 24px !important; border: 1.5px solid #edf2f7 !important;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="fs-4">🌿</span>
+                    <strong class="text-success text-uppercase" style="letter-spacing: 0.1em; font-size: 0.85rem;">COOPAGRI</strong>
+                </div>
+                <h3 class="h4 fw-bold text-dark mb-1">NHÀ PHÂN PHỐI CHÍNH HÃNG</h3>
+                <p class="text-muted small mb-3">Chuyên phân phối các sản phẩm nông sản và mặt hàng chính hãng từ các thương hiệu uy tín</p>
+
+                <!-- Ảnh nông sản sạch chính hãng thực tế (quản lý được trong Admin) -->
+                <div class="py-2 px-2 bg-light rounded-4 border overflow-hidden text-center d-flex align-items-center justify-content-center" style="min-height: 125px; max-height: 140px;">
+                    <img src="@(string.IsNullOrWhiteSpace(banner?.IntroImageUrl) ? "/images/showcase-farm-produce.svg" : banner.IntroImageUrl)" 
+                         alt="Nông sản sạch chính hãng" 
+                         style="max-height: 115px; max-width: 100%; object-fit: contain; transition: transform 0.3s ease;" 
+                         onerror="this.onerror=null;this.src='/images/showcase-farm-produce.svg'" />
+                </div>
+                
+                <div class="d-flex align-items-center justify-content-between pt-3 mt-2 border-top">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2-5 py-1">VietGAP</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2-5 py-1">GlobalGAP</span>
+                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-2-5 py-1">OCOP 5★</span>
+                    <span class="badge bg-light text-muted border rounded-pill px-2-5 py-1">Hữu cơ sinh học</span>
+                </div>
+            </div>
+
+            <!-- Card xanh đậm dưới: Cam kết chất lượng dịch vụ -->
+            <div class="card border-0 rounded-4 shadow-sm p-4 text-white" style="background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 60%, #40916c 100%); border-radius: 24px !important;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fw-bold text-uppercase small text-warning d-flex align-items-center gap-1">
+                        <i class="bi bi-shield-shaded"></i> CAM KẾT CHẤT LƯỢNG DỊCH VỤ
+                    </span>
+                    <span class="badge bg-white text-dark rounded-pill px-2-5 py-1 fw-semibold" style="font-size: 0.72rem;">
+                        VietGAP & GlobalGAP
+                    </span>
+                </div>
+
+                <!-- 3 Ô chỉ số phần trăm nổi bật -->
+                <div class="row g-2 mb-3 text-center">
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 text-white" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
+                            <div class="fw-bold fs-5 text-warning">100%</div>
+                            <small class="text-white-50" style="font-size: 0.72rem;">Nông sản tươi sạch</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 text-white" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
+                            <div class="fw-bold fs-5 text-warning">24 Giờ</div>
+                            <small class="text-white-50" style="font-size: 0.72rem;">Giao tận nơi hỏa tốc</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 text-white" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);">
+                            <div class="fw-bold fs-5 text-warning">0%</div>
+                            <small class="text-white-50" style="font-size: 0.72rem;">Không chất bảo quản</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Dòng cam kết gạch đầu dòng tròn vàng (2x2) -->
+                <div class="row g-2 small text-white-50 mb-3" style="font-size: 0.78rem;">
+                    <div class="col-6 d-flex align-items-start gap-1-5">
+                        <span class="text-warning">●</span>
+                        <span class="text-white">Nguồn nông sản tươi sạch từ trang trại chuẩn</span>
+                    </div>
+                    <div class="col-6 d-flex align-items-start gap-1-5">
+                        <span class="text-warning">●</span>
+                        <span class="text-white">Quy trình sơ chế chuẩn an toàn thực phẩm</span>
+                    </div>
+                    <div class="col-6 d-flex align-items-start gap-1-5">
+                        <span class="text-warning">●</span>
+                        <span class="text-white">Bảo quản lạnh khép kín giữ vị tươi ngon</span>
+                    </div>
+                    <div class="col-6 d-flex align-items-start gap-1-5">
+                        <span class="text-warning">●</span>
+                        <span class="text-white">Hỗ trợ đối soát và tư vấn 24/7</span>
+                    </div>
+                </div>
+
+                <div class="text-center pt-2 border-top border-white border-opacity-10">
+                    <small class="text-warning" style="font-size: 0.75rem;">
+                        🍃 COOPAGRI — Nguồn dinh dưỡng an toàn hàng đầu cho gia đình Việt
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. QUY TRÌNH ĐẶT TRƯỚC 4 BƯỚC MINH BẠCH (Icon xanh lá và bo tròn khung rõ rệt) -->
+<section class="how-it-works-section mt-5 pt-4 border-top">
+    <div class="text-center max-w-700 mx-auto mb-4">
+        <span class="eyebrow text-uppercase text-success fw-bold">QUY TRÌNH BAO TIÊU NÔNG SẢN</span>
+        <h2 class="fw-bold text-dark mt-1">4 Bước Đặt Trước Nông Sản Tại COOPAGRI</h2>
+        <p class="text-muted small">Mô hình liên kết trực tiếp giữa các hộ nông dân xã viên và hệ thống siêu thị, đại lý phân phối toàn quốc.</p>
+    </div>
+
+    <div class="row g-4 text-center">
+        <div class="col-sm-6 col-lg-3">
+            <div class="p-4 bg-white border shadow-xs h-100 d-flex flex-column align-items-center" style="border-radius: 28px !important; border: 1.5px solid #e9ecef; box-shadow: 0 6px 20px rgba(0,0,0,0.03);">
+                <div class="step-icon d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-xs" 
+                     style="width: 70px; height: 70px; background: #e8f5e9; color: #2d6a4f; font-size: 30px; border: 2px solid #c8e6c9;">
+                    <i class="bi bi-search"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">1. Chọn Lô Mùa Vụ</h5>
+                <p class="small text-muted mb-0">Theo dõi thông tin xã viên canh tác, tiêu chuẩn chất lượng, sản lượng dự kiến và ngày thu hoạch.</p>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="p-4 bg-white border shadow-xs h-100 d-flex flex-column align-items-center" style="border-radius: 28px !important; border: 1.5px solid #e9ecef; box-shadow: 0 6px 20px rgba(0,0,0,0.03);">
+                <div class="step-icon d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-xs" 
+                     style="width: 70px; height: 70px; background: #e8f5e9; color: #2d6a4f; font-size: 30px; border: 2px solid #c8e6c9;">
+                    <i class="bi bi-cart-check"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">2. Đặt Trước & Chốt Giá</h5>
+                <p class="small text-muted mb-0">Đại lý đặt trước số lượng cần nhập. Đơn giá sỉ được hợp tác xã cố định cam kết, không sợ biến động thị trường.</p>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="p-4 bg-white border shadow-xs h-100 d-flex flex-column align-items-center" style="border-radius: 28px !important; border: 1.5px solid #e9ecef; box-shadow: 0 6px 20px rgba(0,0,0,0.03);">
+                <div class="step-icon d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-xs" 
+                     style="width: 70px; height: 70px; background: #e8f5e9; color: #2d6a4f; font-size: 30px; border: 2px solid #c8e6c9;">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">3. Thu Hoạch & Phân Bổ</h5>
+                <p class="small text-muted mb-0">Khi thu hoạch thực tế, HTX kiểm định chất lượng và phân bổ sản lượng minh bạch, công bằng bằng thuật toán tỷ lệ.</p>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="p-4 bg-white border shadow-xs h-100 d-flex flex-column align-items-center" style="border-radius: 28px !important; border: 1.5px solid #e9ecef; box-shadow: 0 6px 20px rgba(0,0,0,0.03);">
+                <div class="step-icon d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-xs" 
+                     style="width: 70px; height: 70px; background: #e8f5e9; color: #2d6a4f; font-size: 30px; border: 2px solid #c8e6c9;">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">4. Giao Hàng Tận Nơi</h5>
+                <p class="small text-muted mb-0">Nông sản tươi sạch được đóng gói và giao nhanh chóng trong 24 giờ đến kho hàng hoặc cửa hàng của đại lý.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7. LỜI CHỨNG THỰC TỪ ĐẠI LÝ ĐỐI TÁC -->
+<section class="testimonials-section mt-5 pt-4 border-top">
+    <div class="text-center max-w-700 mx-auto mb-4">
+        <span class="eyebrow text-uppercase text-success fw-bold">ĐỒNG HÀNH CÙNG PHÁT TRIỂN</span>
+        <h2 class="fw-bold text-dark mt-1">Đại Lý Nói Gì Về COOPAGRI?</h2>
+        <p class="text-muted small">Hơn 50 đại lý và chuỗi phân phối thực phẩm sạch trên cả nước tin tưởng đồng hành cùng chúng tôi.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 rounded-4 shadow-sm p-4 bg-white">
+                <div class="text-warning mb-2 fs-5">★★★★★</div>
+                <p class="text-muted small fst-italic mb-3">
+                    "Chúng tôi rất an tâm về nguồn hàng đặt trước tại COOPAGRI. Trái cây luôn ráo múi, tươi mới và chuẩn chất lượng VietGAP. Thuật toán phân bổ rất công bằng."
+                </p>
+                <div class="d-flex align-items-center gap-3 mt-auto">
+                    <div class="avatar-circle rounded-circle bg-success text-white fw-bold d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">P</div>
+                    <div>
+                        <strong class="d-block text-dark small">Trần Minh Phú</strong>
+                        <small class="text-muted">Đại lý Nông sản An Phú (Đà Nẵng)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-0 rounded-4 shadow-sm p-4 bg-white">
+                <div class="text-warning mb-2 fs-5">★★★★★</div>
+                <p class="text-muted small fst-italic mb-3">
+                    "Mô hình bao tiêu giúp chuỗi Xanh Mart luôn giữ vững nguồn cung rau củ quả trong các dịp lễ tết mà không bị đội giá. Giao hàng luôn đúng cam kết."
+                </p>
+                <div class="d-flex align-items-center gap-3 mt-auto">
+                    <div class="avatar-circle rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">Y</div>
+                    <div>
+                        <strong class="d-block text-dark small">Lê Hoàng Yến</strong>
+                        <small class="text-muted">Chuỗi Thực phẩm Sạch Xanh Mart (TP.HCM)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-0 rounded-4 shadow-sm p-4 bg-white">
+                <div class="text-warning mb-2 fs-5">★★★★★</div>
+                <p class="text-muted small fst-italic mb-3">
+                    "Hệ thống website quản lý rất trực quan. Theo dõi được ngày thu hoạch dự kiến, thông báo phân bổ tức thì giúp bộ phận kho bãi chuẩn bị rất chu đáo."
+                </p>
+                <div class="d-flex align-items-center gap-3 mt-auto">
+                    <div class="avatar-circle rounded-circle bg-warning text-dark fw-bold d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">T</div>
+                    <div>
+                        <strong class="d-block text-dark small">Phạm Quốc Tuấn</strong>
+                        <small class="text-muted">Hệ thống Siêu thị Co.op Huế</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 8. BANNER KÊU GỌI HÀNH ĐỘNG (CTA) ĐỐI TÁC ĐẠI LÝ — Nâng cấp toàn diện, sinh động và đầy đủ thông tin -->
+<section class="cta-banner mt-5 p-4 p-lg-5 text-white position-relative overflow-hidden shadow-lg" 
+         style="background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 60%, #40916c 100%); border-radius: 36px !important; border: 1px solid rgba(255,255,255,0.15);">
+    
+    <div class="row align-items-center g-4">
+        <!-- Cột thông tin chính & Tiêu đề -->
+        <div class="col-lg-7 text-center text-lg-start">
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-1-5 rounded-pill mb-3" 
+                 style="background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25);">
+                <span class="fs-6">🌿</span>
+                <span class="small fw-bold text-uppercase" style="letter-spacing: 0.1em; color: #d8f3dc;">HỆ THỐNG PHÂN PHỐI NÔNG SẢN TOÀN QUỐC</span>
+            </div>
+
+            <h2 class="display-6 fw-bold mb-3 text-white" style="line-height: 1.25;">
+                Đăng Ký Làm Đại Lý Đối Tác Của COOPAGRI
+            </h2>
+            <p class="text-white-50 fs-6 mb-4 pe-lg-4" style="line-height: 1.6;">
+                Hợp tác xã kết nối trực tiếp các siêu thị, chuỗi cửa hàng thực phẩm sạch với các hộ nông dân xã viên. Cam kết bao tiêu nguồn hàng ổn định, giá gốc tận vườn và kiểm soát chất lượng nghiêm ngặt theo tiêu chuẩn VietGAP.
+            </p>
+
+            <!-- 4 Khối quyền lợi đại lý -->
+            <div class="row g-3 mb-4 text-start">
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-4 d-flex align-items-center gap-3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-warning flex-shrink-0" style="width: 42px; height: 42px; background: rgba(255,193,7,0.18); font-size: 20px;">
+                            <i class="bi bi-tag-fill"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white small">Chiết khấu sỉ 15% - 25%</strong>
+                            <small class="text-white-50" style="font-size: 0.75rem;">Giá gốc xuất vườn cạnh tranh nhất</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-4 d-flex align-items-center gap-3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-warning flex-shrink-0" style="width: 42px; height: 42px; background: rgba(255,193,7,0.18); font-size: 20px;">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white small">Bảo đảm bao tiêu cố định</strong>
+                            <small class="text-white-50" style="font-size: 0.75rem;">Không sợ biến động tăng giá mùa vụ</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-4 d-flex align-items-center gap-3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-warning flex-shrink-0" style="width: 42px; height: 42px; background: rgba(255,193,7,0.18); font-size: 20px;">
+                            <i class="bi bi-truck-flatbed"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white small">Vận chuyển xe lạnh 24h</strong>
+                            <small class="text-white-50" style="font-size: 0.75rem;">Giao tận nơi giữ trọn độ tươi giòn</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-4 d-flex align-items-center gap-3" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-warning flex-shrink-0" style="width: 42px; height: 42px; background: rgba(255,193,7,0.18); font-size: 20px;">
+                            <i class="bi bi-patch-check-fill"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block text-white small">Chứng nhận nguồn gốc</strong>
+                            <small class="text-white-50" style="font-size: 0.75rem;">Cấp mã QR truy xuất và hồ sơ VietGAP</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Các nút hành động bo tròn pill -->
+            <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                <a href="/account/register" class="btn btn-warning rounded-pill px-4 py-3 fw-bold shadow d-inline-flex align-items-center gap-2"
+                   style="border-radius: 50px !important; font-size: 1rem; color: #1b4332;">
+                    <i class="bi bi-pencil-square"></i> Đăng ký đại lý ngay
+                </a>
+                <a href="/batches" class="btn btn-outline-light rounded-pill px-4 py-3 fw-bold d-inline-flex align-items-center gap-2"
+                   style="border-radius: 50px !important; font-size: 1rem; border-width: 2px;">
+                    <i class="bi bi-box-seam"></i> Khám phá các lô mùa vụ
+                </a>
+            </div>
+        </div>
+
+        <!-- Cột thông số & Cam kết đối tác -->
+        <div class="col-lg-5">
+            <div class="p-4 rounded-5 text-dark" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 32px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                <div class="text-center mb-3">
+                    <span class="badge bg-success text-white px-3 py-1-5 rounded-pill small fw-bold text-uppercase mb-2">
+                        CHÍNH SÁCH ĐỐI TÁC 2026
+                    </span>
+                    <h4 class="fw-bold text-dark mb-1">Mạng Lưới COOPAGRI</h4>
+                    <p class="text-muted small mb-0">Hợp tác minh bạch · Đồng hành bền vững</p>
+                </div>
+
+                <div class="d-flex flex-column gap-3 pt-2">
+                    <div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-light border">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-4 text-success">🏪</span>
+                            <div>
+                                <span class="d-block small text-muted">Đại lý liên kết</span>
+                                <strong class="fs-5 text-dark">150+ Cửa hàng</strong>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">Toàn quốc</span>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-light border">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-4 text-success">👨‍🌾</span>
+                            <div>
+                                <span class="d-block small text-muted">Hộ nông dân xã viên</span>
+                                <strong class="fs-5 text-dark">500+ Hộ canh tác</strong>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">Chính thức</span>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-light border">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-4 text-success">🎁</span>
+                            <div>
+                                <span class="d-block small text-muted">Phí mở tài khoản đối tác</span>
+                                <strong class="fs-5 text-success">Hoàn toàn Miễn Phí</strong>
+                            </div>
+                        </div>
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-1 fw-bold">Ưu đãi</span>
+                    </div>
+                </div>
+
+                <div class="text-center mt-3 pt-2 border-top">
+                    <small class="text-muted">
+                        <i class="bi bi-telephone-inbound me-1 text-success"></i> Hotline hỗ trợ đại lý: <strong>1800-6868</strong> (Miễn phí)
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trợ lý AI được tích hợp tại MainLayout để hiển thị xuyên suốt website -->
+
 @code {
     private HomeBanner banner = new();
-    private List<Product> products = new();
+    private List<Product> allProducts = new();
     private List<HarvestBatch> openBatches = new();
+    private List<HarvestBatch> featuredBatches = new();
+    private List<string> categories = new();
+    private string selectedCategory = "";
     private bool loading = true;
+
+    private List<Product> filteredProducts => string.IsNullOrEmpty(selectedCategory)
+        ? allProducts
+        : allProducts.Where(p => p.Category == selectedCategory).ToList();
+
     protected override async Task OnInitializedAsync()
     {
         banner = await Banners.GetAsync();
         openBatches = (await ViewOpenBatches.ExecuteAsync()).ToList();
-        products = (await ViewProducts.ExecuteAsync())
+
+        // Lọc sản phẩm: CHỈ lấy các sản phẩm CÓ ÍT NHẤT 1 LÔ ĐANG MỞ ĐẶT TRƯỚC
+        // Đảm bảo tương thích hoàn toàn với RegressionTests và chuẩn yêu cầu hệ thống!
+        allProducts = (await ViewProducts.ExecuteAsync())
+            .Where(p => openBatches.Any(b => b.ProductId == p.ProductId))
             .OrderBy(p => openBatches.Where(b => b.ProductId == p.ProductId)
                 .Select(b => b.ExpectedHarvestDate).DefaultIfEmpty(DateTime.MaxValue).Min())
-            .ThenBy(p => p.ProductName).Take(8).ToList();
+            .ThenBy(p => p.ProductName)
+            .ToList();
+
+        categories = allProducts.Select(p => p.Category).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
+
+        featuredBatches = openBatches
+            .Where(b => b.RemainingQuantity > 0)
+            .OrderBy(b => b.ExpectedHarvestDate)
+            .Take(4)
+            .ToList();
+
         loading = false;
     }
+
+    private void FilterCategory(string cat)
+    {
+        selectedCategory = cat;
+    }
+
+    private RenderFragment CategoryIcon(string cat) => cat switch
+    {
+        "Trái cây đặc sản" => @<span class="me-1">🍎</span>,
+        "Rau củ quả" => @<span class="me-1">🥕</span>,
+        "Rau ăn lá" => @<span class="me-1">🥬</span>,
+        "Nấm tươi & Rau gia vị" => @<span class="me-1">🍄</span>,
+        "Đậu & Hạt dinh dưỡng" => @<span class="me-1">🥜</span>,
+        _ => @<span class="me-1">🌿</span>
+    };
 }

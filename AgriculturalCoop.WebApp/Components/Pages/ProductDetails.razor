@@ -1,4 +1,4 @@
-﻿@page "/products/{ProductId:int}"
+@page "/products/{ProductId:int}"
 @inject IViewProductsUseCase ViewProducts
 @inject IViewOpenBatchesUseCase ViewBatches
 @inject IViewHarvestBatchByIdUseCase ViewBatch
@@ -20,7 +20,7 @@ else if (product == null)
 else
 {
     <nav class="product-breadcrumb" aria-label="Đường dẫn"><a href="/">Trang chủ</a><span>/</span><a href="/#nong-san">Nông sản</a><span>/</span><strong>@product.ProductName</strong></nav>
-    <section class="product-purchase-layout">
+    <section class="@(openBatches.Count > 0 ? "product-purchase-layout" : "product-view-layout")">
         <div class="product-photo-panel">
             <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/images/products/placeholder.svg" : product.ImageUrl)"
                  alt="@product.ProductName" onerror="this.onerror=null;this.src='/images/products/placeholder.svg'" />
@@ -152,7 +152,7 @@ else
     {
         var order = new PreOrder { DealerId = UserSession.CurrentDealerId };
         if (includeCart)
-            order.PreOrderLines.AddRange(Cart.Items.Select(i => new PreOrderLine { HarvestBatchId = i.HarvestBatchId, Quantity = i.Quantity }));
+            order.PreOrderLines.AddRange(Cart.Items.Where(i => i.HarvestBatchId != selectedBatchId).Select(i => new PreOrderLine { HarvestBatchId = i.HarvestBatchId, Quantity = i.Quantity }));
         order.PreOrderLines.Add(new PreOrderLine { HarvestBatchId = selectedBatchId, Quantity = quantity });
         return order;
     }
@@ -171,7 +171,7 @@ else
         {
             await ValidateOrder.ValidateAsync(BuildOrder(true));
             var latest = await ViewBatch.ExecuteAsync(selectedBatchId) ?? throw new PreOrderDomainException("Lô không còn tồn tại.");
-            Cart.AddItem(latest, quantity);
+            Cart.SetOrAddItem(latest, quantity);
             message = "Đã thêm nông sản vào giỏ đặt trước.";
         }
         catch (PreOrderDomainException ex) { error = ex.Message; }
@@ -186,7 +186,7 @@ else
         {
             await ValidateOrder.ValidateAsync(BuildOrder(true));
             var latest = await ViewBatch.ExecuteAsync(selectedBatchId) ?? throw new PreOrderDomainException("Lô không còn tồn tại.");
-            Cart.AddItem(latest, quantity);
+            Cart.SetOrAddItem(latest, quantity);
             Navigation.NavigateTo("/checkout");
         }
         catch (PreOrderDomainException ex) { error = ex.Message; }

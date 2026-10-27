@@ -2,31 +2,135 @@
 @attribute [Authorize(Roles = "Dealer")]
 @inject IDealerNotificationUseCases Notifications
 @inject ILogger<MyNotifications> Logger
+
 <PageTitle>Thông báo của tôi — COOPAGRI</PageTitle>
-<div class="page-heading"><div><span class="eyebrow">TÀI KHOẢN ĐẠI LÝ</span><h1>Thông báo của tôi</h1><p>Kết quả phân bổ và nội dung bổ sung từ hợp tác xã.</p></div><button class="btn btn-outline-success" @onclick="Load" disabled="@loading">Làm mới</button></div>
-@if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }
-@if (loading) { <p role="status">Đang tải thông báo…</p> }
-else if (items.Count == 0) { <div class="store-empty">Chưa có thông báo. Khi hợp tác xã lưu phân bổ cho đơn của bạn, thông báo sẽ xuất hiện tại đây.</div> }
+
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">TÀI KHOẢN ĐẠI LÝ</span>
+        <h1>Thông báo của tôi</h1>
+        <p>Kết quả phân bổ và văn bản thông báo chính thức từ ban quản lý hợp tác xã.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="/my-allocations" class="btn btn-outline-success rounded-pill px-3">
+            <i class="bi bi-pie-chart me-1"></i> Xem bảng phân bổ
+        </a>
+        <button class="btn btn-success rounded-pill px-4" @onclick="Load" disabled="@loading">
+            <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+        </button>
+    </div>
+</div>
+
+@if (error != null) { <div class="alert alert-danger rounded-4 shadow-sm" role="alert">@error</div> }
+
+@if (BatchId.HasValue)
+{
+    <div class="alert alert-success-subtle border border-success-subtle py-2 px-4 rounded-pill d-flex align-items-center justify-content-between mb-4 shadow-xs">
+        <span class="small fw-semibold text-success">
+            <i class="bi bi-funnel-fill me-1"></i> Đang lọc thông báo cho lô #@BatchId
+        </span>
+        <a href="/my-notifications" class="text-success fw-bold text-decoration-none small">
+            Xem tất cả thông báo (<span class="text-decoration-underline">Bỏ lọc</span>)
+        </a>
+    </div>
+}
+
+@if (loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted mt-2">Đang tải danh sách thông báo…</p>
+    </div>
+}
+else if (!FilteredItems.Any())
+{
+    <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white" style="border-radius: 28px !important;">
+        <i class="bi bi-bell-slash text-muted fs-1 mb-3"></i>
+        <h4 class="fw-bold text-dark">Chưa có thông báo nào</h4>
+        <p class="text-muted small">Khi hợp tác xã lưu phân bổ cho đơn của bạn, thông báo sẽ xuất hiện tại đây.</p>
+        <div class="mt-2">
+            <a href="/my-allocations" class="btn btn-outline-success rounded-pill px-4">Xem phân bổ của bạn</a>
+        </div>
+    </div>
+}
 else
 {
-    <div class="notification-list">
-        @foreach (var item in items)
+    <div class="notification-list d-flex flex-column gap-3">
+        @foreach (var item in FilteredItems)
         {
-            <article class="admin-card mb-3 @(item.ReadAt == null && !item.IsSuperseded ? "notification-unread" : "")" @key="item.DealerNotificationId">
-                <div class="d-flex justify-content-between flex-wrap gap-2 mb-3"><span class="badge bg-success-subtle text-success">@(item.Kind == 0 ? "Kết quả phân bổ" : "Nội dung bổ sung đã duyệt")</span><small class="text-muted">@item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</small></div>
-                <h2 class="h5">@item.Subject</h2>
-                @if (item.IsSuperseded) { <p class="alert alert-warning small">Lô đã được phân bổ lại sau thông báo bổ sung này. Hãy xem kết quả mới nhất trước khi nhận hàng.</p> }
-                <p class="notification-body">@item.Body</p>
-                <div class="d-flex align-items-center gap-3 flex-wrap"><a href="/my-allocations" class="btn btn-sm btn-outline-success">Xem phân bổ nhận được</a>@if (item.ReadAt == null) { <button class="btn btn-sm btn-success" disabled="@busy" @onclick="() => MarkRead(item.DealerNotificationId)">Đánh dấu đã đọc</button> } else { <small class="text-muted">Đã đọc</small> }</div>
+            var isTarget = BatchId.HasValue && item.HarvestBatchId == BatchId.Value;
+            <article class="card border-0 shadow-sm p-4 bg-white @(isTarget ? "border border-success border-2 shadow" : "") @(item.ReadAt == null && !item.IsSuperseded ? "notification-unread" : "")" 
+                     style="border-radius: 24px !important; @(isTarget ? "background-color: #f8fdf9 !important;" : "")" 
+                     @key="item.DealerNotificationId">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge @(item.Kind == 0 ? "bg-success-subtle text-success border border-success-subtle" : "bg-primary-subtle text-primary border border-primary-subtle") rounded-pill px-3 py-1-5 fw-semibold">
+                            @(item.Kind == 0 ? "Kết quả phân bổ" : "Nội dung bổ sung đã duyệt")
+                        </span>
+                        @if (isTarget)
+                        {
+                            <span class="badge bg-success text-white rounded-pill px-3 py-1-5">
+                                <i class="bi bi-check-circle-fill me-1"></i> Thông báo đơn vừa chọn
+                            </span>
+                        }
+                    </div>
+                    <small class="text-muted font-monospace">
+                        <i class="bi bi-clock me-1"></i>@item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+                    </small>
+                </div>
+
+                <h2 class="h5 fw-bold text-dark mb-2">@item.Subject</h2>
+                
+                @if (item.IsSuperseded)
+                {
+                    <div class="alert alert-warning small rounded-4 py-2 px-3 mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Lô đã được phân bổ lại sau thông báo bổ sung này. Hãy xem kết quả mới nhất trước khi nhận hàng.
+                    </div>
+                }
+
+                <div class="notification-body p-3 bg-light rounded-4 border text-dark mb-3" style="white-space: pre-line; line-height: 1.6; font-size: 0.95rem;">
+                    @item.Body
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                    <a href="/my-allocations" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1-5 fw-semibold">
+                        <i class="bi bi-arrow-left me-1"></i> Về danh sách phân bổ
+                    </a>
+                    
+                    <div>
+                        @if (item.ReadAt == null)
+                        {
+                            <button class="btn btn-sm btn-success rounded-pill px-3 py-1-5 fw-semibold shadow-xs" disabled="@busy" @onclick="() => MarkRead(item.DealerNotificationId)">
+                                <i class="bi bi-check2-all me-1"></i> Đánh dấu đã đọc
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-muted border px-3 py-1-5 rounded-pill">
+                                <i class="bi bi-check-circle text-success me-1"></i> Đã đọc lúc @item.ReadAt.Value.ToString("dd/MM/yyyy HH:mm")
+                            </span>
+                        }
+                    </div>
+                </div>
             </article>
         }
     </div>
 }
+
 @code {
+    [SupplyParameterFromQuery(Name = "batchId")]
+    public int? BatchId { get; set; }
+
     private List<DealerNotification> items = new();
     private bool loading = true, busy;
     private string? error;
+
+    private IEnumerable<DealerNotification> FilteredItems => BatchId.HasValue
+        ? items.Where(i => i.HarvestBatchId == BatchId.Value)
+        : items;
+
     protected override async Task OnInitializedAsync() => await Load();
+
     private async Task Load()
     {
         loading = true; error = null;
@@ -35,6 +139,7 @@ else
         catch (Exception ex) { Logger.LogError(ex, "Could not read dealer notifications"); error = "Chưa tải được thông báo. Vui lòng thử lại."; }
         finally { loading = false; }
     }
+
     private async Task MarkRead(int id)
     {
         if (busy) return;

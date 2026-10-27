@@ -3,23 +3,39 @@
 
 <PageTitle>Đăng ký đại lý - COOPAGRI</PageTitle>
 
-<div class="account-panel card border-0 shadow-sm p-4 p-md-5">
-    <span class="eyebrow">ĐỒNG HÀNH CÙNG HỢP TÁC XÃ</span>
-    <h1 class="h3 mt-2">Đăng ký đại lý</h1>
-    <p class="text-muted">
-        Thông tin tài khoản của bạn sẽ được lưu trên hệ thống.
-    </p>
+<div class="account-auth-wrapper d-flex justify-content-center align-items-center py-4">
+    <div class="account-panel card border-0 shadow-lg p-4 p-md-5" style="border-radius: 32px !important; max-width: 520px; width: 100%; background: #ffffff;">
+        <div class="text-center mb-4">
+            <div class="auth-icon-badge d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-sm" 
+                 style="width: 72px; height: 72px; background: linear-gradient(135deg, #80B155, #5e8a3a); color: white; font-size: 32px;">
+                <i class="bi bi-shop"></i>
+            </div>
+            <div>
+                <span class="eyebrow fw-bold text-uppercase d-block" style="color: #336a29; letter-spacing: 0.15em; font-size: 0.8rem;">ĐỒNG HÀNH CÙNG HỢP TÁC XÃ</span>
+                <h1 class="h3 fw-bold mt-1 text-dark">Đăng ký đại lý</h1>
+                <p class="text-muted small mb-0 px-2">
+                    Tham gia mạng lưới đối tác bao tiêu nông sản sạch cùng COOPAGRI.
+                </p>
+            </div>
+        </div>
 
-    @if (!string.IsNullOrEmpty(Error))
-    {
-        <div class="alert alert-danger">@Error</div>
-    }
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="alert alert-danger rounded-4 py-3 px-4 shadow-sm small border-0 mb-4 d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-circle-fill fs-5 flex-shrink-0"></i>
+                <div>@Error</div>
+            </div>
+        }
 
-    <AccountRegistrationForm Action="/auth/register" />
+        <AccountRegistrationForm Action="/auth/register" />
 
-    <p class="mt-4 mb-0 text-center">
-        Đã có tài khoản? <a href="/account/login">Đăng nhập</a>
-    </p>
+        <div class="mt-4 pt-3 border-top text-center">
+            <p class="mb-0 text-muted small">
+                Đã có tài khoản đại lý?
+                <a href="/account/login" class="fw-bold text-success text-decoration-none ms-1">Đăng nhập ngay →</a>
+            </p>
+        </div>
+    </div>
 </div>
 
 @code {

@@ -1,4 +1,4 @@
-﻿@page "/admin/banner"
+@page "/admin/banner"
 @layout AdminLayout
 @attribute [Authorize(Roles = "Admin")]
 @using AgriculturalCoop.UseCases.PluginInterfaces
@@ -13,7 +13,7 @@
     <div>
         <span class="eyebrow">GIAO DIỆN CỬA HÀNG</span>
         <h1>Banner & Logo Website</h1>
-        <p>Tùy chỉnh biểu tượng logo, tên thương hiệu, banner trang chủ và thông điệp hiển thị cho khách hàng.</p>
+        <p>Tùy chỉnh biểu tượng logo, tên thương hiệu, banner trang chủ và ảnh giới thiệu nông sản sạch chính hãng.</p>
     </div>
     <a class="btn btn-outline-success rounded-pill px-3" href="/" target="_blank" rel="noopener noreferrer">
         <i class="bi bi-box-arrow-up-right me-1"></i> Xem website chính
@@ -31,7 +31,7 @@ else
 {
     @if (message != null)
     {
-        <div class="alert alert-success d-flex align-items-center mb-4" role="status">
+        <div class="alert alert-success d-flex align-items-center mb-4 rounded-4" role="status">
             <i class="bi bi-check-circle-fill fs-5 me-2"></i>
             <div>@message</div>
         </div>
@@ -43,19 +43,19 @@ else
 
         @if (error != null)
         {
-            <div class="alert alert-danger mb-4" role="alert">
+            <div class="alert alert-danger mb-4 rounded-4" role="alert">
                 <i class="bi bi-exclamation-triangle-fill me-1"></i> @error
             </div>
         }
 
         <div class="row g-4">
-            <!-- CỘT 1: FORM CẤU HÌNH LOGO VÀ BANNER -->
+            <!-- CỘT 1: FORM CẤU HÌNH LOGO, BANNER VÀ ẢNH GIỚI THIỆU -->
             <div class="col-lg-7">
                 <!-- 1. CẤU HÌNH LOGO THƯƠNG HIỆU -->
                 <section class="admin-card mb-4" style="border-left: 4px solid #16a34a;">
                     <div class="d-flex align-items-center gap-2 mb-3">
                         <i class="bi bi-award fs-4 text-success"></i>
-                        <h2 class="h5 mb-0 fw-bold">Logo & Thương hiệu Website</h2>
+                        <h2 class="h5 mb-0 fw-bold">1. Logo & Thương hiệu Website</h2>
                     </div>
                     <p class="small text-muted mb-3">
                         Logo và tên thương hiệu sẽ hiển thị tại thanh điều hướng chính (Top Navbar) và chân trang (Footer) trên toàn bộ website.
@@ -100,7 +100,7 @@ else
                 <section class="admin-card mb-4" style="border-left: 4px solid #2563eb;">
                     <div class="d-flex align-items-center gap-2 mb-3">
                         <i class="bi bi-image fs-4 text-primary"></i>
-                        <h2 class="h5 mb-0 fw-bold">Banner Trang chủ</h2>
+                        <h2 class="h5 mb-0 fw-bold">2. Banner Đầu Trang Chủ</h2>
                     </div>
 
                     <div class="mb-3">
@@ -142,14 +142,40 @@ else
                         <div class="col-md-6">
                             <label for="banner-link" class="form-label small fw-semibold">Đường dẫn liên kết</label>
                             <InputText id="banner-link" class="form-control" @bind-Value="form.ButtonUrl" maxlength="200" />
-                            <small class="text-muted">Ví dụ: /#nong-san hoặc /batches</small>
                         </div>
+                    </div>
+                </section>
+
+                <!-- 3. CẤU HÌNH ẢNH GIỚI THIỆU NHÀ PHÂN PHỐI CHÍNH HÃNG (Yêu cầu ảnh 1) -->
+                <section class="admin-card mb-4" style="border-left: 4px solid #ea580c;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-basket3 fs-4 text-warning"></i>
+                        <h2 class="h5 mb-0 fw-bold">3. Ảnh Giới Thiệu "Nhà Phân Phối Chính Hãng" (Trang Chủ)</h2>
+                    </div>
+                    <p class="small text-muted mb-3">
+                        Hình ảnh thực tế trưng bày các loại nông sản tươi sạch nằm trong khung "NHÀ PHÂN PHỐI CHÍNH HÃNG" (bên cạnh các chứng nhận VietGAP, GlobalGAP, OCOP 5★).
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="intro-image" class="form-label small fw-semibold">Tải lên ảnh thực tế mới (PNG, JPG, WebP, SVG)</label>
+                        <InputFile @key="introUploadKey" id="intro-image" class="form-control" OnChange="SelectIntroImage"
+                                   accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled="@busy" />
+                        <small class="text-muted d-block mt-1">Khuyên dùng ảnh chụp giỏ nông sản thật độ phân giải cao hoặc vector nền sáng, tối đa 5 MB.</small>
+                        @if (introFile != null)
+                        {
+                            <div class="small text-success mt-1">
+                                <i class="bi bi-check2"></i> Đã chọn file ảnh giới thiệu: <strong>@introFile.Name</strong>. Bấm Lưu để cập nhật.
+                            </div>
+                        }
+                        <button type="button" class="btn btn-link btn-sm px-0 mt-1" disabled="@busy" @onclick="ResetIntroImage">
+                            Dùng ảnh thực tế mẫu mặc định (Giỏ nông sản sạch COOPAGRI)
+                        </button>
                     </div>
                 </section>
 
                 <div class="mb-4">
                     <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 shadow-sm" disabled="@busy">
-                        <i class="bi bi-floppy me-1"></i> @(busy ? "Đang lưu thay đổi…" : "Lưu thay đổi Logo & Banner")
+                        <i class="bi bi-floppy me-1"></i> @(busy ? "Đang lưu thay đổi…" : "Lưu toàn bộ thay đổi Giao diện")
                     </button>
                 </div>
             </div>
@@ -188,8 +214,25 @@ else
                                 </div>
                             </div>
                         </div>
+                    </section>
+
+                    <!-- XEM TRƯỚC ẢNH GIỚI THIỆU NHÀ PHÂN PHỐI CHÍNH HÃNG -->
+                    <section class="admin-card mb-4">
+                        <span class="eyebrow text-warning">XEM TRƯỚC KHUNG GIỚI THIỆU (ẢNH 1)</span>
+                        <h3 class="h6 fw-bold mb-2">Ảnh thực tế "Nhà Phân Phối Chính Hãng":</h3>
+                        <div class="p-3 bg-light rounded-4 border text-center">
+                            <img src="@(string.IsNullOrWhiteSpace(form.IntroImageUrl) ? "/images/showcase-farm-produce.svg" : form.IntroImageUrl)" 
+                                 alt="Showcase preview" 
+                                 style="max-height: 130px; max-width: 100%; object-fit: contain; border-radius: 8px;"
+                                 onerror="this.onerror=null;this.src='/images/showcase-farm-produce.svg'" />
+                            <div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top">
+                                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0-5 font-monospace" style="font-size: 0.7rem;">VietGAP</span>
+                                <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0-5 font-monospace" style="font-size: 0.7rem;">GlobalGAP</span>
+                                <span class="badge bg-warning-subtle text-dark rounded-pill px-2 py-0-5 font-monospace" style="font-size: 0.7rem;">OCOP 5★</span>
+                            </div>
+                        </div>
                         <small class="text-muted d-block mt-2">
-                            Logo này sẽ hiển thị ở góc trên bên trái của toàn bộ trang người dùng.
+                            Khung này hiển thị trực tiếp ở phần giới thiệu trang chủ.
                         </small>
                     </section>
 
@@ -198,11 +241,15 @@ else
                         <span class="eyebrow text-primary">XEM TRƯỚC BANNER TRANG CHỦ</span>
                         <h3 class="h6 fw-bold mb-2">Giao diện Banner:</h3>
                         <div class="rounded-3 overflow-hidden shadow-sm">
-                            <StoreBanner Banner="form" />
+                            <div class="store-banner p-3 text-white" style="background-image: url('@form.ImageUrl'); background-size: cover; background-position: center; border-radius: 12px; min-height: 130px;">
+                                <div class="bg-dark bg-opacity-50 p-2 rounded-3" style="backdrop-filter: blur(2px);">
+                                    <span class="badge bg-success-subtle text-success rounded-pill mb-1" style="font-size: 0.7rem;">@form.Eyebrow</span>
+                                    <h4 class="h6 fw-bold text-white mb-1">@form.Title</h4>
+                                    <p class="small text-white-50 mb-2" style="font-size: 0.75rem; line-height: 1.3;">@form.Description</p>
+                                    <button class="btn btn-success btn-sm rounded-pill px-3 py-1" style="font-size: 0.75rem;" disabled>@form.ButtonText →</button>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-muted small mt-2 mb-0">
-                            Sau khi lưu, làm mới (F5) trang website chính để thưởng thức giao diện mới!
-                        </p>
                     </section>
                 </div>
             </div>
@@ -212,21 +259,38 @@ else
 
 @code {
     private HomeBanner form = new();
-    private string previousBannerImage = "";
-    private string previousLogoImage = "";
+    private bool loading = true;
+    private bool busy;
+    private string? message;
+    private string? error;
     private IBrowserFile? file;
     private IBrowserFile? logoFile;
+    private IBrowserFile? introFile;
     private Guid uploadKey = Guid.NewGuid();
     private Guid logoUploadKey = Guid.NewGuid();
-    private bool loading = true, busy;
-    private string? message, error;
+    private Guid introUploadKey = Guid.NewGuid();
+    private string previousBannerImage = "";
+    private string previousLogoImage = "";
+    private string previousIntroImage = "";
 
     protected override async Task OnInitializedAsync()
     {
-        form = await Banners.GetAsync();
-        previousBannerImage = form.ImageUrl;
-        previousLogoImage = form.LogoUrl ?? "";
-        loading = false;
+        try
+        {
+            form = await Banners.GetAsync();
+            previousBannerImage = form.ImageUrl;
+            previousLogoImage = form.LogoUrl ?? "";
+            previousIntroImage = form.IntroImageUrl ?? "";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not load banner settings");
+            error = "Không tải được cấu hình banner.";
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
     private void SelectLogo(InputFileChangeEventArgs args)
@@ -259,6 +323,21 @@ else
         error = message = null;
     }
 
+    private void SelectIntroImage(InputFileChangeEventArgs args)
+    {
+        introFile = args.File;
+        error = introFile.Size > ProductImageStore.MaxBytes ? "Ảnh giới thiệu vượt quá 5 MB." : null;
+        message = null;
+    }
+
+    private void ResetIntroImage()
+    {
+        introFile = null;
+        introUploadKey = Guid.NewGuid();
+        form.IntroImageUrl = "/images/showcase-farm-produce.svg";
+        error = message = null;
+    }
+
     private async Task Save()
     {
         if (busy) return;
@@ -266,9 +345,11 @@ else
         message = error = null;
         string? uploadedBanner = null;
         string? uploadedLogo = null;
+        string? uploadedIntro = null;
         var saved = false;
         var originalBannerUrl = form.ImageUrl;
         var originalLogoUrl = form.LogoUrl;
+        var originalIntroUrl = form.IntroImageUrl;
 
         try
         {
@@ -292,11 +373,21 @@ else
                 form.ImageUrl = uploadedBanner;
             }
 
-            // 3. Lưu vào Database thông qua UseCase
+            // 3. Upload Intro Showcase Image mới nếu có chọn file
+            if (introFile != null)
+            {
+                if (introFile.Size > ProductImageStore.MaxBytes)
+                    throw new PreOrderDomainException("Ảnh giới thiệu vượt quá 5 MB.");
+                await using var introStream = introFile.OpenReadStream(ProductImageStore.MaxBytes);
+                uploadedIntro = await Images.SaveAsync(introStream, introFile.Size);
+                form.IntroImageUrl = uploadedIntro;
+            }
+
+            // 4. Lưu vào Database thông qua UseCase
             await Banners.SaveAsync(form);
             saved = true;
 
-            // 4. Dọn dẹp ảnh cũ nếu có thay đổi
+            // 5. Dọn dẹp ảnh cũ nếu có thay đổi
             if (previousBannerImage != form.ImageUrl && !previousBannerImage.StartsWith("/images/banner-harvest"))
                 await Images.RemoveAsync(previousBannerImage);
             previousBannerImage = form.ImageUrl;
@@ -305,12 +396,18 @@ else
                 await Images.RemoveAsync(previousLogoImage);
             previousLogoImage = form.LogoUrl ?? "";
 
+            if (!string.IsNullOrEmpty(previousIntroImage) && previousIntroImage != form.IntroImageUrl && !previousIntroImage.StartsWith("/images/showcase-farm-produce"))
+                await Images.RemoveAsync(previousIntroImage);
+            previousIntroImage = form.IntroImageUrl ?? "";
+
             file = null;
             logoFile = null;
+            introFile = null;
             uploadKey = Guid.NewGuid();
             logoUploadKey = Guid.NewGuid();
+            introUploadKey = Guid.NewGuid();
 
-            message = "Đã cập nhật banner và logo thương hiệu website thành công!";
+            message = "Đã cập nhật banner, logo thương hiệu và ảnh giới thiệu trang chủ thành công!";
         }
         catch (PreOrderDomainException ex)
         {
@@ -318,8 +415,8 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Could not save home banner and logo");
-            error = saved ? "Đã lưu thông tin, nhưng chưa dọn được ảnh cũ." : "Chưa lưu được banner & logo. Vui lòng thử lại.";
+            Logger.LogError(ex, "Could not save home banner, logo and intro image");
+            error = saved ? "Đã lưu thông tin, nhưng chưa dọn được ảnh cũ." : "Chưa lưu được giao diện. Vui lòng thử lại.";
         }
         finally
         {
@@ -327,6 +424,7 @@ else
             {
                 form.ImageUrl = originalBannerUrl;
                 form.LogoUrl = originalLogoUrl;
+                form.IntroImageUrl = originalIntroUrl;
                 if (uploadedBanner != null)
                 {
                     try { await Images.RemoveAsync(uploadedBanner); }
@@ -336,6 +434,11 @@ else
                 {
                     try { await Images.RemoveAsync(uploadedLogo); }
                     catch (IOException ex) { Logger.LogWarning(ex, "Could not remove unused logo upload"); }
+                }
+                if (uploadedIntro != null)
+                {
+                    try { await Images.RemoveAsync(uploadedIntro); }
+                    catch (IOException ex) { Logger.LogWarning(ex, "Could not remove unused intro upload"); }
                 }
             }
             busy = false;

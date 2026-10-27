@@ -102,6 +102,22 @@ namespace AgriculturalCoop.UseCases.PreOrders
             if (preOrder.Notes?.Length > 500)
                 throw new PreOrderDomainException("Ghi chú không quá 500 ký tự.");
 
+            if (string.IsNullOrWhiteSpace(preOrder.PaymentMethod))
+                preOrder.PaymentMethod = "COD";
+
+            if (preOrder.PaymentMethod == "BANK_TRANSFER")
+            {
+                var cleanPhone = new string((preOrder.ContactPhone ?? "").Where(char.IsDigit).ToArray());
+                preOrder.TransferContent = $"CK{cleanPhone}";
+            }
+            else
+            {
+                preOrder.TransferContent = null;
+            }
+
+            if (string.IsNullOrWhiteSpace(preOrder.PaymentStatus))
+                preOrder.PaymentStatus = "Chưa thanh toán";
+
             if (string.IsNullOrEmpty(preOrder.OrderNumber))
             {
                 preOrder.OrderNumber =

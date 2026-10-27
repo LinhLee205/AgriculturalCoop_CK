@@ -14,7 +14,7 @@
                 <a href="/my-notifications" @onclick="Close">Thông báo của tôi</a>
                 <a href="/my-allocations" @onclick="Close">Phân bổ nhận được</a>
                 <a href="/cart" @onclick="Close">Giỏ đặt trước</a>
-                <form method="post" action="/auth/logout"><AntiforgeryToken /><button class="account-signout" type="submit">Đăng xuất</button></form>
+                <form method="post" action="/auth/logout" data-enhance="false"><AntiforgeryToken /><button class="account-signout" type="submit">Đăng xuất</button></form>
             </div>
         </Authorized>
         <NotAuthorized>
@@ -24,8 +24,8 @@
                 <span class="account-dropdown-caption">CHÀO MỪNG ĐẾN COOPAGRI</span>
                 <strong>Tài khoản đại lý</strong>
                 <p>Đăng nhập để đặt trước và theo dõi mùa vụ.</p>
-                <a href="/account/login" class="btn btn-success" data-enhance-nav="false">Đăng nhập</a>
-                <a href="/account/register" class="btn btn-outline-success" data-enhance-nav="false">Đăng ký đại lý</a>
+                <a href="/account/login" class="btn btn-success" data-enhance="false">Đăng nhập</a>
+                <a href="/account/register" class="btn btn-outline-success" data-enhance="false">Đăng ký đại lý</a>
             </div>
         </NotAuthorized>
     </AuthorizeView>

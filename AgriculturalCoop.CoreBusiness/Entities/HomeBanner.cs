@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace AgriculturalCoop.CoreBusiness.Entities;
 
@@ -30,4 +30,7 @@ public class HomeBanner
 
     [StringLength(150)]
     public string BrandTagline { get; set; } = "Nông sản sạch theo mùa";
+
+    [StringLength(500)]
+    public string? IntroImageUrl { get; set; } = "/images/showcase-farm-produce.svg";
 }

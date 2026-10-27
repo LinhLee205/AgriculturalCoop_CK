@@ -1,14 +1,37 @@
-<div class="small order-delivery-summary">
-    <strong>Thông tin nhận hàng:</strong>
-    @if (string.IsNullOrWhiteSpace(Order.DeliveryAddress))
-    {
-        <span class="text-muted">Đơn cũ chưa cung cấp địa chỉ, điện thoại nhận hàng.</span>
-    }
-    else
-    {
-        <span>@Order.RecipientName · @Order.ContactPhone</span>
-        <span class="d-block mt-1">@Order.DeliveryAddress</span>
-    }
+<div class="small order-delivery-summary p-3 bg-light rounded-3 border">
+    <div class="row g-2">
+        <div class="col-md-7">
+            <strong><i class="bi bi-geo-alt-fill text-danger me-1"></i>Thông tin nhận hàng:</strong>
+            @if (string.IsNullOrWhiteSpace(Order.DeliveryAddress))
+            {
+                <span class="text-muted d-block">Đơn chưa có địa chỉ/điện thoại nhận hàng.</span>
+            }
+            else
+            {
+                <div class="mt-1">
+                    <span class="fw-bold text-dark">@Order.RecipientName</span> · <span class="font-monospace">@Order.ContactPhone</span>
+                    <span class="d-block text-muted">@Order.DeliveryAddress</span>
+                </div>
+            }
+        </div>
+        <div class="col-md-5 border-start-md ps-md-3">
+            <strong><i class="bi bi-credit-card-2-front-fill text-primary me-1"></i>Thanh toán:</strong>
+            <div class="mt-1">
+                <span class="badge @(Order.PaymentMethod == "BANK_TRANSFER" ? "bg-primary-subtle text-primary border border-primary-subtle" : "bg-secondary-subtle text-dark border") px-2 py-1 rounded-pill">
+                    @(Order.PaymentMethod == "BANK_TRANSFER" ? "Chuyển khoản VietQR" : "Thanh toán khi nhận hàng (COD)")
+                </span>
+                <span class="badge @(Order.PaymentStatus == "Đã thanh toán" ? "bg-success text-white" : "bg-warning text-dark") px-2 py-1 rounded-pill ms-1">
+                    @(string.IsNullOrEmpty(Order.PaymentStatus) ? "Chưa thanh toán" : Order.PaymentStatus)
+                </span>
+                @if (Order.PaymentMethod == "BANK_TRANSFER" && !string.IsNullOrEmpty(Order.TransferContent))
+                {
+                    <div class="mt-1 small">
+                        <span class="text-muted">Nội dung CK:</span> <strong class="text-danger font-monospace">@Order.TransferContent</strong>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 </div>
 @code {
     [Parameter, EditorRequired] public PreOrder Order { get; set; } = default!;

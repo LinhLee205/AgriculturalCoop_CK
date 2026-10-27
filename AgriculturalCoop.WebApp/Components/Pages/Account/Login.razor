@@ -5,67 +5,117 @@
 
 <PageTitle>@(IsAdminLogin ? "Đăng nhập quản trị" : "Đăng nhập đại lý") - COOPAGRI</PageTitle>
 
-<div class="account-panel card border-0 shadow-sm p-4 p-md-5">
-    <span class="eyebrow">@(IsAdminLogin ? "BAN QUẢN LÝ HỢP TÁC XÃ" : "TÀI KHOẢN ĐẠI LÝ COOPAGRI")</span>
-    <h1 class="h3 mt-2">@(IsAdminLogin ? "Đăng nhập quản trị" : "Đăng nhập đại lý")</h1>
-    <p class="text-muted">
-        @(IsAdminLogin ? "Đăng nhập để quản lý mùa vụ và hoạt động hợp tác xã." : "Đăng nhập để đặt trước nông sản và theo dõi lượng phân bổ của bạn.")
-    </p>
-
-    @if (Error == "invalid")
-    {
-        <div class="alert alert-danger">
-            @(IsAdminLogin ? "Email hoặc mật khẩu chưa đúng, hoặc tài khoản không có quyền quản trị." : "Email hoặc mật khẩu chưa đúng, hoặc tài khoản không phải đại lý.")
+<div class="account-auth-wrapper d-flex justify-content-center align-items-center py-4">
+    <div class="account-panel card border-0 shadow-lg p-4 p-md-5" style="border-radius: 32px !important; max-width: 500px; width: 100%; background: #ffffff;">
+        <div class="text-center mb-4">
+            <div class="auth-icon-badge d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-sm" 
+                 style="width: 72px; height: 72px; background: @(IsAdminLogin ? "linear-gradient(135deg, #198754, #157347)" : "linear-gradient(135deg, #80B155, #5e8a3a)"); color: white; font-size: 32px;">
+                <i class="bi @(IsAdminLogin ? "bi-shield-lock-fill" : "bi-person-check-fill")"></i>
+            </div>
+            <div>
+                <span class="eyebrow fw-bold text-uppercase d-block" style="color: #336a29; letter-spacing: 0.15em; font-size: 0.8rem;">
+                    @(IsAdminLogin ? "BAN QUẢN LÝ HỢP TÁC XÃ" : "TÀI KHOẢN ĐẠI LÝ COOPAGRI")
+                </span>
+                <h1 class="h3 fw-bold mt-1 text-dark">@(IsAdminLogin ? "Đăng nhập quản trị" : "Đăng nhập đại lý")</h1>
+                <p class="text-muted small mb-0 px-2">
+                    @(IsAdminLogin ? "Đăng nhập để quản lý mùa vụ, duyệt đơn và phân bổ nông sản." : "Đăng nhập để đặt trước nông sản mùa vụ và theo dõi sản lượng phân bổ.")
+                </p>
+            </div>
         </div>
-    }
 
-    @if (IsAdminLogin && SwitchAccount)
-    {
-        <div class="alert alert-info" role="status">
-            Tài khoản hiện tại chưa có quyền quản trị. Vui lòng đăng nhập bằng tài khoản Admin để tiếp tục.
-            Các tab trong cùng trình duyệt dùng chung phiên; đăng nhập thành công sẽ chuyển sang tài khoản Admin.
-        </div>
-    }
+        @if (Error == "invalid")
+        {
+            <div class="alert alert-danger rounded-4 py-3 px-4 shadow-sm small border-0 mb-4 d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-circle-fill fs-5 flex-shrink-0"></i>
+                <div>
+                    @(IsAdminLogin ? "Email hoặc mật khẩu chưa đúng, hoặc tài khoản không có quyền quản trị." : "Email hoặc mật khẩu chưa đúng, hoặc tài khoản không phải đại lý.")
+                </div>
+            </div>
+        }
 
-    @if (Registered)
-    {
-        <div class="alert alert-success">
-            Tài khoản đã được tạo. Bạn có thể đăng nhập.
-        </div>
-    }
+        @if (IsAdminLogin && SwitchAccount)
+        {
+            <div class="alert alert-info rounded-4 py-3 px-4 shadow-sm small border-0 mb-4 d-flex align-items-center gap-2" role="status">
+                <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 text-primary"></i>
+                <div>
+                    Tài khoản hiện tại chưa có quyền quản trị. Vui lòng đăng nhập tài khoản Admin để tiếp tục.
+                </div>
+            </div>
+        }
 
-    <form method="post" action="@(IsAdminLogin ? "/auth/admin/login" : "/auth/login")">
-        <AntiforgeryToken />
-        <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+        @if (Registered)
+        {
+            <div class="alert alert-success rounded-4 py-3 px-4 shadow-sm small border-0 mb-4 d-flex align-items-center gap-2">
+                <i class="bi bi-check-circle-fill fs-5 flex-shrink-0 text-success"></i>
+                <div>Tài khoản đã được tạo thành công! Bạn có thể đăng nhập ngay bây giờ.</div>
+            </div>
+        }
 
-        <label class="form-label" for="email">Email</label>
-        <input id="email" name="email"
-               class="form-control mb-3"
-               type="email" required maxlength="254"
-               autocomplete="username" />
+        <form method="post" action="@(IsAdminLogin ? "/auth/admin/login" : "/auth/login")" data-enhance="false">
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
 
-        <label class="form-label" for="password">Mật khẩu</label>
-        <input id="password" name="password"
-               class="form-control mb-4"
-               type="password" required maxlength="128"
-               autocomplete="current-password" />
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-dark ms-2" for="email">
+                    <i class="bi bi-envelope-fill me-1 text-muted"></i> Email đăng nhập
+                </label>
+                <div class="input-group">
+                    <input id="email" name="email"
+                           class="form-control form-control-lg rounded-pill px-4 shadow-none"
+                           style="border-radius: 50px !important; font-size: 0.95rem; border: 1.5px solid #dce2e6;"
+                           type="email" required maxlength="254"
+                           placeholder="name@example.com"
+                           autocomplete="username" />
+                </div>
+            </div>
 
-        <button class="btn btn-success w-100" type="submit">
-            Đăng nhập
-        </button>
-    </form>
+            <div class="mb-4">
+                <label class="form-label fw-semibold small text-dark ms-2" for="password">
+                    <i class="bi bi-key-fill me-1 text-muted"></i> Mật khẩu
+                </label>
+                <div class="input-group">
+                    <input id="password" name="password"
+                           class="form-control form-control-lg rounded-pill px-4 shadow-none"
+                           style="border-radius: 50px !important; font-size: 0.95rem; border: 1.5px solid #dce2e6;"
+                           type="password" required maxlength="128"
+                           placeholder="••••••••••"
+                           autocomplete="current-password" />
+                </div>
+            </div>
 
-    @if (!IsAdminLogin)
-    {
-        <p class="mt-4 mb-0 text-center">
-            Chưa có tài khoản? <a href="/account/register">Đăng ký đại lý</a>
-        </p>
-    }
+            <button class="btn btn-success w-100 rounded-pill py-3 fw-bold fs-6 shadow-sm d-flex align-items-center justify-content-center gap-2"
+                    style="border-radius: 50px !important; transition: all 0.2s;"
+                    type="submit">
+                <i class="bi bi-box-arrow-in-right"></i> Đăng nhập ngay
+            </button>
+        </form>
+
+        @if (!IsAdminLogin)
+        {
+            <div class="mt-4 pt-3 border-top text-center">
+                <p class="mb-0 text-muted small">
+                    Chưa có tài khoản đại lý?
+                    <a href="/account/register" class="fw-bold text-success text-decoration-none ms-1">
+                        Đăng ký đại lý mới →
+                    </a>
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="mt-4 pt-3 border-top text-center">
+                <a href="/" class="text-muted small text-decoration-none">
+                    <i class="bi bi-arrow-left me-1"></i> Trở về trang chủ cửa hàng
+                </a>
+            </div>
+        }
+    </div>
 </div>
 
 @code {
     private bool IsAdminLogin => new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/')
         .Equals("/admin/login", StringComparison.OrdinalIgnoreCase);
+
     [SupplyParameterFromQuery]
     public string? Error { get; set; }
 

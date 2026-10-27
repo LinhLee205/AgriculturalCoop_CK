@@ -73,38 +73,63 @@
                         </span>
                         @if (batch.IsArchived) { <small class="d-block text-muted">Đã lưu trữ</small> }
                     </td>
-                    <td>
-                        <div class="table-actions">
-                            <button class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="() => AskAction(batch, false)">@(batch.IsArchived ? "Khôi phục" : "Lưu trữ")</button>
-                            @if (batch.Status == HarvestBatchStatus.Allocated && !batch.IsArchived) { <button class="btn btn-sm btn-success" disabled="@busy" @onclick="() => AskAction(batch, true)">Hoàn tất giao hàng</button> }
-                            @if (!batch.IsArchived && batch.Status < HarvestBatchStatus.Harvested && batch.ActualQuantity == null)
-                            {
-                                <button class="btn btn-sm btn-outline-success" disabled="@busy" @onclick="() => ToggleOpen(batch)">@(batch.Status == HarvestBatchStatus.OpenForPreOrder ? "Tạm ẩn / ngừng đặt" : "Mở đặt / hiện trên web")</button>
-                            }
-                            <button class="btn btn-sm btn-outline-success"
-                                    disabled="@(busy || batch.IsArchived || batch.Status >= HarvestBatchStatus.Harvested)"
-                                    @onclick="() => Open(batch)">
-                                Sửa
-                            </button>
+                    <td style="min-width: 290px;">
+                        <div class="batch-action-toolbar d-flex flex-column gap-2">
+                            <!-- Hàng 1: Thao tác cốt lõi vụ mùa -->
+                            <div class="d-flex align-items-center gap-2">
+                                <a class="btn btn-sm btn-warning rounded-pill px-3 fw-bold flex-fill shadow-xs d-inline-flex align-items-center justify-content-center gap-1"
+                                   href="/admin/allocations/@batch.HarvestBatchId" title="Xem danh sách đơn & phân bổ sản lượng">
+                                    <i class="bi bi-pie-chart-fill"></i> Đơn / Phân bổ
+                                </a>
 
-                            @if (batch.LinkedOrderCount == 0 && batch.Status < HarvestBatchStatus.Harvested)
-                            {
-                            <button class="btn btn-sm btn-outline-danger" disabled="@busy"
-                                    @onclick="() => AskDelete(batch)">
-                                Xóa
-                            </button>
-                            }
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-2 shadow-xs d-inline-flex align-items-center justify-content-center gap-1"
+                                        disabled="@(busy || batch.IsArchived || batch.Status >= HarvestBatchStatus.Allocated)"
+                                        @onclick="() => OpenYield(batch)" title="Cập nhật sản lượng thu hoạch thực tế">
+                                    <i class="bi bi-clipboard-check"></i> Nhập thực tế
+                                </button>
 
-                            <button class="btn btn-sm btn-outline-secondary"
-                                    disabled="@(busy || batch.IsArchived || batch.Status >= HarvestBatchStatus.Allocated)"
-                                    @onclick="() => OpenYield(batch)">
-                                Nhập thực tế
-                            </button>
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 shadow-xs d-inline-flex align-items-center justify-content-center gap-1"
+                                        disabled="@(busy || batch.IsArchived || batch.Status >= HarvestBatchStatus.Harvested)"
+                                        @onclick="() => Open(batch)" title="Chỉnh sửa thông tin lô">
+                                    <i class="bi bi-pencil-square"></i> Sửa
+                                </button>
+                            </div>
 
-                            <a class="btn btn-sm btn-warning"
-                               href="/admin/allocations/@batch.HarvestBatchId">
-                                Đơn / phân bổ
-                            </a>
+                            <!-- Hàng 2: Trạng thái & Quản trị hồ sơ -->
+                            <div class="d-flex align-items-center flex-wrap gap-1">
+                                @if (!batch.IsArchived && batch.Status < HarvestBatchStatus.Harvested && batch.ActualQuantity == null)
+                                {
+                                    <button class="btn btn-sm @(batch.Status == HarvestBatchStatus.OpenForPreOrder ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-2 py-1 shadow-xs d-inline-flex align-items-center gap-1"
+                                            style="font-size: 0.78rem;" disabled="@busy" @onclick="() => ToggleOpen(batch)"
+                                            title="@(batch.Status == HarvestBatchStatus.OpenForPreOrder ? "Ngừng nhận đơn đặt trước" : "Mở nhận đơn đặt trước trên website")">
+                                        <i class="bi @(batch.Status == HarvestBatchStatus.OpenForPreOrder ? "bi-eye-slash" : "bi-eye")"></i>
+                                        @(batch.Status == HarvestBatchStatus.OpenForPreOrder ? "Tạm ẩn đặt" : "Mở nhận đặt")
+                                    </button>
+                                }
+
+                                @if (batch.Status == HarvestBatchStatus.Allocated && !batch.IsArchived)
+                                {
+                                    <button class="btn btn-sm btn-success rounded-pill px-2 py-1 shadow-xs d-inline-flex align-items-center gap-1"
+                                            style="font-size: 0.78rem;" disabled="@busy" @onclick="() => AskAction(batch, true)" title="Hoàn tất giao hàng cho đại lý">
+                                        <i class="bi bi-check2-all"></i> Hoàn tất giao
+                                    </button>
+                                }
+
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 shadow-xs d-inline-flex align-items-center gap-1"
+                                        style="font-size: 0.78rem;" disabled="@busy" @onclick="() => AskAction(batch, false)"
+                                        title="@(batch.IsArchived ? "Khôi phục lô thu hoạch này" : "Lưu trữ lô thu hoạch này")">
+                                    <i class="bi @(batch.IsArchived ? "bi-arrow-counterclockwise" : "bi-archive")"></i>
+                                    @(batch.IsArchived ? "Khôi phục" : "Lưu trữ")
+                                </button>
+
+                                @if (batch.LinkedOrderCount == 0 && batch.Status < HarvestBatchStatus.Harvested)
+                                {
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 shadow-xs d-inline-flex align-items-center gap-1"
+                                            style="font-size: 0.78rem;" disabled="@busy" @onclick="() => AskDelete(batch)" title="Xóa lô chưa có đơn này">
+                                        <i class="bi bi-trash3"></i> Xóa
+                                    </button>
+                                }
+                            </div>
                         </div>
                     </td>
                 </tr>

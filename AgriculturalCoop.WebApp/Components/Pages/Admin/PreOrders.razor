@@ -2,27 +2,233 @@
 @layout AdminLayout
 @attribute [Authorize(Roles = "Admin")]
 @inject IViewAllPreOrdersUseCase ViewOrders
+@inject IManageOrdersUseCase ManageOrders
+
 <PageTitle>Quản lý đơn đặt trước — COOPAGRI</PageTitle>
-<div class="page-heading"><div><span class="eyebrow">MÙA VỤ & GIAO DỊCH</span><h1>Đơn đặt trước</h1><p>Xem chi tiết, xác nhận đơn đang chờ và hủy đơn chưa phân bổ. Đơn đã giao dịch được giữ để đối chiếu.</p></div><a href="/admin/dealers" class="btn btn-outline-success">Quản lý đại lý</a></div>
-<section class="admin-card mb-4"><div class="row g-3"><div class="col-md-7"><label for="order-search" class="form-label">Tìm mã đơn, đại lý hoặc mã lô</label><input id="order-search" class="form-control" @bind="search" @bind:event="oninput" /></div><div class="col-md-5"><label for="order-status" class="form-label">Trạng thái</label><select id="order-status" class="form-select" @bind="status"><option value="">Tất cả</option><option value="0">Chờ xác nhận</option><option value="1">Đã xác nhận</option><option value="2">Phân bổ một phần</option><option value="3">Đã phân bổ đủ</option><option value="4">Đã hủy</option></select></div></div>
-@if (DealerId.HasValue || BatchId.HasValue) { <p class="small mt-3 mb-0">Đang lọc theo @(DealerId.HasValue ? "đại lý #" + DealerId : "lô #" + BatchId). <a href="/admin/orders">Bỏ lọc liên kết</a></p> }</section>
-@if (loading) { <p role="status">Đang tải đơn…</p> }
+
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">MÙA VỤ & GIAO DỊCH</span>
+        <h1>Đơn đặt trước</h1>
+        <p>Quản lý trạng thái xử lý, vận chuyển và đối soát thanh toán trực tiếp ngay ngoài danh sách.</p>
+    </div>
+    <a href="/admin/dealers" class="btn btn-outline-success rounded-pill px-4">
+        <i class="bi bi-people me-1"></i> Quản lý đại lý
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(toastMessage))
+{
+    <div class="alert @(toastSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show rounded-4 shadow-sm mb-4 d-flex align-items-center gap-2" role="alert">
+        <i class="bi @(toastSuccess ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill") fs-5"></i>
+        <div>@toastMessage</div>
+        <button type="button" class="btn-close" @onclick="() => toastMessage = null" aria-label="Close"></button>
+    </div>
+}
+
+<section class="admin-card mb-4" style="border-radius: 24px !important;">
+    <div class="row g-3">
+        <div class="col-md-7">
+            <label for="order-search" class="form-label fw-semibold small text-muted">Tìm mã đơn, đại lý hoặc mã lô</label>
+            <input id="order-search" class="form-control rounded-pill px-4 shadow-none" style="border-radius: 50px !important;"
+                   placeholder="Nhập mã đơn (VD: ORD-...), tên đại lý hoặc mã lô..."
+                   @bind="search" @bind:event="oninput" />
+        </div>
+        <div class="col-md-5">
+            <label for="order-status" class="form-label fw-semibold small text-muted">Lọc theo trạng thái</label>
+            <select id="order-status" class="form-select rounded-pill px-4 shadow-none" style="border-radius: 50px !important;" @bind="status">
+                <option value="">Tất cả trạng thái</option>
+                <option value="1">Đã xác nhận</option>
+                <option value="0">Đang xử lý</option>
+                <option value="2">Đang vận chuyển</option>
+                <option value="3">Hoàn thành</option>
+                <option value="4">Đã hủy</option>
+            </select>
+        </div>
+    </div>
+    @if (DealerId.HasValue || BatchId.HasValue)
+    {
+        <p class="small mt-3 mb-0">
+            Đang lọc theo @(DealerId.HasValue ? "đại lý #" + DealerId : "lô #" + BatchId). 
+            <a href="/admin/orders" class="text-success fw-bold text-decoration-none ms-1">Bỏ lọc liên kết</a>
+        </p>
+    }
+</section>
+
+@if (loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted mt-2">Đang tải danh sách đơn đặt trước...</p>
+    </div>
+}
 else
 {
-    <section class="admin-card table-responsive"><table class="table align-middle"><thead><tr><th>Mã đơn / ngày đặt</th><th>Đại lý</th><th>Số lô</th><th>Giá trị đặt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
-    @foreach (var o in Filtered) { <tr><td><a href="/admin/orders/@o.PreOrderId" class="fw-bold">@o.OrderNumber</a><small class="d-block text-muted">@o.OrderDate.ToString("dd/MM/yyyy HH:mm")</small></td><td>@o.Dealer?.DealerName<small class="d-block text-muted">@o.ContactPhone</small></td><td>@o.PreOrderLines.Select(l => l.HarvestBatchId).Distinct().Count()</td><td>@o.TotalAmount.ToString("N0") đ</td><td><OrderStatusBadge Status="o.Status" /></td><td><a class="btn btn-sm btn-outline-success" href="/admin/orders/@o.PreOrderId">Chi tiết / xử lý</a></td></tr> }
-    </tbody></table>@if (!Filtered.Any()) { <p class="text-muted">Không có đơn phù hợp.</p> }</section>
+    <section class="admin-card table-responsive shadow-sm" style="border-radius: 24px !important;">
+        <table class="table align-middle table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã đơn / Ngày đặt</th>
+                    <th>Đại lý & SĐT</th>
+                    <th>Số lô</th>
+                    <th>Giá trị đặt</th>
+                    <th style="min-width: 175px;">Thanh toán</th>
+                    <th style="min-width: 175px;">Trạng thái đơn</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Filtered)
+                {
+                    <tr>
+                        <td class="align-middle">
+                            <a href="/admin/orders/@o.PreOrderId" class="fw-bold text-success text-decoration-none fs-6">
+                                @o.OrderNumber
+                            </a>
+                            <small class="d-block text-muted">
+                                <i class="bi bi-calendar3 me-1"></i>@o.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        </td>
+                        <td class="align-middle">
+                            <strong class="d-block text-dark">@o.Dealer?.DealerName</strong>
+                            <small class="text-muted"><i class="bi bi-telephone me-1"></i>@o.ContactPhone</small>
+                        </td>
+                        <td class="align-middle">
+                            <span class="badge bg-light text-dark border px-3 py-1-5 rounded-pill">
+                                @o.PreOrderLines.Select(l => l.HarvestBatchId).Distinct().Count() lô
+                            </span>
+                        </td>
+                        <td class="align-middle">
+                            <strong class="text-dark fs-6">@o.TotalAmount.ToString("N0") đ</strong>
+                        </td>
+                        
+                        <!-- Cột Trạng thái thanh toán: Cho phép chọn trực tiếp ngoài danh sách, cùng hàng ngang hoàn hảo -->
+                        <td class="align-middle" style="min-width: 220px;">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="badge @(o.PaymentMethod == "BANK_TRANSFER" ? "bg-primary-subtle text-primary border border-primary-subtle" : "bg-light text-dark border") rounded-pill px-2-5 py-1 flex-shrink-0 d-inline-flex align-items-center" style="height: 32px; font-size: 0.75rem;">
+                                    <i class="bi @(o.PaymentMethod == "BANK_TRANSFER" ? "bi-qr-code" : "bi-cash") me-1"></i>
+                                    @(o.PaymentMethod == "BANK_TRANSFER" ? "VietQR" : "COD")
+                                </span>
+                                
+                                <select class="form-select form-select-sm rounded-pill fw-semibold shadow-xs"
+                                        style="height: 32px; border-radius: 50px !important; font-size: 0.82rem; @(o.PaymentStatus == "Đã thanh toán" ? "background-color: #d1e7dd; color: #0f5132; border-color: #badbcc;" : "background-color: #fff3cd; color: #664d03; border-color: #ffecb5;")"
+                                        value="@(string.IsNullOrEmpty(o.PaymentStatus) ? "Chưa thanh toán" : o.PaymentStatus)"
+                                        @onchange="@(async e => await ChangePaymentStatus(o, e))">
+                                    <option value="Chưa thanh toán">Chưa thanh toán</option>
+                                    <option value="Đã thanh toán">Đã thanh toán</option>
+                                </select>
+                            </div>
+                        </td>
+
+                        <!-- Cột Trạng thái đơn hàng: Cho phép chọn trực tiếp ngoài danh sách, thẳng hàng ngang -->
+                        <td class="align-middle" style="min-width: 160px;">
+                            <select class="form-select form-select-sm rounded-pill fw-semibold shadow-xs" 
+                                    style="height: 32px; border-radius: 50px !important; font-size: 0.82rem; @GetStatusSelectStyle(o.Status)"
+                                    value="@((int)o.Status)"
+                                    @onchange="@(async e => await ChangeOrderStatus(o, e))">
+                                <option value="1">Đã xác nhận</option>
+                                <option value="0">Đang xử lý</option>
+                                <option value="2">Đang vận chuyển</option>
+                                <option value="3">Hoàn thành</option>
+                                <option value="4">Đã hủy</option>
+                            </select>
+                        </td>
+
+                        <td class="text-end align-middle">
+                            <a class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold shadow-xs text-nowrap d-inline-flex align-items-center" style="height: 32px;" href="/admin/orders/@o.PreOrderId">
+                                Chi tiết →
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!Filtered.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-search fs-3 d-block mb-2"></i>
+                Không có đơn đặt trước nào phù hợp với bộ lọc.
+            </div>
+        }
+    </section>
 }
+
 @code {
     [SupplyParameterFromQuery(Name = "dealerId")] public int? DealerId { get; set; }
     [SupplyParameterFromQuery(Name = "batchId")] public int? BatchId { get; set; }
     private List<PreOrder> orders = new();
     private string search = "", status = "";
     private bool loading = true;
+    private string? toastMessage;
+    private bool toastSuccess = true;
+
     private IEnumerable<PreOrder> Filtered => orders.Where(o => (!DealerId.HasValue || o.DealerId == DealerId) &&
         (!BatchId.HasValue || o.PreOrderLines.Any(l => l.HarvestBatchId == BatchId)) && (status.Length == 0 || ((int)o.Status).ToString() == status) &&
         (search.Trim().Length == 0 || o.OrderNumber.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ||
         (o.Dealer?.DealerName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false) ||
         o.PreOrderLines.Any(l => l.HarvestBatch?.BatchCode.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)));
-    protected override async Task OnInitializedAsync() { orders = (await ViewOrders.ExecuteAsync()).ToList(); loading = false; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        orders = (await ViewOrders.ExecuteAsync()).ToList();
+        loading = false;
+    }
+
+    private async Task ChangeOrderStatus(PreOrder order, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var statusInt))
+        {
+            var newStatus = (PreOrderStatus)statusInt;
+            try
+            {
+                await ManageOrders.UpdateOrderStatusAsync(order.PreOrderId, newStatus);
+                order.Status = newStatus;
+                toastMessage = $"Đã cập nhật trạng thái đơn {order.OrderNumber} thành '{GetStatusName(newStatus)}'.";
+                toastSuccess = true;
+            }
+            catch (Exception ex)
+            {
+                toastMessage = ex.Message;
+                toastSuccess = false;
+            }
+        }
+    }
+
+    private async Task ChangePaymentStatus(PreOrder order, ChangeEventArgs e)
+    {
+        var newPaymentStatus = e.Value?.ToString() ?? "Chưa thanh toán";
+        try
+        {
+            await ManageOrders.UpdatePaymentStatusAsync(order.PreOrderId, newPaymentStatus);
+            order.PaymentStatus = newPaymentStatus;
+            toastMessage = $"Đã cập nhật thanh toán đơn {order.OrderNumber} thành '{newPaymentStatus}'.";
+            toastSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            toastMessage = ex.Message;
+            toastSuccess = false;
+        }
+    }
+
+    private static string GetStatusName(PreOrderStatus status) => status switch
+    {
+        PreOrderStatus.Pending => "Đang xử lý",
+        PreOrderStatus.Confirmed => "Đã xác nhận",
+        PreOrderStatus.PartiallyAllocated => "Đang vận chuyển",
+        PreOrderStatus.FullyAllocated => "Hoàn thành",
+        PreOrderStatus.Cancelled => "Đã hủy",
+        _ => "Chưa xác định"
+    };
+
+    private static string GetStatusSelectStyle(PreOrderStatus status) => status switch
+    {
+        PreOrderStatus.Confirmed => "background-color: #d1e7dd; color: #0f5132; border-color: #badbcc;",
+        PreOrderStatus.Pending => "background-color: #fff3cd; color: #664d03; border-color: #ffecb5;",
+        PreOrderStatus.PartiallyAllocated => "background-color: #cfe2ff; color: #084298; border-color: #b6d4fe;",
+        PreOrderStatus.FullyAllocated => "background-color: #d1e7dd; color: #0f5132; border-color: #badbcc;",
+        PreOrderStatus.Cancelled => "background-color: #e2e3e5; color: #41464b; border-color: #d3d6d8;",
+        _ => ""
+    };
 }

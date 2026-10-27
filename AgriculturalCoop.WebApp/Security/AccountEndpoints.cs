@@ -137,7 +137,7 @@ public static class AccountEndpoints
                 return Results.Redirect(loginPage + "?error=invalid");
 
             await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, Principal(user),
-                new AuthenticationProperties { IsPersistent = false, AllowRefresh = true });
+                new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8), AllowRefresh = true });
 
             var returnUrl = LocalReturnUrl(form["returnUrl"].ToString());
             if (role == "Dealer" && returnUrl != null &&

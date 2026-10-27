@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @inject UserSessionState UserSession
 @inject IHomeBannerUseCases Banners
 
@@ -22,6 +22,9 @@
         </div>
         <span>© @DateTime.Now.Year @BrandTitle · Nông sản theo mùa</span>
     </footer>
+
+    <!-- Trợ lý AI Thông Minh COOPAGRI hiển thị cố định xuyên suốt website -->
+    <AiAssistantFloatingWidget />
 </div>
 <div id="blazor-error-ui" style="display:none">
     Kết nối bị gián đoạn. <a href="">Tải lại trang</a>

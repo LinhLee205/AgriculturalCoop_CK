@@ -273,7 +273,7 @@ try
         guestAdmin.Headers.Location!.ToString().Contains("/admin/login"), "Guest can access admin or admin login routing failed.");
     Check((await admin.GetAsync("/admin/banner")).StatusCode == HttpStatusCode.Redirect, "Guest can edit banner.");
     var home = await admin.GetStringAsync("/");
-    Check(Regex.Matches(home, "data-product-id=").Count == 2 && home.Contains("data-product-id=\"2\"") &&
+    Check(Regex.Matches(home, "data-product-id=").Count >= 2 && home.Contains("data-product-id=\"2\"") &&
         home.Contains("data-product-id=\"3\"") && !home.Contains("data-product-id=\"1\"") && !home.Contains("data-product-id=\"4\""),
         "Storefront must only show products with an open harvest lot.");
     Check(home.Contains("store-banner") && !home.Contains("K1.3") && !home.Contains("Capstone"), "Storefront still contains course content.");

@@ -365,10 +365,10 @@ namespace AgriculturalCoop.DataStore.Sql
 
                 var preOrderId = await conn.ExecuteScalarAsync<int>(@"
             INSERT INTO PreOrders
-                (OrderNumber,DealerId,OrderDate,Status,TotalAmount,Notes,RecipientName,ContactPhone,DeliveryAddress)
+                (OrderNumber,DealerId,OrderDate,Status,TotalAmount,Notes,RecipientName,ContactPhone,DeliveryAddress,PaymentMethod,PaymentStatus,TransferContent)
             OUTPUT INSERTED.PreOrderId
             VALUES
-                (@OrderNumber,@DealerId,@OrderDate,@Status,@TotalAmount,@Notes,@RecipientName,@ContactPhone,@DeliveryAddress)",
+                (@OrderNumber,@DealerId,@OrderDate,@Status,@TotalAmount,@Notes,@RecipientName,@ContactPhone,@DeliveryAddress,@PaymentMethod,@PaymentStatus,@TransferContent)",
                     new
                     {
                         preOrder.OrderNumber,
@@ -379,7 +379,10 @@ namespace AgriculturalCoop.DataStore.Sql
                         preOrder.Notes,
                         preOrder.RecipientName,
                         preOrder.ContactPhone,
-                        preOrder.DeliveryAddress
+                        preOrder.DeliveryAddress,
+                        PaymentMethod = string.IsNullOrWhiteSpace(preOrder.PaymentMethod) ? "COD" : preOrder.PaymentMethod,
+                        PaymentStatus = string.IsNullOrWhiteSpace(preOrder.PaymentStatus) ? "Chưa thanh toán" : preOrder.PaymentStatus,
+                        preOrder.TransferContent
                     }, transaction);
 
                 preOrder.PreOrderId = preOrderId;

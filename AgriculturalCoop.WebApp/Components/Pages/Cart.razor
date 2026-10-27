@@ -11,11 +11,39 @@
 @inject ILogger<Cart> Logger
 
 <PageTitle>Xác nhận đặt trước — COOPAGRI</PageTitle>
-<div class="page-heading"><div><span class="eyebrow">GIỎ ĐẶT TRƯỚC</span><h1>Kiểm tra và xác nhận đơn</h1><p>Điền thông tin nhận hàng trước khi gửi đơn cho hợp tác xã.</p></div><a href="/batches" class="btn btn-outline-success">Chọn thêm lô</a></div>
-@if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">GIỎ ĐẶT TRƯỚC</span>
+        <h1>Kiểm tra và xác nhận đơn</h1>
+        <p>Điền thông tin nhận hàng và chọn phương thức thanh toán trước khi gửi đơn cho hợp tác xã.</p>
+    </div>
+    <a href="/batches" class="btn btn-outline-success rounded-pill px-3">Chọn thêm lô</a>
+</div>
+
+@if (error != null) { <div class="alert alert-danger rounded-4 shadow-sm" role="alert">@error</div> }
+
 @if (CartState.TotalItemCount == 0)
 {
-    <div class="store-empty">Giỏ đặt trước hiện đang trống. <a href="/batches">Khám phá các lô đang mở đặt →</a></div>
+    <div class="d-flex justify-content-center py-5">
+        <div class="card border-0 text-center p-5 bg-white shadow-sm" 
+             style="max-width: 540px; width: 100%; border-radius: 32px !important; border: 1.5px solid #e9ecef !important; box-shadow: 0 10px 30px rgba(0,0,0,0.04) !important;">
+            
+            <div class="mx-auto d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-xs"
+                 style="width: 88px; height: 88px; background: #e8f5e9; color: #2d6a4f; font-size: 38px; border: 2px solid #c8e6c9;">
+                <i class="bi bi-cart3"></i>
+            </div>
+
+            <h3 class="fw-bold mb-2" style="color: #1b4332; font-size: 1.6rem;">Giỏ hàng trống</h3>
+            <p class="text-muted small mb-4 px-2">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
+
+            <div>
+                <a href="/batches" class="btn btn-success rounded-pill px-4 py-2-5 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
+                   style="background: #2d6a4f; border-color: #2d6a4f; border-radius: 50px !important; padding: 10px 28px;">
+                    <i class="bi bi-arrow-left"></i> Tiếp tục mua sắm
+                </a>
+            </div>
+        </div>
+    </div>
 }
 else
 {
@@ -25,34 +53,152 @@ else
             {
                 <PreOrderLineItemComponent @key="item.HarvestBatchId" Item="item" OnRemove="Remove" OnQuantityChanged="ChangeQuantity" />
             }
-            <button class="btn btn-outline-danger btn-sm" disabled="@busy" @onclick="CartState.Clear">Xóa toàn bộ giỏ</button>
+            <button class="btn btn-outline-danger btn-sm rounded-pill px-3 mt-2" disabled="@busy" @onclick="CartState.Clear">
+                <i class="bi bi-trash3 me-1"></i> Xóa toàn bộ giỏ
+            </button>
         </section>
+
         <section class="col-lg-5">
-            <div class="admin-card">
-                <h2 class="h5 mb-3">Thông tin nhận hàng</h2>
+            <div class="admin-card rounded-4 shadow-sm p-4 bg-white border">
+                <h2 class="h5 mb-3 fw-bold text-dark"><i class="bi bi-truck me-2 text-success"></i>Thông tin nhận hàng</h2>
                 <EditForm Model="contact" OnValidSubmit="Submit" FormName="order-checkout">
                     <DataAnnotationsValidator />
                     <fieldset disabled="@busy">
-                        <div class="mb-3"><label for="checkout-recipient" class="form-label">Tên người nhận <span class="text-danger">*</span></label><InputText id="checkout-recipient" class="form-control" @bind-Value="contact.RecipientName" maxlength="150" autocomplete="name" /><ValidationMessage For="() => contact.RecipientName" /></div>
-                        <div class="mb-3"><label for="checkout-phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label><InputText id="checkout-phone" class="form-control" @bind-Value="contact.ContactPhone" maxlength="20" type="tel" autocomplete="tel" /><ValidationMessage For="() => contact.ContactPhone" /></div>
-                        <div class="mb-3"><label for="checkout-address" class="form-label">Địa chỉ nhận hàng <span class="text-danger">*</span></label><InputTextArea id="checkout-address" class="form-control" @bind-Value="contact.DeliveryAddress" maxlength="255" rows="3" autocomplete="street-address" placeholder="Số nhà, đường, phường/xã, tỉnh/thành phố" /><ValidationMessage For="() => contact.DeliveryAddress" /></div>
-                        <div class="mb-3"><label for="checkout-notes" class="form-label">Ghi chú cho hợp tác xã</label><InputTextArea id="checkout-notes" class="form-control" @bind-Value="contact.Notes" maxlength="500" rows="2" /><ValidationMessage For="() => contact.Notes" /></div>
+                        <div class="mb-3">
+                            <label for="checkout-recipient" class="form-label fw-semibold small">Tên người nhận <span class="text-danger">*</span></label>
+                            <InputText id="checkout-recipient" class="form-control rounded-3" @bind-Value="contact.RecipientName" maxlength="150" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn A" />
+                            <ValidationMessage For="() => contact.RecipientName" class="text-danger small" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-phone" class="form-label fw-semibold small">Số điện thoại <span class="text-danger">*</span></label>
+                            <InputText id="checkout-phone" class="form-control rounded-3" @bind-Value="contact.ContactPhone" maxlength="20" type="tel" autocomplete="tel" placeholder="Ví dụ: 0912345678" />
+                            <ValidationMessage For="() => contact.ContactPhone" class="text-danger small" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-address" class="form-label fw-semibold small">Địa chỉ nhận hàng <span class="text-danger">*</span></label>
+                            <InputTextArea id="checkout-address" class="form-control rounded-3" @bind-Value="contact.DeliveryAddress" maxlength="255" rows="2" autocomplete="street-address" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố" />
+                            <ValidationMessage For="() => contact.DeliveryAddress" class="text-danger small" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-notes" class="form-label fw-semibold small">Ghi chú cho hợp tác xã</label>
+                            <InputTextArea id="checkout-notes" class="form-control rounded-3" @bind-Value="contact.Notes" maxlength="500" rows="2" placeholder="Ghi chú thêm về thời gian giao hàng, yêu cầu đóng gói..." />
+                            <ValidationMessage For="() => contact.Notes" class="text-danger small" />
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <!-- LỰA CHỌN PHƯƠNG THỨC THANH TOÁN -->
+                        <h3 class="h6 mb-3 fw-bold text-dark"><i class="bi bi-wallet2 me-2 text-success"></i>Phương thức thanh toán</h3>
+
+                        <div class="payment-methods mb-3">
+                            <div class="form-check p-3 rounded-3 border mb-2 @(contact.PaymentMethod == "COD" ? "border-success bg-success-subtle bg-opacity-10" : "bg-light")">
+                                <input class="form-check-input" type="radio" name="paymentMethodRadio" id="payment-cod"
+                                       checked="@(contact.PaymentMethod == "COD")"
+                                       @onchange="@(() => contact.PaymentMethod = "COD")" />
+                                <label class="form-check-label d-block ms-2 cursor-pointer" for="payment-cod">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="fw-bold text-dark"><i class="bi bi-cash-coin me-1 text-success"></i> Thanh toán khi nhận hàng (COD)</span>
+                                        <span class="badge bg-secondary-subtle text-dark rounded-pill">Tiền mặt</span>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">Thanh toán trực tiếp khi hợp tác xã giao nông sản tận nơi.</small>
+                                </label>
+                            </div>
+
+                            <div class="form-check p-3 rounded-3 border mb-2 @(contact.PaymentMethod == "BANK_TRANSFER" ? "border-success bg-success-subtle bg-opacity-10" : "bg-light")">
+                                <input class="form-check-input" type="radio" name="paymentMethodRadio" id="payment-transfer"
+                                       checked="@(contact.PaymentMethod == "BANK_TRANSFER")"
+                                       @onchange="@(() => contact.PaymentMethod = "BANK_TRANSFER")" />
+                                <label class="form-check-label d-block ms-2 cursor-pointer" for="payment-transfer">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="fw-bold text-dark"><i class="bi bi-qr-code-scan me-1 text-primary"></i> Thanh toán chuyển khoản (VietQR)</span>
+                                        <span class="badge bg-primary-subtle text-primary rounded-pill">Quét mã QR 24/7</span>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">Quét mã VietQR tiện lợi qua ứng dụng mọi ngân hàng hoặc Vietcombank.</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- KHUNG HIỂN THỊ VIETQR KHI CHỌN CHUYỂN KHOẢN -->
+                        @if (contact.PaymentMethod == "BANK_TRANSFER")
+                        {
+                            <div class="vietqr-box p-3 rounded-4 border border-success-subtle bg-success-subtle bg-opacity-10 mb-3 text-center">
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                    <span class="badge bg-success rounded-pill px-3 py-1">VietQR chuẩn Napas 247</span>
+                                    <span class="badge bg-dark rounded-pill px-2 py-1">Vietcombank</span>
+                                </div>
+
+                                <div class="vietqr-image-container bg-white p-2 rounded-3 d-inline-block shadow-sm mb-2">
+                                    <img src="@VietQrImageUrl" alt="Mã QR Vietcombank thanh toán" class="img-fluid rounded-2" style="max-width: 220px; width: 100%; height: auto;" />
+                                </div>
+
+                                <p class="small text-muted mb-2">Mở app ngân hàng quét mã để thanh toán tự động đúng số tiền & nội dung:</p>
+
+                                <div class="text-start bg-white p-3 rounded-3 border small">
+                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                        <span class="text-muted">Ngân hàng:</span>
+                                        <strong>Vietcombank (VCB)</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                        <span class="text-muted">Số tài khoản:</span>
+                                        <strong class="text-primary font-monospace fs-6">1041586535</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                        <span class="text-muted">Chủ tài khoản:</span>
+                                        <strong class="text-uppercase">LE THI LINH</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                        <span class="text-muted">Số tiền:</span>
+                                        <strong class="text-success fs-6">@total.ToString("N0") VNĐ</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1">
+                                        <span class="text-muted">Nội dung CK:</span>
+                                        <strong class="text-danger font-monospace">@TransferContentText</strong>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <small class="text-muted fst-italic">Hệ thống sẽ lưu nội dung chuyển khoản này vào đơn hàng để đối soát.</small>
+                                </div>
+                            </div>
+                        }
+
                         <hr />
-                        <p class="small text-muted">Đại lý: <strong>@UserSession.CurrentDealerName</strong> · @CartState.TotalItemCount lô</p>
-                        <div class="d-flex justify-content-between gap-3 mb-3"><strong>Tổng tiền dự kiến</strong><strong class="fs-4 text-success">@total.ToString("N0") đ</strong></div>
+
+                        <p class="small text-muted">Đại lý: <strong>@UserSession.CurrentDealerName</strong> · @CartState.TotalItemCount lô nông sản</p>
+                        <div class="d-flex justify-content-between align-items-center gap-3 mb-3 p-3 rounded-3 bg-light border">
+                            <span class="fw-bold text-muted">Tổng tiền dự kiến:</span>
+                            <strong class="fs-4 text-success">@total.ToString("N0") đ</strong>
+                        </div>
                         <p class="small text-muted">Khi hụt mùa, lượng nhận thực tế theo kết quả phân bổ của hợp tác xã. Đơn chỉ được tạo khi bạn bấm xác nhận bên dưới.</p>
-                        <button type="submit" class="btn btn-success w-100" disabled="@busy">@(busy ? "Đang gửi đơn…" : "Xác nhận thông tin và đặt trước")</button>
+                        
+                        <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill fw-bold shadow-sm py-3" disabled="@busy">
+                            @(busy ? "Đang gửi đơn…" : "Xác nhận thông tin và đặt trước")
+                        </button>
                     </fieldset>
                 </EditForm>
             </div>
         </section>
     </div>
 }
+
 @code {
     private CheckoutContactForm contact = new();
     private decimal total;
     private bool busy;
     private string? error;
+
+    private string CleanPhone => new string((contact.ContactPhone ?? "").Where(char.IsDigit).ToArray());
+    private string TransferContentText => string.IsNullOrEmpty(CleanPhone) ? "CK<SỐ_ĐIỆN_THOẠI>" : $"CK{CleanPhone}";
+
+    private string VietQrImageUrl
+    {
+        get
+        {
+            var content = string.IsNullOrEmpty(CleanPhone) ? "CK" : $"CK{CleanPhone}";
+            var amount = Convert.ToInt64(Math.Max(0, total));
+            return $"https://img.vietqr.io/image/vietcombank-1041586535-compact2.png?amount={amount}&addInfo={Uri.EscapeDataString(content)}&accountName=LE%20THI%20LINH";
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await UserSession.InitializeAsync();
@@ -60,24 +206,56 @@ else
         total = CartState.TotalAmount;
         if (CartState.TotalItemCount > 0)
         {
-            try { var preview = BuildOrder(); await ValidateOrder.ValidateAsync(preview); total = preview.TotalAmount; }
+            try 
+            { 
+                var preview = BuildOrder(); 
+                await ValidateOrder.ValidateAsync(preview); 
+                total = preview.TotalAmount; 
+            }
             catch (PreOrderDomainException ex) { error = ex.Message; }
         }
     }
-    private void CartChanged() { total = CartState.TotalAmount; StateHasChanged(); }
-    private void Remove(int batchId) { if (!busy) CartState.RemoveItem(batchId); }
-    private void ChangeQuantity((int BatchId, decimal NewQty) args) { if (!busy) CartState.UpdateQuantity(args.BatchId, args.NewQty); }
+
+    private void CartChanged() 
+    { 
+        total = CartState.TotalAmount; 
+        StateHasChanged(); 
+    }
+
+    private void Remove(int batchId) 
+    { 
+        if (!busy) CartState.RemoveItem(batchId); 
+    }
+
+    private void ChangeQuantity((int BatchId, decimal NewQty) args) 
+    { 
+        if (!busy) CartState.UpdateQuantity(args.BatchId, args.NewQty); 
+    }
+
     private PreOrder BuildOrder() => new()
     {
         DealerId = UserSession.CurrentDealerId,
-        RecipientName = contact.RecipientName, ContactPhone = contact.ContactPhone,
-        DeliveryAddress = contact.DeliveryAddress, Notes = contact.Notes,
-        PreOrderLines = CartState.Items.Select(i => new PreOrderLine { HarvestBatchId = i.HarvestBatchId, Quantity = i.Quantity }).ToList()
+        RecipientName = contact.RecipientName,
+        ContactPhone = contact.ContactPhone,
+        DeliveryAddress = contact.DeliveryAddress,
+        Notes = contact.Notes,
+        PaymentMethod = contact.PaymentMethod,
+        PaymentStatus = "Chưa thanh toán",
+        TransferContent = contact.PaymentMethod == "BANK_TRANSFER"
+            ? $"CK{CleanPhone}"
+            : null,
+        PreOrderLines = CartState.Items.Select(i => new PreOrderLine 
+        { 
+            HarvestBatchId = i.HarvestBatchId, 
+            Quantity = i.Quantity 
+        }).ToList()
     };
+
     private async Task Submit()
     {
         if (busy) return;
-        busy = true; error = null;
+        busy = true; 
+        error = null;
         try
         {
             await UserSession.InitializeAsync();
@@ -95,8 +273,13 @@ else
             Nav.NavigateTo("/my-orders");
         }
         catch (PreOrderDomainException ex) { error = ex.Message; }
-        catch (Exception ex) { Logger.LogError(ex, "Could not submit checkout"); error = "Chưa xác nhận được đơn. Vui lòng kiểm tra lịch sử đơn trước khi thử lại."; }
+        catch (Exception ex) 
+        { 
+            Logger.LogError(ex, "Could not submit checkout"); 
+            error = "Chưa xác nhận được đơn. Vui lòng kiểm tra lịch sử đơn trước khi thử lại."; 
+        }
         finally { busy = false; }
     }
+
     public void Dispose() => CartState.OnChange -= CartChanged;
 }

@@ -1111,8 +1111,10 @@ img.store-brand-img {
 }
 
 /* Consistent rounded controls and aligned admin rows */
-.account-panel { border-radius: 26px !important; }
-.account-panel .form-control, .account-panel .btn { border-radius: 14px !important; }
+.account-panel { border-radius: 32px !important; box-shadow: 0 20px 45px rgba(0,0,0,0.08) !important; }
+.account-panel .form-control { border-radius: 50px !important; padding: 12px 22px !important; }
+.account-panel .btn { border-radius: 50px !important; padding: 12px 24px !important; font-weight: 600; }
+.account-panel .alert { border-radius: 20px !important; }
 .admin-content .btn:not(.btn-close), .store-main .btn:not(.btn-close) { border-radius: 14px; }
 .admin-content .form-control, .admin-content .form-select,
 .store-main .form-control, .store-main .form-select { border-radius: 12px; }
@@ -1139,4 +1141,14 @@ img.store-brand-img {
     .admin-card { padding: 18px; }
     .table-actions .btn { white-space: normal; }
     .account-panel { margin: 12px; padding: 24px !important; }
+}
+
+.batch-action-toolbar .btn {
+    white-space: nowrap;
+    border-radius: 50px !important;
+    transition: all 0.2s ease-in-out;
+}
+.batch-action-toolbar .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }

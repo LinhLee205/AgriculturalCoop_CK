@@ -1,4 +1,5 @@
 using System.Data;
+using AgriculturalCoop.CoreBusiness.Entities;
 using AgriculturalCoop.UseCases.PluginInterfaces;
 using Dapper;
 using Microsoft.Data.SqlClient;
@@ -8,6 +9,18 @@ public sealed class SqlOrderManagementRepository(ISqlDataAccess db) : IOrderMana
 {
     public Task<bool> ConfirmOrderAsync(int orderId) => ChangeAsync(orderId, 1, null);
     public Task<bool> CancelOrderAsync(int orderId, string reason) => ChangeAsync(orderId, 4, reason);
+    public async Task<bool> UpdateOrderStatusAsync(int orderId, PreOrderStatus status)
+    {
+        using var conn = db.CreateConnection();
+        return await conn.ExecuteAsync("UPDATE PreOrders SET Status=@Status WHERE PreOrderId=@Id",
+            new { Id = orderId, Status = (int)status }) > 0;
+    }
+    public async Task<bool> UpdatePaymentStatusAsync(int orderId, string paymentStatus)
+    {
+        using var conn = db.CreateConnection();
+        return await conn.ExecuteAsync("UPDATE PreOrders SET PaymentStatus=@PaymentStatus WHERE PreOrderId=@Id",
+            new { Id = orderId, PaymentStatus = paymentStatus }) > 0;
+    }
     private async Task<bool> ChangeAsync(int orderId, int status, string? reason)
     {
         using var conn = db.CreateConnection();

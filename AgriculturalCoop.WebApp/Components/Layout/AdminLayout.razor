@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @inject UserSessionState UserSession
 
 <div class="admin-shell">
@@ -64,7 +64,7 @@
                     ↗ Xem trang khách hàng
                 </a>
 
-                <form method="post" action="/auth/logout">
+                <form method="post" action="/auth/logout" data-enhance="false">
                     <AntiforgeryToken />
                     <button class="btn btn-success btn-sm" type="submit">
                         Đăng xuất

@@ -11,102 +11,328 @@
 
 <div class="page-heading">
     <div>
-        <span class="eyebrow">TỔNG QUAN</span>
-        <h1>Bảng điều khiển</h1>
-        <p>Theo dõi danh mục, mùa vụ và giá trị nông sản đã phân bổ.</p>
+        <span class="eyebrow">TỔNG QUAN QUẢN TRỊ</span>
+        <h1>Bảng điều khiển Hợp Tác Xã</h1>
+        <p>Theo dõi tổng quan hoạt động mùa vụ, các đơn hàng vừa đặt và tiến độ thu hoạch mới nhất.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="/admin/batches" class="btn btn-outline-success rounded-pill px-3 py-2 fw-semibold shadow-xs">
+            <i class="bi bi-calendar-plus me-1"></i> Tạo lô mới
+        </a>
+        <a href="/admin/orders" class="btn btn-success rounded-pill px-3 py-2 fw-semibold shadow-xs">
+            <i class="bi bi-cart-check me-1"></i> Xử lý đơn hàng
+        </a>
     </div>
 </div>
 
-<div class="dashboard-grid">
-    <a href="/admin/members" class="stat-card">
-        <span>Xã viên</span>
-        <strong>@memberCount</strong>
-        <small>Hộ tham gia hợp tác xã</small>
-    </a>
+<!-- 1. HÀNG THẺ CHỈ SỐ TỔNG QUAN (6 THẺ THỐNG KÊ ĐỒNG BỘ) -->
+<div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3 mb-4">
+    <div class="col">
+        <a href="/admin/members" class="card border-0 rounded-4 shadow-sm p-3 bg-white text-decoration-none h-100 hover-lift" style="border: 1px solid #edf2f7 !important;">
+            <div class="text-muted small fw-semibold d-flex justify-content-between align-items-center mb-1">
+                <span>Xã viên</span>
+                <i class="bi bi-people text-success"></i>
+            </div>
+            <strong class="fs-4 text-dark d-block">@memberCount</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Hộ tham gia HTX</small>
+        </a>
+    </div>
 
-    <a href="/admin/products" class="stat-card">
-        <span>Nông sản</span>
-        <strong>@productCount</strong>
-        <small>Danh mục sản phẩm</small>
-    </a>
+    <div class="col">
+        <a href="/admin/products" class="card border-0 rounded-4 shadow-sm p-3 bg-white text-decoration-none h-100 hover-lift" style="border: 1px solid #edf2f7 !important;">
+            <div class="text-muted small fw-semibold d-flex justify-content-between align-items-center mb-1">
+                <span>Nông sản</span>
+                <i class="bi bi-basket text-success"></i>
+            </div>
+            <strong class="fs-4 text-dark d-block">@productCount</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Mặt hàng canh tác</small>
+        </a>
+    </div>
 
-    <a href="/admin/batches" class="stat-card">
-        <span>Lô đang mở đặt</span>
-        <strong>@openCount</strong>
-        <small>Nhận đơn từ đại lý</small>
-    </a>
+    <div class="col">
+        <a href="/admin/batches" class="card border-0 rounded-4 shadow-sm p-3 bg-white text-decoration-none h-100 hover-lift" style="border: 1px solid #edf2f7 !important;">
+            <div class="text-muted small fw-semibold d-flex justify-content-between align-items-center mb-1">
+                <span>Lô mở đặt</span>
+                <i class="bi bi-calendar3-range text-success"></i>
+            </div>
+            <strong class="fs-4 text-success d-block">@openCount</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Nhận đơn đại lý</small>
+        </a>
+    </div>
 
-    <a href="/admin/orders" class="stat-card">
-        <span>Đơn đặt trước</span>
-        <strong>@orderCount</strong>
-        <small>Đơn đã ghi nhận</small>
-    </a>
+    <div class="col">
+        <a href="/admin/orders" class="card border-0 rounded-4 shadow-sm p-3 bg-white text-decoration-none h-100 hover-lift" style="border: 1px solid #edf2f7 !important;">
+            <div class="text-muted small fw-semibold d-flex justify-content-between align-items-center mb-1">
+                <span>Tổng đơn</span>
+                <i class="bi bi-receipt text-primary"></i>
+            </div>
+            <strong class="fs-4 text-dark d-block">@orderCount</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Đơn đặt trước</small>
+        </a>
+    </div>
+
+    <div class="col">
+        <a href="/admin/orders?status=0" class="card border-0 rounded-4 shadow-sm p-3 bg-white text-decoration-none h-100 hover-lift" style="border: 1px solid #edf2f7 !important;">
+            <div class="text-muted small fw-semibold d-flex justify-content-between align-items-center mb-1">
+                <span>Chờ xử lý</span>
+                <i class="bi bi-clock-history text-warning"></i>
+            </div>
+            <strong class="fs-4 text-warning d-block">@pendingOrdersCount</strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Cần xác nhận</small>
+        </a>
+    </div>
+
+    <div class="col">
+        <a href="/admin/revenue" class="card border-0 rounded-4 shadow-sm p-3 bg-white text-decoration-none h-100 hover-lift" style="border: 1px solid #edf2f7 !important;">
+            <div class="text-muted small fw-semibold d-flex justify-content-between align-items-center mb-1">
+                <span>Giá trị phân bổ</span>
+                <i class="bi bi-cash-coin text-success"></i>
+            </div>
+            <strong class="fs-5 text-success d-block" style="font-size: 1.15rem !important;">@allocatedAmount.ToString("N0") <small style="font-size: 0.75rem;">đ</small></strong>
+            <small class="text-muted" style="font-size: 0.72rem;">Đã chốt phân bổ</small>
+        </a>
+    </div>
 </div>
 
-<div class="row g-4 mt-1">
-    <div class="col-lg-7">
-        <section class="admin-card">
-            <h2 class="h5">Quy trình quản lý mùa vụ</h2>
-            <ol class="workflow-list">
-                <li>
-                    <a href="/admin/members">Quản lý xã viên</a> và
-                    <a href="/admin/products">danh mục nông sản</a>.
-                </li>
-                <li>
-                    <a href="/admin/batches">Tạo lô thu hoạch</a>,
-                    nhập sản lượng dự kiến và mở nhận đặt trước.
-                </li>
-                <li>
-                    <a href="/admin/orders">Theo dõi đơn</a>,
-                    nhập sản lượng thực tế rồi chạy phân bổ ở từng lô.
-                </li>
-                <li>
-                    <a href="/admin/revenue">
-                        Đối chiếu doanh thu theo xã viên
-                    </a>.
-                </li>
-            </ol>
+<div class="row g-4 mb-4">
+    <!-- 2. BẢNG ĐƠN HÀNG VỪA ĐẶT MỚI NHẤT -->
+    <div class="col-lg-8">
+        <section class="card border-0 rounded-4 shadow-sm bg-white p-4 h-100" style="border-radius: 28px !important; border: 1.5px solid #edf2f7 !important;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="h5 fw-bold text-dark mb-1">
+                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Đơn hàng vừa đặt mới nhất
+                    </h2>
+                    <p class="text-muted small mb-0">Các đơn đặt trước đại lý vừa gửi lên hệ thống.</p>
+                </div>
+                <a href="/admin/orders" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                    Xem tất cả (@orderCount) →
+                </a>
+            </div>
+
+            @if (!recentOrders.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+                    Chưa có đơn đặt trước nào trong hệ thống.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr style="font-size: 0.85rem;">
+                                <th>Mã đơn / Ngày đặt</th>
+                                <th>Đại lý đối tác</th>
+                                <th>Giá trị</th>
+                                <th>Thanh toán</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in recentOrders)
+                            {
+                                <tr>
+                                    <td>
+                                        <a href="/admin/orders/@o.PreOrderId" class="fw-bold text-success text-decoration-none">
+                                            @o.OrderNumber
+                                        </a>
+                                        <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                            @o.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="d-block text-dark fw-semibold" style="font-size: 0.88rem;">@o.Dealer?.DealerName</span>
+                                        <small class="text-muted font-monospace" style="font-size: 0.75rem;">@o.ContactPhone</small>
+                                    </td>
+                                    <td>
+                                        <strong class="text-dark" style="font-size: 0.9rem;">@o.TotalAmount.ToString("N0") đ</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(o.PaymentStatus == "Đã thanh toán" ? "bg-success" : "bg-warning text-dark") rounded-pill px-2-5 py-1" style="font-size: 0.72rem;">
+                                            @(string.IsNullOrEmpty(o.PaymentStatus) ? "Chưa thanh toán" : o.PaymentStatus)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <OrderStatusBadge Status="o.Status" />
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="/admin/orders/@o.PreOrderId" class="btn btn-sm btn-outline-success rounded-pill px-2-5 py-1 fw-semibold" style="font-size: 0.78rem;">
+                                            Xem →
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </section>
     </div>
 
-    <div class="col-lg-5">
-        <section class="admin-card">
-            <h2 class="h5">Giá trị mùa vụ</h2>
-            <p class="text-muted small">
-                Giá trị theo lượng phân bổ, chưa phải tiền đã thu.
+    <!-- 3. TÓM TẮT TÀI CHÍNH & HÀNH ĐỘNG NHANH -->
+    <div class="col-lg-4 d-flex flex-column gap-3">
+        <!-- Card Giá trị mùa vụ -->
+        <section class="card border-0 rounded-4 shadow-sm p-4 text-white" style="background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%); border-radius: 28px !important;">
+            <span class="text-white-50 text-uppercase small fw-bold" style="letter-spacing: 0.08em; font-size: 0.75rem;">ĐỐI CHIẾU MÙA VỤ</span>
+            <h3 class="h5 fw-bold text-white mt-1 mb-2">Giá Trị Phân Bổ Thực Tế</h3>
+            <div class="fs-2 fw-bold text-warning mb-2">
+                @allocatedAmount.ToString("N0") <small class="fs-5 text-white">VNĐ</small>
+            </div>
+            <p class="text-white-50 small mb-3" style="line-height: 1.5; font-size: 0.8rem;">
+                Tính theo sản lượng thực tế đã phân bổ cho các đại lý sau kiểm định chất lượng.
             </p>
-
-            <div class="revenue-total">
-                @allocatedAmount.ToString("N0") <small>đ</small>
+            <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);">
+                <div class="d-flex justify-content-between align-items-center mb-1 text-white small">
+                    <span>Tổng đặt trước:</span>
+                    <strong class="text-white">@committedAmount.ToString("N0") đ</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center text-white small">
+                    <span>Tỷ lệ đáp ứng:</span>
+                    <strong class="text-warning">@(committedAmount > 0 ? Math.Round((allocatedAmount / committedAmount) * 100m, 1) : 0)%</strong>
+                </div>
             </div>
-
-            <hr />
-
-            <div class="d-flex justify-content-between">
-                <span>Giá trị đặt trước</span>
-                <strong>@committedAmount.ToString("N0") đ</strong>
-            </div>
-
-            <a href="/admin/revenue" class="btn btn-outline-success mt-4">
-                Xem theo xã viên
+            <a href="/admin/revenue" class="btn btn-warning rounded-pill px-4 py-2 mt-3 fw-bold text-dark w-100 shadow-sm" style="font-size: 0.88rem;">
+                <i class="bi bi-graph-up-arrow me-1"></i> Chi tiết doanh thu theo xã viên
             </a>
         </section>
+
+        <!-- Card Hành động nhanh -->
+        <section class="card border-0 rounded-4 shadow-sm p-4 bg-white" style="border-radius: 28px !important; border: 1.5px solid #edf2f7 !important;">
+            <h4 class="h6 fw-bold text-dark mb-3">
+                <i class="bi bi-tools text-success me-1"></i> Thao tác nhanh quản trị
+            </h4>
+            <div class="d-flex flex-column gap-2">
+                <a href="/admin/batches" class="btn btn-light border text-start rounded-pill px-3 py-2 small fw-semibold text-dark hover-bg-light">
+                    <i class="bi bi-calendar3-range text-success me-2"></i> Mở nhận đặt trước lô mới
+                </a>
+                <a href="/admin/dealers" class="btn btn-light border text-start rounded-pill px-3 py-2 small fw-semibold text-dark hover-bg-light">
+                    <i class="bi bi-building-check text-primary me-2"></i> Quản lý danh sách đại lý
+                </a>
+                <a href="/admin/integrations" class="btn btn-light border text-start rounded-pill px-3 py-2 small fw-semibold text-dark hover-bg-light">
+                    <i class="bi bi-stars text-warning me-2"></i> Cấu hình AI & Thông báo
+                </a>
+            </div>
+        </section>
     </div>
 </div>
 
+<!-- 4. HÀNG BẢNG LÔ NÔNG SẢN CHUẨN BỊ THU HOẠCH -->
+<section class="card border-0 rounded-4 shadow-sm bg-white p-4 mb-4" style="border-radius: 28px !important; border: 1.5px solid #edf2f7 !important;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="h5 fw-bold text-dark mb-1">
+                <i class="bi bi-calendar-check-fill text-success me-1"></i> Các lô mùa vụ chuẩn bị thu hoạch
+            </h2>
+            <p class="text-muted small mb-0">Theo dõi tiến độ đơn đặt của đại lý so với sản lượng dự kiến.</p>
+        </div>
+        <a href="/admin/batches" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+            Quản lý tất cả lô →
+        </a>
+    </div>
+
+    @if (!upcomingBatches.Any())
+    {
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+            Hiện chưa có lô mùa vụ nào đang mở nhận đặt.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr style="font-size: 0.85rem;">
+                        <th>Mã Lô Nông Sản</th>
+                        <th>Xã viên canh tác</th>
+                        <th>Ngày thu hoạch</th>
+                        <th>Đơn giá bao tiêu</th>
+                        <th style="min-width: 180px;">Tiến độ nhận đặt</th>
+                        <th class="text-end">Xử lý</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var b in upcomingBatches)
+                    {
+                        var pct = b.ExpectedQuantity > 0 ? Math.Min(100, Math.Round((b.TotalOrderedQuantity / b.ExpectedQuantity) * 100m, 1)) : 0;
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-3 border bg-white p-1 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; overflow: hidden;">
+                                        <img src="@(string.IsNullOrEmpty(b.Product?.ImageUrl) ? "/images/products/placeholder.svg" : b.Product.ImageUrl)" 
+                                             alt="@b.Product?.ProductName" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                                    </div>
+                                    <div>
+                                        <strong class="d-block text-dark fs-6">@(b.Product?.ProductName ?? "Nông sản")</strong>
+                                        <span class="badge bg-light text-muted border font-monospace" style="font-size: 0.72rem;">@b.BatchCode</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="d-block text-dark fw-semibold" style="font-size: 0.88rem;">@(b.Member?.FullName ?? "Xã viên HTX")</span>
+                                <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-geo-alt me-1"></i>@(b.Member?.Address ?? "Vùng trồng HTX")</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border px-2-5 py-1 rounded-pill" style="font-size: 0.8rem;">
+                                    <i class="bi bi-calendar-event text-success me-1"></i>@b.ExpectedHarvestDate.ToString("dd/MM/yyyy")
+                                </span>
+                            </td>
+                            <td>
+                                <strong class="text-success fs-6">@b.UnitPrice.ToString("N0") đ</strong><small class="text-muted">/@(b.Product?.Unit ?? "kg")</small>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-between small text-muted mb-1" style="font-size: 0.75rem;">
+                                    <span>Đã đặt: <strong>@b.TotalOrderedQuantity.ToString("N0")</strong> / @b.ExpectedQuantity.ToString("N0") kg</span>
+                                    <strong class="@(pct >= 90 ? "text-danger" : "text-success")">@pct%</strong>
+                                </div>
+                                <div class="progress rounded-pill" style="height: 6px;">
+                                    <div class="progress-bar @(pct >= 90 ? "bg-danger" : "bg-success")" style="width: @pct%;"></div>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <a href="/admin/batches" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 fw-semibold" style="font-size: 0.8rem;">
+                                    Nhập thực tế / Phân bổ →
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
 @code {
-    private int memberCount, productCount, openCount, orderCount;
+    private int memberCount, productCount, openCount, orderCount, pendingOrdersCount;
     private decimal allocatedAmount, committedAmount;
+    private List<PreOrder> recentOrders = new();
+    private List<HarvestBatch> upcomingBatches = new();
 
     protected override async Task OnInitializedAsync()
     {
         memberCount = (await ViewMembers.ExecuteAsync()).Count();
         productCount = (await ViewProducts.ExecuteAsync()).Count();
 
-        openCount = (await ViewBatches.ExecuteAsync())
-            .Count(b => b.Status == HarvestBatchStatus.OpenForPreOrder);
+        var batches = (await ViewBatches.ExecuteAsync()).ToList();
+        openCount = batches.Count(b => b.Status == HarvestBatchStatus.OpenForPreOrder);
 
-        orderCount = (await ViewOrders.ExecuteAsync()).Count();
+        upcomingBatches = batches
+            .Where(b => b.Status == HarvestBatchStatus.OpenForPreOrder)
+            .OrderBy(b => b.ExpectedHarvestDate)
+            .Take(5)
+            .ToList();
+
+        var orders = (await ViewOrders.ExecuteAsync()).ToList();
+        orderCount = orders.Count;
+        pendingOrdersCount = orders.Count(o => o.Status == PreOrderStatus.Pending);
+
+        recentOrders = orders
+            .OrderByDescending(o => o.OrderDate)
+            .Take(5)
+            .ToList();
 
         var revenue = await ViewRevenue.ExecuteAsync(null, null);
         allocatedAmount = revenue.Sum(r => r.AllocatedAmount);

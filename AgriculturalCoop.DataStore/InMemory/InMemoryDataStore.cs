@@ -526,6 +526,22 @@ namespace AgriculturalCoop.DataStore.InMemory
             return Task.FromResult(true);
         }
 
+        public Task<bool> UpdatePaymentStatusAsync(int orderId, string paymentStatus)
+        {
+            var order = _preOrders.FirstOrDefault(o => o.PreOrderId == orderId);
+            if (order == null) return Task.FromResult(false);
+            order.PaymentStatus = paymentStatus;
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> UpdateOrderStatusAsync(int orderId, PreOrderStatus status)
+        {
+            var order = _preOrders.FirstOrDefault(o => o.PreOrderId == orderId);
+            if (order == null) return Task.FromResult(false);
+            order.Status = status;
+            return Task.FromResult(true);
+        }
+
         public Task AddDealerAsync(Dealer dealer)
         {
             dealer.DealerId = _nextDealerId++;

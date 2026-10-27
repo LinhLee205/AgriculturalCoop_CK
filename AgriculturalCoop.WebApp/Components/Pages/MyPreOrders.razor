@@ -28,7 +28,7 @@
     }
     else if (!orders.Any())
     {
-        <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white">
+        <div class="card border-0 rounded-4 shadow-sm p-5 text-center bg-white" style="border-radius: 28px !important;">
             <i class="bi bi-journal-x text-muted fs-1 mb-3"></i>
             <h4 class="fw-bold text-dark">Chưa có đơn đặt trước nào</h4>
             <p class="text-muted small">Quý đại lý chưa có đơn đặt trước nào trong hệ thống.</p>
@@ -42,18 +42,32 @@
         <div class="d-flex flex-column gap-4">
             @foreach (var order in orders)
             {
-                <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden">
-                    <div class="card-header bg-light border-bottom p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="badge bg-dark font-monospace px-3 py-2 rounded-3 fs-6">
-                                @order.OrderNumber
+                <div class="card border-0 shadow-sm bg-white overflow-hidden" 
+                     style="border-radius: 28px !important; border: 1.5px solid #edf2f7 !important; box-shadow: 0 6px 24px rgba(0,0,0,0.04) !important;">
+                    <div class="card-header bg-light border-bottom p-3 p-md-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div class="d-flex align-items-center flex-wrap gap-2 gap-md-3">
+                            <span class="badge bg-dark font-monospace px-3 py-2 rounded-pill fs-6">
+                                <i class="bi bi-receipt me-1 text-success"></i>@order.OrderNumber
                             </span>
                             <span class="text-muted small">
                                 <i class="bi bi-calendar3 me-1"></i> Ngày đặt: @order.OrderDate.ToString("dd/MM/yyyy HH:mm")
                             </span>
                         </div>
 
-                        <div>
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <!-- Badge Phương thức thanh toán -->
+                            <span class="badge bg-white text-secondary border px-3 py-2 rounded-pill">
+                                <i class="bi @(order.PaymentMethod == "BANK_TRANSFER" ? "bi-qr-code" : "bi-cash-coin") me-1 text-primary"></i>
+                                @(order.PaymentMethod == "BANK_TRANSFER" ? "VietQR Chuyển khoản" : "Thanh toán COD")
+                            </span>
+
+                            <!-- Badge Trạng thái thanh toán -->
+                            <span class="badge @(order.PaymentStatus == "Đã thanh toán" ? "bg-success" : "bg-warning text-dark") px-3 py-2 rounded-pill fw-semibold">
+                                <i class="bi @(order.PaymentStatus == "Đã thanh toán" ? "bi-check2-circle" : "bi-clock-history") me-1"></i>
+                                @(string.IsNullOrEmpty(order.PaymentStatus) ? "Chưa thanh toán" : order.PaymentStatus)
+                            </span>
+
+                            <!-- Badge Trạng thái đơn -->
                             @if (order.Status == PreOrderStatus.Confirmed)
                             {
                                 <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold">
@@ -66,10 +80,16 @@
                                     <i class="bi bi-pie-chart-fill me-1"></i> Đã phân bổ sản lượng
                                 </span>
                             }
-                            else
+                            else if (order.Status == PreOrderStatus.Cancelled)
                             {
                                 <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
-                                    @(order.Status == PreOrderStatus.Cancelled ? "Đã hủy" : "Chờ xử lý")
+                                    <i class="bi bi-x-circle me-1"></i> Đã hủy
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-2 rounded-pill fw-semibold">
+                                    <i class="bi bi-hourglass-split me-1"></i> Chờ xử lý
                                 </span>
                             }
                         </div>
@@ -77,14 +97,14 @@
 
                     <div class="card-body p-4">
                         <div class="mb-3"><OrderDeliverySummary Order="order" /></div>
-                        @if (order.Status == PreOrderStatus.Cancelled) { <p class="alert alert-secondary small">Lý do hủy: @order.CancellationReason</p> }
+                        @if (order.Status == PreOrderStatus.Cancelled) { <p class="alert alert-secondary small rounded-4">Lý do hủy: @order.CancellationReason</p> }
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Mã Lô Nông Sản</th>
+                                        <th style="min-width: 250px;">Mặt Hàng Nông Sản & Mã Lô</th>
                                         <th>Khối Lượng Đặt</th>
-                                        <th>Đơn Giá</th>
+                                        <th>Đơn Giá Sỉ</th>
                                         <th>Thành Tiền Dự Kiến</th>
                                         <th>Thực Tế Được Phân Bổ</th>
                                     </tr>
@@ -94,16 +114,39 @@
                                     {
                                         <tr>
                                             <td>
-                                                <div class="fw-bold text-dark">@(line.HarvestBatch?.Product?.ProductName ?? $"Lô #{line.HarvestBatchId}")</div>
-                                                <small class="text-muted font-monospace">@line.HarvestBatch?.BatchCode</small>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <!-- Thumbnail hình ảnh sản phẩm trước tên mặt hàng -->
+                                                    <div class="rounded-4 border bg-white p-1 d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" 
+                                                         style="width: 58px; height: 58px; min-width: 58px; overflow: hidden; border-radius: 16px !important;">
+                                                        <img src="@(string.IsNullOrEmpty(line.HarvestBatch?.Product?.ImageUrl) ? "/images/products/placeholder.svg" : line.HarvestBatch.Product.ImageUrl)" 
+                                                             alt="@line.HarvestBatch?.Product?.ProductName" 
+                                                             style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold text-dark fs-6">@(line.HarvestBatch?.Product?.ProductName ?? $"Lô #{line.HarvestBatchId}")</div>
+                                                        <div class="d-flex align-items-center gap-2 mt-1">
+                                                            <span class="badge bg-light text-muted border font-monospace" style="font-size: 0.75rem;">
+                                                                <i class="bi bi-upc-scan me-1"></i>@line.HarvestBatch?.BatchCode
+                                                            </span>
+                                                            @if (line.HarvestBatch != null && line.HarvestBatch.ExpectedHarvestDate != default)
+                                                            {
+                                                                <span class="text-muted small" style="font-size: 0.75rem;">
+                                                                    <i class="bi bi-calendar3 me-1"></i>Dự kiến thu hoạch: @line.HarvestBatch.ExpectedHarvestDate.ToString("dd/MM/yyyy")
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="fw-bold">
-                                                @line.Quantity.ToString("N2") kg
+                                                <span class="badge bg-light text-dark border px-2-5 py-1-5 rounded-pill fs-6">
+                                                    @line.Quantity.ToString("N2") kg
+                                                </span>
                                             </td>
                                             <td>
-                                                @line.UnitPrice.ToString("N0") đ/kg
+                                                <span class="text-dark fw-semibold">@line.UnitPrice.ToString("N0") đ</span><small class="text-muted">/kg</small>
                                             </td>
-                                            <td class="text-dark fw-semibold">
+                                            <td class="text-success fw-bold fs-6">
                                                 @line.LineTotal.ToString("N0") đ
                                             </td>
                                             <td>
@@ -129,13 +172,13 @@
                             </table>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top flex-wrap gap-2">
                             <div class="text-muted small">
-                                <i class="bi bi-chat-left-text me-1"></i> Ghi chú: @(string.IsNullOrEmpty(order.Notes) ? "Không có" : order.Notes)
+                                <i class="bi bi-chat-left-text me-1"></i> Ghi chú đơn: @(string.IsNullOrEmpty(order.Notes) ? "Không có ghi chú thêm" : order.Notes)
                             </div>
                             <div>
                                 <span class="text-muted me-2">Tổng giá trị đơn:</span>
-                                <span class="fs-5 fw-extrabold text-success">@order.TotalAmount.ToString("N0") VNĐ</span>
+                                <span class="fs-4 fw-bold text-success">@order.TotalAmount.ToString("N0") VNĐ</span>
                             </div>
                         </div>
                     </div>

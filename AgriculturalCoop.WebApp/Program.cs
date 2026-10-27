@@ -290,3 +290,5 @@ app.MapRazorComponents<App>()
 app.MapAccountEndpoints();
 
 app.Run();
+
+

@@ -1,4 +1,4 @@
-﻿using AgriculturalCoop.CoreBusiness.Entities;
+using AgriculturalCoop.CoreBusiness.Entities;
 using AgriculturalCoop.UseCases.PluginInterfaces;
 
 namespace AgriculturalCoop.DataStore.InMemory;
@@ -25,6 +25,7 @@ public class InMemoryHomeBannerRepository : IHomeBannerRepository
         ImageUrl = value.ImageUrl,
         LogoUrl = value.LogoUrl,
         BrandName = value.BrandName,
-        BrandTagline = value.BrandTagline
+        BrandTagline = value.BrandTagline,
+        IntroImageUrl = value.IntroImageUrl
     };
 }

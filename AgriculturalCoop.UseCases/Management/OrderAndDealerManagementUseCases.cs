@@ -8,9 +8,23 @@ public interface IManageOrdersUseCase
 {
     Task ConfirmAsync(int orderId);
     Task CancelAsync(int orderId, string reason);
+    Task UpdatePaymentStatusAsync(int orderId, string paymentStatus);
+    Task UpdateOrderStatusAsync(int orderId, PreOrderStatus status);
 }
 public class ManageOrdersUseCase(IOrderManagementRepository repository, IAdminAuthorization authorization) : IManageOrdersUseCase
 {
+    public async Task UpdateOrderStatusAsync(int orderId, PreOrderStatus status)
+    {
+        await authorization.EnsureAdminAsync();
+        if (!await repository.UpdateOrderStatusAsync(orderId, status))
+            throw new PreOrderDomainException("Không cập nhật được trạng thái đơn hàng. Hãy tải lại đơn.");
+    }
+    public async Task UpdatePaymentStatusAsync(int orderId, string paymentStatus)
+    {
+        await authorization.EnsureAdminAsync();
+        if (!await repository.UpdatePaymentStatusAsync(orderId, paymentStatus))
+            throw new PreOrderDomainException("Không cập nhật được trạng thái thanh toán. Hãy tải lại đơn.");
+    }
     public async Task ConfirmAsync(int orderId)
     {
         await authorization.EnsureAdminAsync();
