@@ -12,6 +12,8 @@ namespace AgriculturalCoop.UseCases.Allocations
     public interface IAllocateHarvestUseCase
     {
         Task<List<AllocationResultItem>> ExecuteAsync(int batchId, decimal actualHarvestQuantity);
+        List<AllocationResultItem> PreviewAllocation(HarvestBatch batch, List<PreOrderLine> orderLines, decimal actualHarvestQuantity);
+        Task<List<AllocationResultItem>> SaveCustomAllocationsAsync(int batchId, decimal actualHarvestQuantity, List<AllocationResultItem> customAllocations);
     }
 
     public class AllocateHarvestUseCase : IAllocateHarvestUseCase
@@ -88,6 +90,82 @@ namespace AgriculturalCoop.UseCases.Allocations
                 actualHarvestQuantity, DateTime.Now, notices);
 
             return resultItems;
+        }
+
+        public List<AllocationResultItem> PreviewAllocation(HarvestBatch batch, List<PreOrderLine> orderLines, decimal actualHarvestQuantity)
+        {
+            if (batch == null) throw new ArgumentNullException(nameof(batch));
+            if (orderLines == null) return new List<AllocationResultItem>();
+
+            var validLines = orderLines.Where(l => l.PreOrder?.Status != PreOrderStatus.Cancelled).ToList();
+            if (!validLines.Any() || actualHarvestQuantity < 0) return new List<AllocationResultItem>();
+
+            return _allocationService.CalculateAllocation(batch, validLines, actualHarvestQuantity);
+        }
+
+        public async Task<List<AllocationResultItem>> SaveCustomAllocationsAsync(int batchId, decimal actualHarvestQuantity, List<AllocationResultItem> customAllocations)
+        {
+            var batch = await _batchRepository.GetBatchByIdAsync(batchId);
+            if (batch == null)
+                throw new PreOrderDomainException($"Lô thu hoạch #{batchId} không tồn tại.");
+            if (batch.IsArchived || batch.Status == HarvestBatchStatus.Completed)
+                throw new PreOrderDomainException("Lô đã lưu trữ hoặc hoàn tất. Không thay đổi kết quả đã chốt.");
+
+            if (actualHarvestQuantity < 0 || actualHarvestQuantity != decimal.Round(actualHarvestQuantity, 2))
+                throw new PreOrderDomainException("Sản lượng thực tế không âm và có tối đa 2 chữ số thập phân.");
+
+            var lines = (await _preOrderRepository.GetLinesByBatchIdAsync(batchId))
+                .Where(l => l.PreOrder?.Status != PreOrderStatus.Cancelled).ToList();
+            if (!lines.Any())
+                throw new PreOrderDomainException($"Lô [{batch.BatchCode}] chưa có bất kỳ đơn đặt trước nào để phân bổ.");
+
+            if (customAllocations == null || customAllocations.Count == 0)
+                throw new PreOrderDomainException("Danh sách phân bổ tùy chỉnh không được để trống.");
+
+            // Kiểm tra từng đơn phân bổ
+            decimal totalAllocated = 0;
+            foreach (var item in customAllocations)
+            {
+                if (item.AllocatedQuantity < 0)
+                    throw new PreOrderDomainException($"Số lượng phân bổ của đại lý {item.DealerName} không được âm.");
+                if (item.AllocatedQuantity > item.RequestedQuantity)
+                    throw new PreOrderDomainException($"Số lượng phân bổ ({item.AllocatedQuantity:N2} kg) của đại lý {item.DealerName} không được vượt quá số lượng đặt ({item.RequestedQuantity:N2} kg).");
+
+                totalAllocated += item.AllocatedQuantity;
+            }
+
+            if (totalAllocated > actualHarvestQuantity)
+                throw new PreOrderDomainException($"Tổng sản lượng phân bổ ({totalAllocated:N2} kg) không được vượt quá sản lượng thực tế thu hoạch ({actualHarvestQuantity:N2} kg).");
+
+            var allocationsToSave = customAllocations.Select(r => new Allocation
+            {
+                PreOrderLineId = r.PreOrderLineId,
+                HarvestBatchId = batchId,
+                RequestedQuantity = r.RequestedQuantity,
+                AllocatedQuantity = r.AllocatedQuantity,
+                AllocationDate = DateTime.Now,
+                Reason = string.IsNullOrWhiteSpace(r.Note) ? $"Phân bổ chốt theo quyết định HTX ({r.AllocatedQuantity:N2}/{r.RequestedQuantity:N2} kg)" : r.Note
+            }).ToList();
+
+            var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+            string Number(decimal value) => value.ToString("N2", culture);
+            var notices = allocationsToSave.Select(a =>
+            {
+                var line = lines.Single(l => l.PreOrderLineId == a.PreOrderLineId);
+                return new DealerNotification
+                {
+                    DealerId = line.PreOrder?.DealerId ?? throw new PreOrderDomainException("Thiếu thông tin đại lý của đơn đặt."),
+                    HarvestBatchId = batchId,
+                    PreOrderLineId = a.PreOrderLineId,
+                    Subject = $"Kết quả phân bổ lô {batch.BatchCode}",
+                    Body = $"Hợp tác xã đã cập nhật kết quả phân bổ sản lượng.\n\nLô: {batch.BatchCode} — {batch.Product?.ProductName}\nĐơn đặt trước: #{line.PreOrderId}\nSản lượng thực tế toàn lô: {Number(actualHarvestQuantity)} kg\nLượng đã đặt: {Number(a.RequestedQuantity)} kg\nLượng được phân bổ: {Number(a.AllocatedQuantity)} kg\n\n{a.Reason}\n\nXem mục Phân bổ nhận được để đối chiếu."
+                };
+            }).ToList();
+
+            await _allocationRepository.SaveAllocationsTransactionAsync(batchId, allocationsToSave,
+                actualHarvestQuantity, DateTime.Now, notices);
+
+            return customAllocations;
         }
     }
 

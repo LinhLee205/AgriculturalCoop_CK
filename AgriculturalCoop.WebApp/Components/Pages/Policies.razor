@@ -1,0 +1,287 @@
+@page "/policies"
+@page "/policies/{PolicyKey}"
+@inject NavigationManager Nav
+
+<PageTitle>Chính Sách & Quy Định — COOPAGRI</PageTitle>
+
+<div class="container py-4">
+    <!-- Breadcrumb điều hướng -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-success">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chính sách & Quy định</li>
+        </ol>
+    </nav>
+
+    <!-- Header Trang -->
+    <div class="mb-4 text-center text-md-start">
+        <span class="badge bg-success-subtle text-success px-3 py-1-5 rounded-pill fw-semibold mb-2" style="font-size: 0.85rem;">
+            🌿 Cam Kết Uy Tín & Minh Bạch
+        </span>
+        <h1 class="fw-bold text-dark mb-2" style="font-size: 2rem; color: #143823 !important;">
+            Chính Sách & Quy Định Hợp Tác Xã COOPAGRI
+        </h1>
+        <p class="text-muted" style="max-width: 820px;">
+            Nhằm đảm bảo quyền lợi tối đa cho các hộ nông dân xã viên và hệ thống siêu thị, đại lý đối tác bao tiêu, 
+            COOPAGRI công khai các chính sách vận hành và quy chuẩn cam kết chất lượng theo mùa vụ.
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Cột Trái: Danh mục Đề mục Chính sách -->
+        <div class="col-lg-4 col-md-5">
+            <div class="card border-0 shadow-sm p-3 bg-white sticky-top" style="top: 85px; border-radius: 20px; border: 1.5px solid #eef2f6 !important;">
+                <h6 class="text-uppercase fw-bold text-muted px-2 mb-3" style="font-size: 0.76rem; letter-spacing: 0.08em;">
+                    Danh mục chính sách
+                </h6>
+                <div class="nav flex-column nav-pills gap-2">
+                    <button type="button" class="nav-link text-start py-2-5 px-3 rounded-4 d-flex align-items-center gap-2 @(activeKey == "bao-mat" ? "active bg-success text-white fw-bold shadow-xs" : "text-dark bg-light hover-bg-light")"
+                            @onclick='() => SelectPolicy("bao-mat")'>
+                        <i class="bi bi-shield-lock-fill @(activeKey == "bao-mat" ? "text-white" : "text-success") fs-5"></i>
+                        <span>1. Bảo mật thông tin</span>
+                    </button>
+
+                    <button type="button" class="nav-link text-start py-2-5 px-3 rounded-4 d-flex align-items-center gap-2 @(activeKey == "thanh-toan" ? "active bg-success text-white fw-bold shadow-xs" : "text-dark bg-light hover-bg-light")"
+                            @onclick='() => SelectPolicy("thanh-toan")'>
+                        <i class="bi bi-qr-code @(activeKey == "thanh-toan" ? "text-white" : "text-success") fs-5"></i>
+                        <span>2. Thanh toán & VietQR</span>
+                    </button>
+
+                    <button type="button" class="nav-link text-start py-2-5 px-3 rounded-4 d-flex align-items-center gap-2 @(activeKey == "phan-bo" ? "active bg-success text-white fw-bold shadow-xs" : "text-dark bg-light hover-bg-light")"
+                            @onclick='() => SelectPolicy("phan-bo")'>
+                        <i class="bi bi-pie-chart-fill @(activeKey == "phan-bo" ? "text-white" : "text-success") fs-5"></i>
+                        <span>3. Phân bổ khi hụt mùa</span>
+                    </button>
+
+                    <button type="button" class="nav-link text-start py-2-5 px-3 rounded-4 d-flex align-items-center gap-2 @(activeKey == "kiem-dinh" ? "active bg-success text-white fw-bold shadow-xs" : "text-dark bg-light hover-bg-light")"
+                            @onclick='() => SelectPolicy("kiem-dinh")'>
+                        <i class="bi bi-patch-check-fill @(activeKey == "kiem-dinh" ? "text-white" : "text-success") fs-5"></i>
+                        <span>4. Kiểm định VietGAP & Đổi trả</span>
+                    </button>
+                </div>
+
+                <hr class="my-3" />
+
+                <!-- Banner hỗ trợ nhanh -->
+                <div class="p-3 rounded-4 text-center" style="background: #f0fdf4; border: 1px dashed #86efac;">
+                    <div class="fw-bold text-success mb-1" style="font-size: 0.9rem;">Cần hỗ trợ trực tiếp?</div>
+                    <small class="text-muted d-block mb-2" style="font-size: 0.78rem;">Ban Quản lý Hợp tác xã phục vụ 24/7</small>
+                    <a href="tel:0981291299" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
+                        <i class="bi bi-telephone-fill me-1"></i> 0981 291 299
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Nội dung chi tiết của Chính sách được chọn -->
+        <div class="col-lg-8 col-md-7">
+            <div class="card border-0 shadow-sm p-4 p-md-5 bg-white" style="border-radius: 24px; border: 1.5px solid #eef2f6 !important; min-height: 480px;">
+                @if (activeKey == "bao-mat")
+                {
+                    <article>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-success text-white rounded-pill px-3 py-1">Chính sách 01</span>
+                            <span class="text-muted small">Cập nhật lần cuối: Năm 2026</span>
+                        </div>
+                        <h2 class="fw-bold mb-3" style="color: #143823;">Chính Sách Bảo Mật Thông Tin Đối Tác & Khách Hàng</h2>
+                        
+                        <p class="lead text-secondary" style="font-size: 1rem; line-height: 1.7;">
+                            Hợp tác xã Nông nghiệp COOPAGRI cam kết bảo mật tuyệt đối toàn bộ thông tin cá nhân của các hộ nông dân xã viên, cũng như dữ liệu thương mại, hợp đồng bao tiêu của các đại lý, siêu thị đối tác.
+                        </p>
+
+                        <hr class="my-4" />
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">1. Thu thập thông tin</h4>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            Hệ thống chỉ thu thập các dữ liệu cần thiết phục vụ cho quy trình đặt trước và bàn giao nông sản, bao gồm:
+                        </p>
+                        <ul class="text-secondary" style="line-height: 1.8;">
+                            <li>Tên đại lý / Doanh nghiệp, người đại diện nhận hàng.</li>
+                            <li>Số điện thoại liên lạc để gửi thông báo xác nhận và tạo cú pháp thanh toán VietQR.</li>
+                            <li>Địa chỉ kho nhận hàng phục vụ công tác điều phối xe tải lạnh bảo ôn.</li>
+                            <li>Lịch sử các đơn đặt trước và kết quả phân bổ sản lượng mùa vụ.</li>
+                        </ul>
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">2. Phạm vi sử dụng thông tin</h4>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            Dữ liệu thu thập chỉ được sử dụng nội bộ trong Hợp tác xã nhằm:
+                        </p>
+                        <ul class="text-secondary" style="line-height: 1.8;">
+                            <li>Xác nhận và quản lý tiến độ các lô nông sản mùa vụ đã chốt bao tiêu.</li>
+                            <li>Gửi thông báo kết quả thu hoạch và phân bổ sản lượng trực tiếp lên tài khoản đại lý.</li>
+                            <li>Đối soát thanh toán chuyển khoản ngân hàng qua VietQR một cách chính xác.</li>
+                        </ul>
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">3. Cam kết không chia sẻ cho bên thứ ba</h4>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            COOPAGRI cam kết <strong>không bán, không chuyển giao hay chia sẻ</strong> bất kỳ dữ liệu đối tác nào cho bên thứ ba vì mục đích quảng cáo hoặc thương mại mà không có sự đồng ý của quý đại lý.
+                        </p>
+                    </article>
+                }
+                else if (activeKey == "thanh-toan")
+                {
+                    <article>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-success text-white rounded-pill px-3 py-1">Chính sách 02</span>
+                            <span class="text-muted small">Cập nhật lần cuối: Năm 2026</span>
+                        </div>
+                        <h2 class="fw-bold mb-3" style="color: #143823;">Quy Định Thanh Toán & Chuyển Khoản VietQR</h2>
+                        
+                        <p class="lead text-secondary" style="font-size: 1rem; line-height: 1.7;">
+                            Nhằm tạo sự thuận tiện, minh bạch và an toàn tuyệt đối cho các đối tác bao tiêu, COOPAGRI hỗ trợ 2 phương thức thanh toán chính thức trên toàn hệ thống.
+                        </p>
+
+                        <hr class="my-4" />
+
+                        <div class="row g-3 mb-4">
+                            <!-- Box Chuyển khoản VietQR -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-4 h-100" style="background: #f0fdf4; border: 1.5px solid #86efac;">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <i class="bi bi-qr-code-scan text-success fs-4"></i>
+                                        <strong class="text-success fs-6">Phương thức 1: Quét mã VietQR</strong>
+                                    </div>
+                                    <p class="small text-secondary mb-2">
+                                        Hệ thống tự động sinh mã QR liên kết ngân hàng kèm đúng số tiền và nội dung chuyển khoản cố định.
+                                    </p>
+                                    <ul class="list-unstyled small mb-0" style="line-height: 1.8;">
+                                        <li>• Ngân hàng: <strong>Vietcombank (VCB)</strong></li>
+                                        <li>• Số tài khoản: <strong>1041586535</strong></li>
+                                        <li>• Chủ tài khoản: <strong>LE THI LINH</strong></li>
+                                        <li>• Cú pháp: <strong>CK + Số điện thoại khách</strong></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Box Thanh toán tiền mặt COD -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-4 h-100" style="background: #f8fafc; border: 1.5px solid #e2e8f0;">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <i class="bi bi-cash-stack text-warning fs-4"></i>
+                                        <strong class="text-dark fs-6">Phương thức 2: Tiền mặt khi nhận (COD)</strong>
+                                    </div>
+                                    <p class="small text-secondary mb-2">
+                                        Đại lý kiểm tra thực tế khối lượng và quy cách nông sản tại kho hoặc điểm nhận hàng, sau đó thanh toán trực tiếp cho tài xế xe lạnh của HTX.
+                                    </p>
+                                    <ul class="list-unstyled small mb-0" style="line-height: 1.8;">
+                                        <li>• Áp dụng khi nhận hàng tại kho</li>
+                                        <li>• Có biên bản bàn giao và ký nhận</li>
+                                        <li>• Xuất hóa đơn VAT theo yêu cầu</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">Quy định cố định giá bao tiêu</h4>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            Ngay khi đại lý hoàn tất đặt trước lô mùa vụ trên website, đơn giá sỉ được cố định trong suốt vòng đời vụ mùa. Hợp tác xã cam kết không tăng giá kể cả khi giá nông sản ngoài thị trường biến động tăng cao.
+                        </p>
+                    </article>
+                }
+                else if (activeKey == "phan-bo")
+                {
+                    <article>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-success text-white rounded-pill px-3 py-1">Chính sách 03</span>
+                            <span class="text-muted small">Cập nhật lần cuối: Năm 2026</span>
+                        </div>
+                        <h2 class="fw-bold mb-3" style="color: #143823;">Chính Sách Phân Bổ Sản Lượng Khi Hụt Mùa Vụ</h2>
+                        
+                        <p class="lead text-secondary" style="font-size: 1rem; line-height: 1.7;">
+                            Nông nghiệp canh tác phụ thuộc vào điều kiện tự nhiên, thời tiết và khí hậu. Khi xảy ra thiên tai hoặc biến động mùa vụ làm sản lượng thực tế thu hoạch thấp hơn dự kiến, COOPAGRI áp dụng quy tắc phân bổ tỷ lệ công bằng, minh bạch.
+                        </p>
+
+                        <hr class="my-4" />
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">1. Nguyên tắc phân bổ tỷ lệ công bằng</h4>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            Khi tổng sản lượng thu hoạch thực tế nhỏ hơn tổng số lượng các đại lý đã đặt trước:
+                        </p>
+                        <div class="p-3 rounded-4 bg-light border font-monospace text-dark mb-3" style="font-size: 0.95rem;">
+                            Số lượng phân bổ đại lý = (Số lượng đặt của đại lý ÷ Tổng lượng đã đặt) × Sản lượng thực tế
+                        </div>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            Hệ thống áp dụng phương pháp <strong>Largest Remainder (Hamilton-Hare)</strong> để xử lý phần dư làm tròn chính xác đến 0,01 kg, bảo đảm: <strong>Tổng lượng phân bổ bằng đúng sản lượng thu hoạch thực tế</strong>.
+                        </p>
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">2. Quyền điều chỉnh linh hoạt của Ban Quản lý</h4>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            Nhằm đáp ứng linh hoạt thực tế hợp đồng, Ban Quản lý HTX có thể điều chỉnh ưu tiên phân bổ cho các đại lý đối tác chiến lược hoặc các chuỗi siêu thị có cam kết tiêu chuẩn khắt khe, miễn sao tổng khối lượng phân bổ không vượt quá sản lượng thu hoạch thực tế.
+                        </p>
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">3. Thông báo công khai và đối chiếu</h4>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            Mọi quyết định phân bổ sau khi Ban Quản lý chốt sẽ được tự động đồng bộ lên mục <strong>Phân bổ</strong> trong tài khoản đại lý trên website để đối tác tra cứu và đối soát tức thì.
+                        </p>
+                    </article>
+                }
+                else if (activeKey == "kiem-dinh")
+                {
+                    <article>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-success text-white rounded-pill px-3 py-1">Chính sách 04</span>
+                            <span class="text-muted small">Cập nhật lần cuối: Năm 2026</span>
+                        </div>
+                        <h2 class="fw-bold mb-3" style="color: #143823;">Tiêu Chuẩn Kiểm Định VietGAP & Chính Sách Đổi Trả</h2>
+                        
+                        <p class="lead text-secondary" style="font-size: 1rem; line-height: 1.7;">
+                            COOPAGRI đặt chất lượng nông sản và an toàn thực phẩm làm kim chỉ nam phát triển bền vững cho các hộ nông dân xã viên và đối tác phân phối.
+                        </p>
+
+                        <hr class="my-4" />
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">1. Quy chuẩn kiểm định chất lượng</h4>
+                        <ul class="text-secondary" style="line-height: 1.8;">
+                            <li><strong>100% vùng trồng đạt chuẩn:</strong> Canh tác theo quy trình VietGAP, GlobalGAP, không sử dụng thuốc bảo vệ thực vật ngoài danh mục hoặc chất kích thích tăng trưởng độc hại.</li>
+                            <li><strong>Kiểm tra mẫu trước thu hoạch:</strong> Kỹ sư nông nghiệp của HTX trực tiếp đo độ ngọt Brix, kiểm tra dư lượng nitrat và vi sinh vật trước ngày cắt tại vườn.</li>
+                            <li><strong>Truy xuất nguồn gốc:</strong> Từng lô nông sản đều có mã định danh, hồ sơ nhật ký đồng ruộng và thông tin xã viên canh tác rõ ràng.</li>
+                        </ul>
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">2. Quy định đóng gói & Vận chuyển xe lạnh 24h</h4>
+                        <ul class="text-secondary" style="line-height: 1.8;">
+                            <li>Nông sản sau thu hoạch được sơ chế loại bỏ trái dập, khử trùng bằng nước ozone và đóng gói thùng carton tiêu chuẩn.</li>
+                            <li>100% vận chuyển bằng xe tải lạnh duy trì dải nhiệt độ 5°C - 10°C, bảo đảm độ giòn tươi khi đến kho hàng của đại lý trong vòng 24 giờ.</li>
+                        </ul>
+
+                        <h4 class="fw-bold text-dark mt-4 mb-2">3. Chính sách đổi trả & Bồi thường 100%</h4>
+                        <p class="text-secondary" style="line-height: 1.7;">
+                            Đại lý được quyền đồng kiểm tại thời điểm giao hàng:
+                        </p>
+                        <ul class="text-secondary" style="line-height: 1.8;">
+                            <li>Nếu nông sản bị dập nát, hư hỏng do quá trình vận chuyển: HTX đổi bù hàng mới hoặc hoàn tiền 100% phần sản phẩm lỗi trong vòng 24 giờ.</li>
+                            <li>Nếu sai quy cách hoặc khối lượng so với đơn phân bổ đã chốt: Đại lý thông báo qua Hotline 0981 291 299 để được xử lý giải quyết ngay.</li>
+                        </ul>
+                    </article>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? PolicyKey { get; set; }
+
+    private string activeKey = "bao-mat";
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(PolicyKey))
+        {
+            var key = PolicyKey.ToLowerInvariant().Trim();
+            if (key is "bao-mat" or "thanh-toan" or "phan-bo" or "kiem-dinh")
+            {
+                activeKey = key;
+                return;
+            }
+        }
+        activeKey = "bao-mat";
+    }
+
+    private void SelectPolicy(string key)
+    {
+        activeKey = key;
+        Nav.NavigateTo($"/policies/{key}");
+    }
+}
+

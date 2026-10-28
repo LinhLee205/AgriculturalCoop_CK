@@ -1152,3 +1152,56 @@ img.store-brand-img {
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
+
+/* Luxury Coop Dark Forest Green Footer (Phong cách Faifo Tailor tối màu cao cấp) */
+.coop-luxury-footer {
+    background: #0f2417;
+    color: #cbd5e1;
+    width: 100%;
+    margin-top: 48px;
+    border-top: 2px solid #1c452b;
+}
+
+.coop-luxury-footer .footer-container {
+    box-sizing: border-box;
+    width: min(var(--store-max-width, 1280px), 100%);
+    margin: 0 auto;
+    padding: 48px var(--store-gutter, 32px) 24px;
+}
+
+.coop-luxury-footer .hover-text-white {
+    transition: color 0.2s ease, transform 0.2s ease;
+    display: inline-block;
+}
+
+.coop-luxury-footer .hover-text-white:hover {
+    color: #ffffff !important;
+    transform: translateX(3px);
+}
+
+.coop-luxury-footer .footer-title {
+    position: relative;
+    padding-bottom: 8px;
+}
+
+.coop-luxury-footer .footer-title::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 32px;
+    height: 2px;
+    background: #4ade80;
+    border-radius: 2px;
+}
+
+.coop-luxury-footer .payment-badge {
+    transition: all 0.2s ease;
+}
+
+.coop-luxury-footer .payment-badge:hover {
+    background: #236440 !important;
+    border-color: #4ade80 !important;
+    transform: translateY(-1px);
+}
+

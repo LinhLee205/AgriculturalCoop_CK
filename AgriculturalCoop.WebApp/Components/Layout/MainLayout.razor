@@ -5,22 +5,135 @@
 <div class="store-shell">
     <TopNavBar />
     <main class="store-main">@Body</main>
-    <footer class="store-footer">
-        <div>
-            <a class="footer-brand" href="/" aria-label="@BrandTitle">
-                @if (!string.IsNullOrEmpty(banner?.LogoUrl))
-                {
-                    <img src="@banner.LogoUrl" alt="@BrandTitle" style="height: 32px; max-width: 100px; object-fit: contain; margin-right: 8px; vertical-align: middle;" />
-                }
-                else
-                {
-                    <span class="me-1">🌿</span>
-                }
-                <span>@BrandTitle</span>
-            </a>
-            <p>@(string.IsNullOrWhiteSpace(banner?.BrandTagline) ? "Kết nối người trồng. Trao gửi mùa tươi." : banner.BrandTagline)</p>
+    <footer class="coop-luxury-footer" style="background: #0d2818 !important; background-color: #0d2818 !important; color: #e2e8f0 !important; width: 100% !important; margin-top: 48px !important; border-top: 4px solid #2d6a4f !important; display: block !important;">
+        <div class="footer-container" style="box-sizing: border-box; width: min(var(--store-max-width, 1280px), 100%); margin: 0 auto; padding: 48px var(--store-gutter, 32px) 24px;">
+            <div class="row g-4 g-lg-5">
+                <!-- Cột 1: Thông tin thương hiệu, GPKD & Địa chỉ chi nhánh -->
+                <div class="col-lg-5 col-md-12">
+                    <div class="footer-brand-header mb-3">
+                        <a href="/" class="d-inline-flex align-items-center text-decoration-none text-white gap-2">
+                            @if (!string.IsNullOrEmpty(banner?.LogoUrl))
+                            {
+                                <img src="@banner.LogoUrl" alt="@BrandTitle" style="height: 40px; max-width: 140px; object-fit: contain; background: rgba(255,255,255,0.9); padding: 3px 6px; border-radius: 8px;" />
+                            }
+                            else
+                            {
+                                <span class="fs-4">🌿</span>
+                            }
+                            <span class="fs-4 fw-bold tracking-tight text-white" style="color: #ffffff !important;">@BrandTitle</span>
+                        </a>
+                        <p class="footer-tagline fst-italic mt-2 mb-3" style="font-size: 0.9rem; color: #86efac !important;">
+                            "@(string.IsNullOrWhiteSpace(banner?.BrandTagline) ? "Kết nối người trồng — Trao gửi mùa tươi" : banner.BrandTagline)"
+                        </p>
+                    </div>
+
+                    <div class="footer-info-block">
+                        <h6 class="text-uppercase fw-bold mb-3" style="font-size: 0.82rem; letter-spacing: 0.08em; color: #a3e635 !important;">
+                            Thông tin liên hệ
+                        </h6>
+
+                        <div class="mb-2 d-flex align-items-start gap-2" style="font-size: 0.85rem; line-height: 1.55;">
+                            <i class="bi bi-card-heading flex-shrink-0 mt-1" style="color: #4ade80 !important; font-size: 1rem;"></i>
+                            <div>
+                                <strong style="color: #4ade80 !important;">ĐĂNG KÝ KINH DOANH</strong><br />
+                                <span style="color: #e2e8f0 !important;">GPKD: 0108686868 do Sở KH&ĐT Thừa Thiên Huế cấp</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 d-flex align-items-start gap-2" style="font-size: 0.85rem; line-height: 1.55;">
+                            <i class="bi bi-geo-alt-fill flex-shrink-0 mt-1" style="color: #4ade80 !important; font-size: 1rem;"></i>
+                            <div>
+                                <strong style="color: #4ade80 !important;">ĐỊA CHỈ</strong><br />
+                                <span class="d-block" style="color: #e2e8f0 !important;">• Trụ sở chính: Số 45 Đường Nông Nghiệp Xanh, Huyện Phong Điền, TP. Huế</span>
+                                <span class="d-block" style="color: #e2e8f0 !important;">• Cs1: Tổng kho lạnh Miền Trung: Lô A3 KCN Phú Bài, Hương Thủy, Thừa Thiên Huế</span>
+                                <span class="d-block" style="color: #e2e8f0 !important;">• Cs2: Kho trung chuyển Đà Nẵng: 120 Trường Chinh, Cẩm Lệ, Đà Nẵng</span>
+                                <span class="d-block" style="color: #e2e8f0 !important;">• Cs3: Chi nhánh đối tác TP.HCM: 88 Nam Kỳ Khởi Nghĩa, Quận 1, TP. Hồ Chí Minh</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+                            <i class="bi bi-envelope-fill flex-shrink-0" style="color: #4ade80 !important;"></i>
+                            <div>
+                                <strong style="color: #4ade80 !important;">EMAIL:</strong>
+                                <a href="mailto:info@coopagri.vn" class="ms-1" style="color: #f1f5f9 !important; text-decoration: underline;">info@coopagri.vn</a>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+                            <i class="bi bi-telephone-fill flex-shrink-0" style="color: #4ade80 !important;"></i>
+                            <div>
+                                <strong style="color: #4ade80 !important;">HOTLINE:</strong>
+                                <a href="tel:0981291299" class="fw-bold text-decoration-none ms-1" style="color: #facc15 !important; font-size: 0.95rem;">0981 291 299</a>
+                                <span class="ms-1" style="color: #cbd5e1 !important;">| 1900 6868</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cột 2: Khám phá (Hiển thị linh hoạt theo trạng thái đăng nhập đại lý) -->
+                <div class="col-lg-3 col-md-6 col-6">
+                    <h5 class="footer-title fw-bold mb-3" style="font-size: 1.05rem; letter-spacing: 0.03em; color: #ffffff !important; border-bottom: 2px solid #22c55e; padding-bottom: 6px; display: inline-block;">
+                        Khám phá
+                    </h5>
+                    <ul class="list-unstyled footer-links d-flex flex-column gap-2 mb-0" style="font-size: 0.88rem;">
+                        <li><a href="/" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Giới thiệu Hợp tác xã</a></li>
+                        <li><a href="/products" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Danh mục nông sản sạch</a></li>
+                        <li><a href="/batches" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Lô mùa vụ mở đặt trước</a></li>
+                        @if (UserSession.IsDealer)
+                        {
+                            <li><a href="/my-orders" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Đơn đặt của tôi</a></li>
+                            <li><a href="/my-allocations" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Phân bổ nhận được</a></li>
+                        }
+                        else
+                        {
+                            <li><a href="/account/register" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Đăng ký đại lý đối tác</a></li>
+                            <li><a href="/account/login" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Đăng nhập tài khoản đại lý</a></li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- Cột 3: Chính sách & Phương thức thanh toán -->
+                <div class="col-lg-4 col-md-6 col-6">
+                    <h5 class="footer-title fw-bold mb-3" style="font-size: 1.05rem; letter-spacing: 0.03em; color: #ffffff !important; border-bottom: 2px solid #22c55e; padding-bottom: 6px; display: inline-block;">
+                        Chính sách
+                    </h5>
+                    <ul class="list-unstyled footer-links d-flex flex-column gap-2 mb-4" style="font-size: 0.88rem;">
+                        <li><a href="/policies/bao-mat" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Chính sách bảo mật thông tin</a></li>
+                        <li><a href="/policies/thanh-toan" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Quy định thanh toán & VietQR</a></li>
+                        <li><a href="/policies/phan-bo" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Chính sách phân bổ khi hụt mùa</a></li>
+                        <li><a href="/policies/kiem-dinh" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Tiêu chuẩn kiểm định VietGAP</a></li>
+                        <li><a href="/faq" style="color: #cbd5e1 !important; text-decoration: none;" class="hover-text-white">Hỏi đáp & Trợ giúp (FAQ)</a></li>
+                    </ul>
+
+                    <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.78rem; letter-spacing: 0.06em; color: #a3e635 !important;">
+                        Phương thức thanh toán
+                    </h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="payment-badge d-flex align-items-center gap-1-5 px-3 py-1-5 rounded-2"
+                             style="background: #143823 !important; border: 1.5px solid #22c55e !important; color: #86efac !important; font-size: 0.8rem; font-weight: 600;">
+                            <i class="bi bi-cash-stack fs-6 text-warning me-1"></i>
+                            <span>Thanh toán TIỀN MẶT (COD)</span>
+                        </div>
+                        <div class="payment-badge d-flex align-items-center gap-1-5 px-3 py-1-5 rounded-2"
+                             style="background: #143823 !important; border: 1.5px solid #38bdf8 !important; color: #7dd3fc !important; font-size: 0.8rem; font-weight: 600;">
+                            <i class="bi bi-qr-code fs-6 text-info me-1"></i>
+                            <span>Chuyển khoản VIETQR (VCB)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Bar: Bản quyền & Ghi chú -->
+            <div class="footer-bottom-bar mt-4 pt-3 border-top d-flex flex-column flex-md-row justify-content-between align-items-center gap-2"
+                 style="border-color: rgba(255, 255, 255, 0.2) !important; font-size: 0.8rem; color: #94a3b8 !important;">
+                <div>
+                    © @DateTime.Now.Year <strong style="color: #ffffff !important;">@BrandTitle</strong>. Bảo lưu mọi quyền.
+                </div>
+                <div>
+                    Nền tảng Đặt trước Nông sản theo Mùa vụ · Chuẩn hóa VietGAP & Phân bổ minh bạch
+                </div>
+            </div>
         </div>
-        <span>© @DateTime.Now.Year @BrandTitle · Nông sản theo mùa</span>
     </footer>
 
     <!-- Trợ lý AI Thông Minh COOPAGRI hiển thị cố định xuyên suốt website -->

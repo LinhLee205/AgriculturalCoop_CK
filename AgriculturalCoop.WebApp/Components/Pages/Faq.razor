@@ -1,0 +1,241 @@
+@page "/faq"
+@inject NavigationManager Nav
+
+<PageTitle>Hỏi Đáp & Trợ Giúp (FAQ) — COOPAGRI</PageTitle>
+
+<div class="container py-4">
+    <!-- Breadcrumb điều hướng -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-success">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Hỏi đáp & Trợ giúp</li>
+        </ol>
+    </nav>
+
+    <!-- Header Trang -->
+    <div class="text-center mb-5">
+        <span class="badge bg-success-subtle text-success px-3 py-1-5 rounded-pill fw-semibold mb-2" style="font-size: 0.85rem;">
+            💬 Hỗ Trợ Đối Tác & Khách Hàng 24/7
+        </span>
+        <h1 class="fw-bold text-dark mb-2" style="font-size: 2.2rem; color: #143823 !important;">
+            Câu Hỏi Thường Gặp (FAQ)
+        </h1>
+        <p class="text-muted mx-auto" style="max-width: 700px; font-size: 0.95rem;">
+            Tổng hợp và giải đáp các thắc mắc phổ biến nhất về quy trình đặt trước nông sản, phương thức thanh toán VietQR, thuật toán phân bổ tỷ lệ và chính sách giao hàng xe lạnh của HTX COOPAGRI.
+        </p>
+
+        <!-- Thanh tìm kiếm câu hỏi nhanh -->
+        <div class="mx-auto mt-4" style="max-width: 580px;">
+            <div class="input-group shadow-sm" style="border-radius: 50px; overflow: hidden; border: 1.5px solid #d1fae5;">
+                <span class="input-group-text bg-white border-0 ps-4 text-success">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control border-0 py-3 shadow-none" 
+                       placeholder="Nhập từ khóa cần tìm (VD: vietqr, phân bổ, thanh trà, giao hàng...)"
+                       @bind="searchQuery" @bind:event="oninput" />
+                @if (!string.IsNullOrEmpty(searchQuery))
+                {
+                    <button class="btn bg-white border-0 text-muted pe-3" type="button" @onclick="() => searchQuery = string.Empty">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách câu hỏi dạng Accordion Xổ Xuống (Collapsible list) -->
+    <div class="mx-auto" style="max-width: 1100px;">
+        @{
+            var filteredList = GetFilteredFaqs();
+        }
+
+        @if (filteredList.Count == 0)
+        {
+            <div class="text-center py-5 p-4 rounded-4 bg-light border">
+                <i class="bi bi-question-circle text-muted fs-1 d-block mb-2"></i>
+                <h5 class="fw-bold text-secondary">Không tìm thấy câu hỏi phù hợp với từ khóa "@searchQuery"</h5>
+                <p class="text-muted small">Bạn có thể hỏi trực tiếp Trợ lý AI ở góc dưới bên phải màn hình hoặc gọi Hotline 0981 291 299.</p>
+                <button type="button" class="btn btn-outline-success btn-sm rounded-pill px-3" @onclick="() => searchQuery = string.Empty">
+                    Xem tất cả câu hỏi
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3">
+                @foreach (var item in filteredList)
+                {
+                    bool isExpanded = expandedIds.Contains(item.Id);
+
+                    <div class="card border-0 shadow-sm overflow-hidden" 
+                         style="border-radius: 20px; border: 1.5px solid @(isExpanded ? "#86efac" : "#e2e8f0") !important; transition: all 0.25s ease;">
+                        
+                        <!-- Header câu hỏi (Click vào để Xổ xuống) -->
+                        <div class="d-flex justify-content-between align-items-center @(isExpanded ? "bg-success-subtle" : "bg-white")"
+                             style="cursor: pointer; user-select: none; padding: 22px 28px !important; min-height: 76px;"
+                             @onclick="() => ToggleItem(item.Id)">
+                            
+                            <div class="d-flex align-items-center gap-3 pe-3 flex-grow-1">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 @(isExpanded ? "bg-success text-white shadow-xs" : "bg-light text-success")"
+                                     style="width: 44px; height: 44px; font-size: 1.25rem;">
+                                    <i class="@item.Icon"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0 @(isExpanded ? "text-success-emphasis" : "text-dark")" style="font-size: 1.08rem; line-height: 1.5;">
+                                    @item.Question
+                                </h6>
+                            </div>
+
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 @(isExpanded ? "bg-success text-white" : "bg-light text-muted")" 
+                                 style="width: 38px; height: 38px; transform: @(isExpanded ? "rotate(180deg)" : "rotate(0deg)"); transition: all 0.25s ease;">
+                                <i class="bi bi-chevron-down" style="font-size: 1.1rem;"></i>
+                            </div>
+                        </div>
+
+                        <!-- Nội dung trả lời (Xổ xuống khi click) -->
+                        @if (isExpanded)
+                        {
+                            <div class="bg-white border-top animate-fade-in" style="font-size: 1rem; line-height: 1.8; color: #334155; padding: 26px 32px !important;">
+                                @((MarkupString)item.AnswerHtml)
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Khung kết nối hỗ trợ -->
+        <div class="mt-5 p-4 rounded-4 text-center bg-white border shadow-sm" style="border-radius: 24px !important; border-color: #e2e8f0 !important;">
+            <div class="d-inline-flex p-3 rounded-circle bg-success-subtle text-success mb-3 fs-3">
+                <i class="bi bi-headset"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-2">Bạn vẫn còn câu hỏi chưa được giải đáp?</h4>
+            <p class="text-muted mx-auto mb-4" style="max-width: 520px; font-size: 0.9rem;">
+                Đội ngũ điều phối viên của Hợp tác xã COOPAGRI luôn sẵn sàng tư vấn chi tiết cho các đại lý đối tác về mùa vụ, hợp đồng và vận chuyển.
+            </p>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <a href="tel:0981291299" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-xs">
+                    <i class="bi bi-telephone-fill me-1"></i> Gọi Hotline: 0981 291 299
+                </a>
+                <a href="/batches" class="btn btn-outline-success rounded-pill px-4 py-2 fw-bold">
+                    <i class="bi bi-box-seam me-1"></i> Khám phá các lô mùa vụ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string searchQuery = "";
+    private HashSet<int> expandedIds = new() { 1, 2 }; // Mặc định mở 2 câu đầu tiên
+
+    public record FaqItem(int Id, string Question, string AnswerHtml, string Icon);
+
+    private readonly List<FaqItem> faqList = new()
+    {
+        new FaqItem(
+            1,
+            "1. Lô mùa vụ là gì và tại sao đại lý nên đặt trước tại COOPAGRI?",
+            "<p><strong>Lô mùa vụ</strong> là đơn vị quản lý sản lượng thu hoạch nông sản của từng hộ xã viên theo một khoảng thời gian dự kiến (ví dụ: Lô Cà chua bi VietGAP thu hoạch tháng 11, Lô Thanh trà Thủy Biều thu hoạch tháng 10).</p>" +
+            "<p>Khi đại lý đặt trước:</p>" +
+            "<ul>" +
+            "<li><strong>Cố định đơn giá sỉ bao tiêu:</strong> Giá được giữ nguyên trong suốt mùa vụ, không lo tăng giá khi thị trường biến động.</li>" +
+            "<li><strong>Đảm bảo nguồn hàng:</strong> Được ưu tiên phân bổ sản lượng sạch, chuẩn VietGAP ngay khi cắt tại vườn.</li>" +
+            "<li><strong>Vận chuyển xe lạnh:</strong> Giao hàng tận nơi trong 24 giờ giữ trọn độ tươi giòn.</li>" +
+            "</ul>",
+            "bi-box-seam-fill"
+        ),
+
+        new FaqItem(
+            2,
+            "2. Khi thu hoạch thực tế bị thiếu hụt sản lượng thì HTX phân bổ như thế nào?",
+            "<p>Trong nông nghiệp, nếu gặp thời tiết bất lợi dẫn đến sản lượng thực tế thu hoạch thấp hơn tổng số lượng các đại lý đã đặt trước, COOPAGRI áp dụng <strong>Luật phân bổ tỷ lệ công bằng (Luật 2)</strong>:</p>" +
+            "<ul>" +
+            "<li>Số lượng mỗi đại lý nhận được = <code>(Lượng đặt của đại lý ÷ Tổng lượng đã đặt) × Sản lượng thực tế</code>.</li>" +
+            "<li>Áp dụng thuật toán <strong>Largest Remainder (Hamilton-Hare)</strong> làm tròn đến 0,01 kg để bảo đảm tổng phân bổ chính xác 100% bằng sản lượng thực tế thu hoạch.</li>" +
+            "<li>Ban Quản lý có thể điều chỉnh linh hoạt số lượng cho từng đơn trước khi chốt lưu và đăng thông báo công khai lên tài khoản đại lý.</li>" +
+            "</ul>",
+            "bi-pie-chart-fill"
+        ),
+
+        new FaqItem(
+            3,
+            "3. Phương thức thanh toán chuyển khoản qua VietQR hoạt động ra sao?",
+            "<p>Hệ thống tích hợp cổng thanh toán <strong>VietQR</strong> hoàn toàn tự động và chính xác:</p>" +
+            "<ul>" +
+            "<li><strong>Ngân hàng:</strong> Vietcombank (VCB)</li>" +
+            "<li><strong>Số tài khoản:</strong> <code>1041586535</code></li>" +
+            "<li><strong>Chủ tài khoản:</strong> LE THI LINH</li>" +
+            "<li><strong>Nội dung chuyển khoản cố định:</strong> <code>CK + Số điện thoại của đại lý</code> (hệ thống tự động sinh).</li>" +
+            "</ul>" +
+            "<p class='mb-0'>Khi đại lý dùng app ngân hàng quét mã QR, số tiền và nội dung sẽ tự động điền đúng 100%, không cần nhập tay, tránh nhầm lẫn.</p>",
+            "bi-qr-code-scan"
+        ),
+
+        new FaqItem(
+            4,
+            "4. Đơn hàng đặt trước tối đa bao nhiêu kg cho một lô nông sản?",
+            "<p>Theo <strong>Luật 1 của Hợp tác xã</strong>, tổng khối lượng đặt trước của tất cả các đại lý trên một lô <strong>không được vượt quá sản lượng dự kiến</strong> của lô đó.</p>" +
+            "<p class='mb-0'>Hệ thống tự động khóa ô đặt hàng hoặc báo lỗi vi phạm nếu số lượng vượt quá khối lượng khả dụng còn lại, bảo đảm không bao giờ bán vượt quá khả năng canh tác của xã viên.</p>",
+            "bi-shield-check"
+        ),
+
+        new FaqItem(
+            5,
+            "5. Thời gian vận chuyển bằng xe lạnh bảo ôn mất bao lâu?",
+            "<p>COOPAGRI sử dụng 100% xe tải lạnh chuyên dụng (dải nhiệt độ 5°C - 10°C):</p>" +
+            "<ul>" +
+            "<li><strong>Khu vực Thừa Thiên Huế & Đà Nẵng:</strong> Giao nhanh hỏa tốc trong <strong>4 - 8 giờ</strong> sau thu hoạch.</li>" +
+            "<li><strong>Các tỉnh thành khác (Hà Nội, TP.HCM...):</strong> Giao trong vòng <strong>24 giờ</strong> đến kho của đại lý.</li>" +
+            "</ul>",
+            "bi-truck"
+        ),
+
+        new FaqItem(
+            6,
+            "6. Chính sách đổi trả và kiểm tra hàng khi nhận như thế nào?",
+            "<p>Đại lý có quyền <strong>đồng kiểm</strong> số lượng và chất lượng nông sản ngay khi tài xế bàn giao. Nếu nông sản bị dập nát, hư hỏng do vận chuyển hoặc không đạt quy chuẩn cam kết, HTX sẽ:</p>" +
+            "<ul>" +
+            "<li>Đổi bù sản phẩm tương đương trong đợt giao tiếp theo hoặc;</li>" +
+            "<li>Hoàn tiền 100% phần giá trị sản phẩm bị lỗi trong vòng 24 giờ.</li>" +
+            "</ul>",
+            "bi-arrow-left-right"
+        ),
+
+        new FaqItem(
+            7,
+            "7. Làm thế nào để đăng ký trở thành đại lý đối tác chính thức?",
+            "<p>Rất đơn giản, bạn chỉ cần:</p>" +
+            "<ol>" +
+            "<li>Nhấn nút <strong>Đăng ký</strong> ở góc trên bên phải website hoặc chọn <em>Đăng ký làm đại lý</em> trên trang chủ.</li>" +
+            "<li>Điền đầy đủ thông tin: Tên đại lý, người liên hệ, số điện thoại và địa chỉ kho nhận hàng.</li>" +
+            "<li>Đăng nhập để nhận ngay bảng giá sỉ độc quyền và mức chiết khấu từ <strong>15% đến 25%</strong>.</li>" +
+            "</ol>",
+            "bi-person-plus-fill"
+        )
+    };
+
+    private void ToggleItem(int id)
+    {
+        if (expandedIds.Contains(id))
+        {
+            expandedIds.Remove(id);
+        }
+        else
+        {
+            expandedIds.Add(id);
+        }
+    }
+
+    private List<FaqItem> GetFilteredFaqs()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+            return faqList;
+
+        var q = searchQuery.ToLowerInvariant().Trim();
+        return faqList.Where(item => 
+            item.Question.ToLowerInvariant().Contains(q) || 
+            item.AnswerHtml.ToLowerInvariant().Contains(q)
+        ).ToList();
+    }
+}
+

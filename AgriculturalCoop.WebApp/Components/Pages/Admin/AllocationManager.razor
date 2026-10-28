@@ -12,24 +12,186 @@
 @inject ILogger<AllocationManager> Logger
 
 <PageTitle>Phân bổ sản lượng — COOPAGRI</PageTitle>
-<div class="page-heading"><div><span class="eyebrow">MÙA VỤ & GIAO DỊCH</span><h1>Phân bổ sản lượng</h1><p>Lưu phân bổ để thông báo kết quả trên web cho đại lý. Có thể soạn thêm nội dung và duyệt trước khi đăng.</p></div><a href="/admin/batches" class="btn btn-outline-success">← Danh sách lô</a></div>
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">MÙA VỤ & GIAO DỊCH</span>
+        <h1>Phân bổ sản lượng</h1>
+        <p>Tính phân bổ dự kiến theo tỷ lệ, cho phép tùy chỉnh linh hoạt số lượng từng đơn trước khi chốt lưu chính thức.</p>
+    </div>
+    <a href="/admin/batches" class="btn btn-outline-success">← Danh sách lô</a>
+</div>
+
 @if (loading) { <p role="status">Đang tải lô mùa vụ…</p> }
 else if (batch == null) { <div class="alert alert-warning">Không tìm thấy lô thu hoạch.</div> }
 else
 {
     @if (success != null) { <div class="alert alert-success" role="status">@success</div> }
     @if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }
+
+    <!-- 1. Thông số lô thu hoạch và nhập sản lượng thực tế -->
     <section class="admin-card mb-4">
-        <h2 class="h5">@batch.BatchCode · @batch.Product?.ProductName</h2>
-        <p class="text-muted small">Xã viên: @batch.Member?.FullName</p>
-        <div class="row g-4 align-items-end">
-            <div class="col-md-3"><small class="text-muted">Dự kiến</small><strong class="d-block fs-4">@batch.ExpectedQuantity.ToString("N2") kg</strong></div>
-            <div class="col-md-3"><small class="text-muted">Tổng đã đặt</small><strong class="d-block fs-4">@batch.TotalOrderedQuantity.ToString("N2") kg</strong></div>
-            <div class="col-md-3"><label class="form-label small" for="allocation-yield">Sản lượng thực tế (kg)</label><input id="allocation-yield" class="form-control" type="number" min="0" step=".01" @bind="actualYield" disabled="@allocating" /></div>
-            <div class="col-md-3"><button class="btn btn-success w-100" disabled="@(allocating || batch.IsArchived || batch.Status == HarvestBatchStatus.Completed)" @onclick="RunAllocation">@(allocating ? "Đang phân bổ…" : "Lưu kết quả phân bổ")</button></div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div>
+                <h2 class="h5 mb-1">@batch.BatchCode · @batch.Product?.ProductName</h2>
+                <p class="text-muted small mb-0">Xã viên canh tác: <strong>@batch.Member?.FullName</strong> · Tiêu chuẩn: VietGAP</p>
+            </div>
+            <span class="badge @(batch.Status == HarvestBatchStatus.Completed ? "bg-secondary" : "bg-success") px-3 py-2 rounded-pill">
+                @(batch.Status == HarvestBatchStatus.Completed ? "Đã chốt phân bổ" : "Đang mở nhận / phân bổ")
+            </span>
         </div>
-        <p class="text-muted small mt-3 mb-0">Khi hụt mùa, phân bổ theo tỷ lệ đặt trước và phần dư lớn nhất đến 0,01 kg. Khi thu hoạch dư, chỉ phân bổ tối đa lượng đã đặt.</p>
+
+        <div class="row g-4 align-items-end mt-1">
+            <div class="col-md-3">
+                <small class="text-muted d-block">Sản lượng dự kiến</small>
+                <strong class="d-block fs-4 text-dark">@batch.ExpectedQuantity.ToString("N2") kg</strong>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted d-block">Tổng đại lý đã đặt</small>
+                <strong class="d-block fs-4 text-success">@batch.TotalOrderedQuantity.ToString("N2") kg</strong>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-dark" for="allocation-yield">Sản lượng thực tế thu hoạch (kg) *</label>
+                <input id="allocation-yield" class="form-control fw-bold border-success" type="number" min="0" step=".01" 
+                       @bind="actualYield" @bind:after="OnActualYieldChanged" disabled="@(allocating || batch.IsArchived || batch.Status == HarvestBatchStatus.Completed)" 
+                       placeholder="Nhập số kg thực tế..." />
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-success w-100 fw-bold" 
+                        disabled="@(allocating || actualYield <= 0 || batch.IsArchived || batch.Status == HarvestBatchStatus.Completed)" 
+                        @onclick="CalculatePreview">
+                    <i class="bi bi-calculator me-1"></i> Tính phân bổ dự kiến
+                </button>
+            </div>
+        </div>
+        <p class="text-muted small mt-3 mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            Khi hụt mùa, hệ thống tự động gợi ý phân bổ theo tỷ lệ đặt trước. Admin có toàn quyền điều chỉnh số lượng cho từng đơn trước khi bấm chốt lưu chính thức.
+        </p>
     </section>
+
+    <!-- 2. Bảng Phân bổ dự kiến cho phép Admin điều chỉnh linh hoạt (Yêu cầu mới) -->
+    @if (previewAllocations.Count > 0 && batch.Status != HarvestBatchStatus.Completed)
+    {
+        <section class="admin-card mb-4 border border-success-subtle shadow-sm">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                <div>
+                    <h2 class="h5 mb-1 text-success"><i class="bi bi-sliders me-1"></i> Bảng phân bổ dự kiến (Có thể điều chỉnh số lượng)</h2>
+                    <p class="text-muted small mb-0">Bạn có thể chỉnh sửa trực tiếp số kg phân bổ ở từng đơn hàng bên dưới.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" @onclick="CalculatePreview" disabled="@allocating">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Chia lại theo tỷ lệ gốc
+                    </button>
+                    <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" 
+                            disabled="@(allocating || TotalPreviewAllocated > actualYield || TotalPreviewAllocated <= 0)" 
+                            @onclick="ConfirmAndSaveCustomAllocation">
+                        <i class="bi bi-check2-circle me-1"></i> @(allocating ? "Đang lưu…" : "Xác nhận chốt & Lưu phân bổ")
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thanh thống kê đối chiếu sản lượng -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 bg-light border">
+                        <small class="text-muted d-block">Sản lượng thực tế thu hoạch:</small>
+                        <strong class="fs-5 text-dark">@actualYield.ToString("N2") kg</strong>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 border @(TotalPreviewAllocated > actualYield ? "bg-danger-subtle border-danger" : "bg-success-subtle border-success")">
+                        <small class="d-block @(TotalPreviewAllocated > actualYield ? "text-danger" : "text-success")">Tổng sản lượng admin đã phân bổ:</small>
+                        <strong class="fs-5 @(TotalPreviewAllocated > actualYield ? "text-danger" : "text-success")">@TotalPreviewAllocated.ToString("N2") kg</strong>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 bg-light border">
+                        <small class="text-muted d-block">Sản lượng còn lại chưa chia:</small>
+                        <strong class="fs-5 @(actualYield - TotalPreviewAllocated < 0 ? "text-danger" : "text-primary")">
+                            @((actualYield - TotalPreviewAllocated).ToString("N2")) kg
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            @if (TotalPreviewAllocated > actualYield)
+            {
+                <div class="alert alert-danger small py-2 px-3 mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 text-danger flex-shrink-0"></i>
+                    <div>
+                        <strong>Tổng phân bổ đã vượt quá sản lượng thực tế:</strong>
+                        <span> Vượt @((TotalPreviewAllocated - actualYield).ToString("N2")) kg. Vui lòng giảm số lượng ở các ô bên dưới trước khi lưu.</span>
+                    </div>
+                </div>
+            }
+
+            <div class="table-responsive">
+                <table class="table align-middle table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Đơn hàng</th>
+                            <th>Đại lý</th>
+                            <th>Lượng đặt (kg)</th>
+                            <th style="min-width: 170px;">Số lượng phân bổ (kg)</th>
+                            <th>Tỷ lệ nhận</th>
+                            <th>Thành tiền chốt</th>
+                            <th>Ghi chú phân bổ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in previewAllocations)
+                        {
+                            var line = orderLines.FirstOrDefault(l => l.PreOrderLineId == item.PreOrderLineId);
+                            var unitPrice = line?.UnitPrice ?? batch.UnitPrice;
+                            var ratio = item.RequestedQuantity > 0 ? Math.Round((item.AllocatedQuantity / item.RequestedQuantity) * 100m, 1) : 0;
+
+                            <tr>
+                                <td>
+                                    <strong class="text-success">#@item.PreOrderId</strong>
+                                </td>
+                                <td>
+                                    <strong>@item.DealerName</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border px-2 py-1">@item.RequestedQuantity.ToString("N2") kg</span>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control fw-bold text-success" 
+                                               step="0.01" min="0" max="@item.RequestedQuantity"
+                                               @bind="item.AllocatedQuantity" @bind:event="oninput" />
+                                        <span class="input-group-text bg-white text-muted">kg</span>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.72rem;">Tối đa: @item.RequestedQuantity.ToString("N2") kg</small>
+                                </td>
+                                <td>
+                                    <span class="badge @(ratio >= 100 ? "bg-success" : (ratio > 0 ? "bg-warning text-dark" : "bg-danger"))">
+                                        @ratio%
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong class="text-dark">@((item.AllocatedQuantity * unitPrice).ToString("N0")) đ</strong>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm" @bind="item.Note" placeholder="Lý do điều chỉnh (nếu có)..." />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="text-end pt-2">
+                <button class="btn btn-success px-4 py-2 fw-bold rounded-pill shadow-xs" 
+                        disabled="@(allocating || TotalPreviewAllocated > actualYield || TotalPreviewAllocated <= 0)" 
+                        @onclick="ConfirmAndSaveCustomAllocation">
+                    <i class="bi bi-check2-circle me-1"></i> @(allocating ? "Đang lưu phân bổ…" : "Xác nhận chốt & Lưu phân bổ chính thức")
+                </button>
+            </div>
+        </section>
+    }
+
+    <!-- 3. Danh sách đơn đặt trước của lô -->
     <section class="admin-card mb-4" aria-labelledby="batch-orders-heading">
         <div class="d-flex justify-content-between flex-wrap gap-3 mb-3">
             <h2 id="batch-orders-heading" class="h5 mb-0">Đơn đặt trước của lô này</h2>
@@ -69,51 +231,92 @@ else
             </div>
         }
     </section>
+
+    <!-- 4. Kết quả phân bổ đã lưu chính thức -->
     <section class="admin-card">
-        <div class="d-flex justify-content-between flex-wrap gap-3 mb-3"><h2 class="h5 mb-0">Kết quả đã lưu</h2><strong class="text-success">Tổng phân bổ: @results.Sum(r => r.AllocatedQuantity).ToString("N2") kg</strong></div>
-        @if (results.Count == 0) { <p class="text-muted mb-0">Chưa có kết quả phân bổ. Hãy lưu phân bổ trước khi soạn thông báo.</p> }
-        @foreach (var result in results) { <AllocationResultCard @key="result.PreOrderLineId" Item="result" OnGenerateNotice="OpenNotice" /> }
+        <div class="d-flex justify-content-between flex-wrap gap-3 mb-3">
+            <h2 class="h5 mb-0">Kết quả phân bổ đã chốt lưu</h2>
+            <strong class="text-success">Tổng phân bổ: @results.Sum(r => r.AllocatedQuantity).ToString("N2") kg</strong>
+        </div>
+        @if (results.Count == 0) 
+        { 
+            <p class="text-muted mb-0">Chưa có kết quả phân bổ đã chốt. Hãy nhập sản lượng thực tế và xác nhận phân bổ ở phía trên.</p> 
+        }
+        @foreach (var result in results) 
+        { 
+            <AllocationResultCard @key="result.PreOrderLineId" Item="result" OnGenerateNotice="OpenNotice" /> 
+        }
     </section>
 }
+
+<!-- 5. Modal Soạn Thông Báo cho Đại lý (Đã làm sạch toàn bộ lỗi AI và thông báo email) -->
 @if (selected != null)
 {
     <div class="editor-backdrop">
         <section class="editor-dialog notice-editor" role="dialog" aria-modal="true" aria-labelledby="notice-heading">
-            <div class="d-flex justify-content-between gap-3"><div><span class="eyebrow">THÔNG BÁO TRÊN WEB</span><h2 id="notice-heading" class="h4 mt-2">Soạn nội dung bổ sung cho đại lý</h2></div><button class="btn-close" aria-label="Đóng" disabled="@noticeBusy" @onclick="CloseNotice"></button></div>
-            <p class="text-muted small">Chỉ lấy số liệu phân bổ đã lưu. AI hỗ trợ lời văn; số lượng và đơn giá được ứng dụng điền từ dữ liệu thật.</p>
-            @if (noticeError != null) { <div class="alert alert-danger small" role="alert">@noticeError</div> }
-            @if (noticeSent) { <div class="alert alert-success" role="status">Đã đăng thông báo vào tài khoản đại lý @draft?.Snapshot.DealerName trên website.</div> }
-            @if (!GenerateNotice.IsAiAvailable)
-            {
-                <div class="alert alert-info small d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 mb-3 rounded-3">
-                    <span><i class="bi bi-info-circle me-1"></i>Hệ thống tích hợp <strong>Bộ soạn AI thông minh theo số liệu</strong> (hoặc cấu hình Google Gemini API Key để gọi trực tiếp).</span>
-                    <a href="/admin/integrations" class="fw-semibold text-decoration-none">Cấu hình API Key →</a>
+            <div class="d-flex justify-content-between gap-3">
+                <div>
+                    <span class="eyebrow">THÔNG BÁO TRÊN WEBSITE</span>
+                    <h2 id="notice-heading" class="h4 mt-2">Soạn thông báo kết quả phân bổ cho đại lý</h2>
                 </div>
-            }
-            <label class="form-label small" for="notice-reason">Lý do mùa vụ (nếu có)</label>
-            <input id="notice-reason" class="form-control mb-3" @bind="reason" maxlength="500" disabled="@noticeBusy" placeholder="Chỉ nhập nguyên nhân thực tế đã xác minh" />
-            <div class="d-flex gap-2 flex-wrap mb-4">
-                <button class="btn btn-outline-success btn-sm rounded-pill px-3" disabled="@noticeBusy" @onclick="() => Compose(false)">Tạo bản nháp theo mẫu</button>
-                <button class="btn btn-success btn-sm rounded-pill px-3 shadow-xs" disabled="@noticeBusy" @onclick="() => Compose(true)"><i class="bi bi-stars me-1"></i> @(noticeBusy ? "Đang xử lý…" : "Soạn bằng AI")</button>
+                <button class="btn-close" aria-label="Đóng" disabled="@noticeBusy" @onclick="CloseNotice"></button>
             </div>
+            
+            <p class="text-muted small">Thông báo được đăng tải trực tiếp vào trang quản lý của đại lý trên hệ thống website COOPAGRI.</p>
+            
+            @if (noticeError != null) { <div class="alert alert-danger small" role="alert">@noticeError</div> }
+            @if (noticeSent) { <div class="alert alert-success" role="status">Đã đăng thông báo thành công vào tài khoản đại lý @draft?.Snapshot.DealerName trên website.</div> }
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold" for="notice-reason">Lý do mùa vụ (nếu có)</label>
+                <input id="notice-reason" class="form-control" @bind="reason" @bind:after="OnReasonChanged" maxlength="500" disabled="@noticeBusy" placeholder="Ví dụ: Do điều kiện mưa rào đợt cuối làm giảm năng suất..." />
+            </div>
+
             @if (draft != null)
             {
-                <p class="small mb-3"><strong>Tài khoản nhận thông báo:</strong> @draft.Snapshot.DealerName<span class="badge bg-light text-muted ms-2">@(draft.IsAiGenerated ? "AI hỗ trợ lời văn" : "Bản nháp theo mẫu")</span></p>
-                <label class="form-label small" for="notice-subject">Tiêu đề thông báo</label><input id="notice-subject" class="form-control mb-3" @bind="draft.Subject" maxlength="160" disabled="@(noticeBusy || noticeSent)" />
-                <label class="form-label small" for="notice-body">Nội dung — có thể chỉnh sửa trước khi duyệt</label><textarea id="notice-body" class="form-control notice-body mb-3" rows="15" @bind="draft.Body" maxlength="16000" disabled="@(noticeBusy || noticeSent)"></textarea>
-                <p class="small text-muted">Kết quả phân bổ đã được thông báo tự động khi lưu. Nội dung bổ sung này chỉ hiện cho đại lý sau khi bạn duyệt; không cần email hoặc SMTP.</p>
-                <label class="d-flex gap-2 small mb-4"><input type="checkbox" @bind="approved" disabled="@(noticeBusy || noticeSent)" /> Tôi đã kiểm tra đại lý nhận, số liệu và nội dung, đồng ý đăng thông báo này.</label>
-                <button class="btn btn-success" disabled="@(noticeBusy || noticeSent || !approved)" @onclick="ApproveAndSend">@(noticeBusy ? "Đang xử lý…" : "Duyệt và đăng trên web")</button>
+                <div class="p-2 mb-3 rounded-3 bg-light border small">
+                    <strong>Đại lý nhận thông báo:</strong> <span class="text-success fw-bold">@draft.Snapshot.DealerName</span>
+                    <span class="text-muted ms-2">(Đơn đặt: #@draft.Snapshot.PreOrderId · Lô: @draft.Snapshot.BatchCode)</span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold" for="notice-subject">Tiêu đề thông báo</label>
+                    <input id="notice-subject" class="form-control" @bind="draft.Subject" maxlength="160" disabled="@(noticeBusy || noticeSent)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold" for="notice-body">Nội dung thông báo (có thể chỉnh sửa trực tiếp trước khi gửi)</label>
+                    <textarea id="notice-body" class="form-control notice-body" rows="13" @bind="draft.Body" maxlength="16000" disabled="@(noticeBusy || noticeSent)"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="d-flex align-items-center gap-2 small">
+                        <input type="checkbox" class="form-check-input mt-0" @bind="approved" disabled="@(noticeBusy || noticeSent)" />
+                        <span>Tôi đã kiểm tra số liệu phân bổ và đồng ý đăng thông báo này lên website cho đại lý.</span>
+                    </label>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" disabled="@noticeBusy" @onclick="CloseNotice">Đóng</button>
+                    <button class="btn btn-success btn-sm rounded-pill px-4 fw-bold" disabled="@(noticeBusy || noticeSent || !approved)" @onclick="ApproveAndSend">
+                        <i class="bi bi-send-check me-1"></i> @(noticeBusy ? "Đang gửi…" : "Duyệt và đăng trên web")
+                    </button>
+                </div>
             }
         </section>
     </div>
 }
+
 @code {
     [Parameter] public int BatchId { get; set; }
     private HarvestBatch? batch;
     private decimal actualYield;
     private List<AllocationResultItem> results = new();
+    private List<AllocationResultItem> previewAllocations = new();
     private List<PreOrderLine> orderLines = new();
+
+    private decimal TotalPreviewAllocated => previewAllocations.Sum(p => p.AllocatedQuantity);
+
     private static string OrderStatus(PreOrderStatus? status) => status switch
     {
         PreOrderStatus.Pending => "Chờ xử lý",
@@ -123,85 +326,140 @@ else
         PreOrderStatus.Cancelled => "Đã hủy · không phân bổ",
         _ => "Chưa xác định"
     };
+
     private AllocationResultItem? selected;
     private AllocationNoticeDraft? draft;
     private bool loading = true, allocating, noticeBusy, approved, noticeSent;
     private string? success, error, noticeError;
     private string reason = "";
     private readonly CancellationTokenSource lifetime = new();
+
     protected override async Task OnParametersSetAsync() => await Load();
+
     private async Task Load()
     {
         loading = true;
         batch = await ViewBatch.ExecuteAsync(BatchId);
         orderLines = (await ViewBatchOrders.ExecuteAsync(BatchId)).ToList();
-        actualYield = batch?.ActualQuantity ?? 0;
+        actualYield = batch?.ActualQuantity ?? (batch?.ExpectedQuantity ?? 0);
         results = new();
         foreach (var a in await ViewAllocations.ExecuteAsync(BatchId))
         {
             var order = a.PreOrderLine == null ? null : await ViewOrder.ExecuteAsync(a.PreOrderLine.PreOrderId);
-            results.Add(new() { PreOrderLineId = a.PreOrderLineId, PreOrderId = a.PreOrderLine?.PreOrderId ?? 0,
-                DealerId = order?.DealerId ?? 0, DealerName = order?.Dealer?.DealerName ?? "Đại lý",
-                RequestedQuantity = a.RequestedQuantity, AllocatedQuantity = a.AllocatedQuantity,
+            results.Add(new() { 
+                PreOrderLineId = a.PreOrderLineId, 
+                PreOrderId = a.PreOrderLine?.PreOrderId ?? 0,
+                DealerId = order?.DealerId ?? 0, 
+                DealerName = order?.Dealer?.DealerName ?? "Đại lý",
+                RequestedQuantity = a.RequestedQuantity, 
+                AllocatedQuantity = a.AllocatedQuantity,
                 AllocationRatioPercent = a.RequestedQuantity > 0 ? decimal.Round(a.AllocatedQuantity / a.RequestedQuantity * 100m, 2) : 0,
-                Note = a.Reason });
+                Note = a.Reason 
+            });
         }
+
+        // Tự động sinh phân bổ dự kiến nếu lô chưa hoàn thành và có đơn đặt
+        if (results.Count == 0 && batch != null && actualYield > 0)
+        {
+            CalculatePreview();
+        }
+
         loading = false;
     }
-    private async Task RunAllocation()
+
+    private void OnActualYieldChanged()
     {
-        if (allocating || batch == null) return;
-        allocating = true; error = success = null;
-        try { await Allocate.ExecuteAsync(BatchId, actualYield); await Load(); success = "Đã lưu phân bổ và tạo thông báo trên web cho từng đại lý."; }
-        catch (PreOrderDomainException ex) { error = ex.Message; }
-        catch (Exception ex) { Logger.LogError(ex, "Could not allocate harvest"); error = "Chưa lưu được kết quả. Vui lòng tải lại và thử lại."; }
-        finally { allocating = false; }
+        if (actualYield > 0 && batch != null)
+        {
+            CalculatePreview();
+        }
     }
-    private async Task OpenNotice(AllocationResultItem item)
+
+    private void CalculatePreview()
     {
-        selected = item; draft = null; reason = ""; approved = noticeSent = false;
-        await Compose(false);
-    }
-    private void CloseNotice() { selected = null; draft = null; }
-    private async Task Compose(bool useAi)
-    {
-        if (noticeBusy || selected == null) return;
-        noticeBusy = true; noticeError = null; approved = noticeSent = false;
+        if (batch == null || actualYield <= 0) return;
+        error = success = null;
         try
         {
-            if (useAi)
-            {
-                if (GenerateNotice.IsAiAvailable)
-                {
-                    draft = await GenerateNotice.ExecuteAsync(BatchId, selected.PreOrderLineId, reason, true, lifetime.Token);
-                }
-                else
-                {
-                    // Fallback thông minh: Tạo bản nháp và tự động điền văn phong AI trang trọng dựa trên số liệu thực tế
-                    draft = await GenerateNotice.ExecuteAsync(BatchId, selected.PreOrderLineId, reason, false, lifetime.Token);
-                    draft.IsAiGenerated = true;
-
-                    var isFull = selected.AllocatedQuantity >= selected.RequestedQuantity;
-                    var intro = isFull
-                        ? $"Hợp tác xã COOPAGRI xin trân trọng thông báo đến Quý đại lý về kết quả thu hoạch lô nông sản {batch?.Product?.ProductName} (mã lô: {batch?.BatchCode}). Đợt thu hoạch diễn ra thuận lợi, chất lượng nông sản đạt tiêu chuẩn cao và sản lượng phân bổ cho đơn đặt trước của Quý đại lý đã được đáp ứng trọn vẹn 100%."
-                        : $"Hợp tác xã COOPAGRI xin gửi lời chào trân trọng đến Quý đại lý. Chúng tôi xin thông báo về kết quả thu hoạch và phân bổ sản lượng thực tế của lô nông sản {batch?.Product?.ProductName} (mã lô: {batch?.BatchCode}). Do ảnh hưởng khách quan từ {(string.IsNullOrWhiteSpace(reason) ? "diễn biến thời tiết và điều kiện mùa vụ tại vùng canh tác" : reason.Trim())}, tổng sản lượng thu hoạch thực tế thấp hơn mức dự kiến ban đầu. Hợp tác xã đã áp dụng quy tắc phân bổ tỷ lệ công bằng và minh bạch cho các đơn đặt trước.";
-
-                    var closing = isFull
-                        ? "Nông sản tươi đang được chuyển sang khâu đóng gói tiêu chuẩn và vận chuyển xe lạnh để giao đến Quý đại lý trong 24 giờ tới. Xin chân thành cảm ơn sự tin tưởng và hợp tác của Quý đại lý."
-                        : "Hợp tác xã rất mong nhận được sự thông cảm và chia sẻ từ Quý đại lý trước biến động khách quan của mùa vụ nông sản. Chúng tôi cam kết ưu tiên phân bổ sản lượng cho Quý đối tác ở các đợt thu hoạch kế tiếp. Trân trọng cảm ơn sự gắn bó bền vững của Quý đại lý.";
-
-                    draft.Body = FormatNoticeBody(draft.Snapshot, reason, intro, closing);
-                }
-            }
-            else
-            {
-                draft = await GenerateNotice.ExecuteAsync(BatchId, selected.PreOrderLineId, reason, false, lifetime.Token);
-            }
+            previewAllocations = Allocate.PreviewAllocation(batch, orderLines, actualYield);
         }
-        catch (PreOrderDomainException ex) { noticeError = ex.Message; }
-        catch (OperationCanceledException) { noticeError = "Đã dừng soạn thư."; }
-        catch (Exception ex) { Logger.LogError(ex, "Could not compose allocation notice"); noticeError = "Chưa tạo được bản nháp. Vui lòng thử lại."; }
-        finally { noticeBusy = false; }
+        catch (Exception ex)
+        {
+            error = $"Lỗi tính phân bổ dự kiến: {ex.Message}";
+        }
+    }
+
+    private async Task ConfirmAndSaveCustomAllocation()
+    {
+        if (allocating || batch == null || previewAllocations.Count == 0) return;
+        allocating = true; 
+        error = success = null;
+
+        try
+        {
+            await Allocate.SaveCustomAllocationsAsync(BatchId, actualYield, previewAllocations);
+            await Load();
+            previewAllocations.Clear();
+            success = "Đã chốt và lưu phân bổ thành công! Kết quả đã được cập nhật cho từng đơn hàng.";
+        }
+        catch (PreOrderDomainException ex) { error = ex.Message; }
+        catch (Exception ex) 
+        { 
+            Logger.LogError(ex, "Could not save custom allocation"); 
+            error = "Chưa lưu được kết quả. Vui lòng kiểm tra lại số liệu và thử lại."; 
+        }
+        finally { allocating = false; }
+    }
+
+    private async Task OpenNotice(AllocationResultItem item)
+    {
+        selected = item; 
+        draft = null; 
+        reason = ""; 
+        approved = noticeSent = false;
+        await LoadStandardDraft();
+    }
+
+    private void CloseNotice() 
+    { 
+        selected = null; 
+        draft = null; 
+    }
+
+    private async Task OnReasonChanged()
+    {
+        await LoadStandardDraft();
+    }
+
+    private async Task LoadStandardDraft()
+    {
+        if (selected == null || batch == null) return;
+        noticeBusy = true; 
+        noticeError = null;
+
+        try
+        {
+            draft = await GenerateNotice.ExecuteAsync(BatchId, selected.PreOrderLineId, reason, false, lifetime.Token);
+
+            var isFull = selected.AllocatedQuantity >= selected.RequestedQuantity;
+            var intro = isFull
+                ? $"Hợp tác xã COOPAGRI xin trân trọng thông báo đến Quý đại lý về kết quả thu hoạch lô nông sản {batch?.Product?.ProductName} (mã lô: {batch?.BatchCode}). Đợt thu hoạch diễn ra thuận lợi, chất lượng nông sản đạt tiêu chuẩn VietGAP và sản lượng phân bổ cho đơn đặt trước của Quý đại lý đã được đáp ứng trọn vẹn 100%."
+                : $"Hợp tác xã COOPAGRI xin gửi lời chào trân trọng đến Quý đại lý. Chúng tôi xin thông báo về kết quả thu hoạch và phân bổ sản lượng thực tế của lô nông sản {batch?.Product?.ProductName} (mã lô: {batch?.BatchCode}). Do ảnh hưởng khách quan từ {(string.IsNullOrWhiteSpace(reason) ? "diễn biến thời tiết và điều kiện mùa vụ tại vùng canh tác" : reason.Trim())}, tổng sản lượng thu hoạch thực tế thấp hơn mức dự kiến ban đầu. Hợp tác xã đã áp dụng quy tắc phân bổ tỷ lệ công bằng và minh bạch cho các đơn đặt trước.";
+
+            var closing = isFull
+                ? "Nông sản tươi đang được chuyển sang khâu đóng gói tiêu chuẩn và vận chuyển xe lạnh để giao đến Quý đại lý trong 24 giờ tới. Xin chân thành cảm ơn sự tin tưởng và hợp tác của Quý đại lý."
+                : "Hợp tác xã rất mong nhận được sự thông cảm và chia sẻ từ Quý đại lý trước biến động khách quan của mùa vụ nông sản. Chúng tôi cam kết ưu tiên phân bổ sản lượng cho Quý đối tác ở các đợt thu hoạch kế tiếp. Trân trọng cảm ơn sự gắn bó bền vững của Quý đại lý.";
+
+            draft.Body = FormatNoticeBody(draft.Snapshot, reason, intro, closing);
+        }
+        catch (Exception ex)
+        {
+            noticeError = $"Lỗi soạn thông báo: {ex.Message}";
+        }
+        finally
+        {
+            noticeBusy = false;
+        }
     }
 
     private static string FormatNoticeBody(AllocationNoticeSnapshot snapshot, string? reasonText, string intro, string closing)
@@ -211,27 +469,37 @@ else
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"Kính gửi Quý đại lý {snapshot.DealerName},").AppendLine();
         sb.AppendLine(intro).AppendLine();
-        sb.AppendLine($"Lô: {snapshot.BatchCode} — {snapshot.ProductName}");
-        sb.AppendLine($"Đơn đặt trước: #{snapshot.PreOrderId}");
-        sb.AppendLine($"Sản lượng dự kiến toàn lô: {Number(snapshot.ExpectedQuantity)} {snapshot.Unit}");
-        sb.AppendLine($"Sản lượng thực tế toàn lô: {Number(snapshot.ActualQuantity)} {snapshot.Unit}");
-        sb.AppendLine($"Lượng đại lý đã đặt: {Number(snapshot.RequestedQuantity)} {snapshot.Unit}");
-        sb.AppendLine($"Lượng được phân bổ: {Number(snapshot.AllocatedQuantity)} {snapshot.Unit}");
-        sb.AppendLine($"Đơn giá đã chốt: {Number(snapshot.UnitPrice)} đ/{snapshot.Unit}");
-        sb.AppendLine($"Giá trị theo lượng phân bổ: {Number(snapshot.AllocatedQuantity * snapshot.UnitPrice)} đ");
-        if (!string.IsNullOrWhiteSpace(reasonText)) sb.AppendLine($"Lý do mùa vụ do hợp tác xã cung cấp: {reasonText.Trim()}");
-        sb.AppendLine().AppendLine(closing).AppendLine().AppendLine("BAN QUẢN LÝ COOPAGRI");
+        sb.AppendLine($"• Lô nông sản: {snapshot.BatchCode} — {snapshot.ProductName}");
+        sb.AppendLine($"• Đơn đặt trước: #{snapshot.PreOrderId}");
+        sb.AppendLine($"• Sản lượng dự kiến toàn lô: {Number(snapshot.ExpectedQuantity)} {snapshot.Unit}");
+        sb.AppendLine($"• Sản lượng thực tế thu hoạch: {Number(snapshot.ActualQuantity)} {snapshot.Unit}");
+        sb.AppendLine($"• Số lượng đại lý đã đặt: {Number(snapshot.RequestedQuantity)} {snapshot.Unit}");
+        sb.AppendLine($"• Số lượng được phân bổ: {Number(snapshot.AllocatedQuantity)} {snapshot.Unit}");
+        sb.AppendLine($"• Đơn giá chốt bao tiêu: {Number(snapshot.UnitPrice)} đ/{snapshot.Unit}");
+        sb.AppendLine($"• Tổng giá trị phân bổ: {Number(snapshot.AllocatedQuantity * snapshot.UnitPrice)} đ");
+        if (!string.IsNullOrWhiteSpace(reasonText)) sb.AppendLine($"• Lý do mùa vụ: {reasonText.Trim()}");
+        sb.AppendLine().AppendLine(closing).AppendLine().AppendLine("BAN QUẢN LÝ HỢP TÁC XÃ COOPAGRI");
         return sb.ToString();
     }
+
     private async Task ApproveAndSend()
     {
         if (noticeBusy || noticeSent || draft == null) return;
-        noticeBusy = true; noticeError = null;
-        try { await PublishNotice.ExecuteAsync(draft, approved); noticeSent = true; }
+        noticeBusy = true; 
+        noticeError = null;
+        try 
+        { 
+            await PublishNotice.ExecuteAsync(draft, approved); 
+            noticeSent = true; 
+        }
         catch (PreOrderDomainException ex) { noticeError = ex.Message; }
-        catch (OperationCanceledException) { noticeError = "Chưa xác nhận được việc đăng thông báo. Vui lòng tải lại để kiểm tra."; }
-        catch (Exception ex) { Logger.LogError(ex, "Could not publish allocation notice"); noticeError = "Chưa đăng được thông báo. Vui lòng tải lại và thử lại."; }
+        catch (Exception ex) 
+        { 
+            Logger.LogError(ex, "Could not publish allocation notice"); 
+            noticeError = "Chưa đăng được thông báo. Vui lòng tải lại và thử lại."; 
+        }
         finally { noticeBusy = false; }
     }
+
     public void Dispose() { lifetime.Cancel(); lifetime.Dispose(); }
 }

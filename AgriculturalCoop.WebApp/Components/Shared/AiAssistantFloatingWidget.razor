@@ -63,9 +63,9 @@
                                 <i class="bi bi-stars"></i>
                             </div>
                         }
-                        <div class="p-3 rounded-4 shadow-xs" 
-                             style="max-width: 84%; line-height: 1.55; white-space: pre-line; @(msg.IsUser ? "background: #2d6a4f; color: #ffffff; border-bottom-right-radius: 4px !important;" : "background: #ffffff; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px !important;")">
-                            @msg.Text
+                        <div class="p-3 shadow-xs" 
+                             style="max-width: 85%; line-height: 1.6; border-radius: 20px !important; @(msg.IsUser ? "background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%); color: #ffffff; border: none; box-shadow: 0 4px 12px rgba(45,106,79,0.25);" : "background: #ffffff; color: #1e293b; border: 1.5px solid #e2e8f0; box-shadow: 0 4px 14px rgba(0,0,0,0.04);")">
+                            @FormatMessage(msg.Text, msg.IsUser)
                         </div>
                     </div>
                 }
@@ -76,7 +76,7 @@
                         <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 13px;">
                             <i class="bi bi-stars"></i>
                         </div>
-                        <div class="p-3 rounded-4 bg-white border shadow-xs d-flex align-items-center gap-2 text-muted">
+                        <div class="p-3 bg-white border shadow-xs d-flex align-items-center gap-2 text-muted" style="border-radius: 20px !important;">
                             <span class="spinner-border spinner-border-sm text-success" role="status"></span>
                             <small>Đang tra cứu dữ liệu COOPAGRI…</small>
                         </div>
@@ -100,11 +100,11 @@
                     
                     @if (showSuggestions)
                     {
-                        <div class="d-flex flex-column gap-1-5">
+                        <div class="d-flex flex-column gap-2">
                             @foreach (var suggestion in suggestedQuestions)
                             {
-                                <button type="button" class="btn btn-sm btn-white border text-start rounded-pill px-3 py-1-5 shadow-xs text-dark hover-bg-light"
-                                        style="font-size: 0.8rem; background: #ffffff; transition: all 0.2s ease;"
+                                <button type="button" class="btn btn-sm btn-white border text-start rounded-pill px-3 py-2 shadow-xs text-dark hover-bg-light"
+                                        style="font-size: 0.8rem; background: #ffffff; transition: all 0.2s ease; margin-bottom: 2px;"
                                         @onclick="() => AskQuestion(suggestion)">
                                     <i class="bi bi-chat-left-dots text-success me-1"></i> @suggestion
                                 </button>
@@ -259,40 +259,156 @@ Hãy trả lời người dùng bằng tiếng Việt ngắn gọn, niềm nở,
         return GetFallbackAnswer(question);
     }
 
+    private MarkupString FormatMessage(string text, bool isUser)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return new MarkupString("");
+
+        // Mã hóa an toàn
+        var safeText = System.Net.WebUtility.HtmlEncode(text);
+
+        // Chuyển đổi **nội dung** thành chữ đậm, không để lộ dấu ** ra ngoài
+        string strongStyle = isUser 
+            ? "font-weight: 700; color: #ffffff;" 
+            : "font-weight: 700; color: #14532d;";
+
+        var formatted = System.Text.RegularExpressions.Regex.Replace(
+            safeText, 
+            @"\*\*(.*?)\*\*", 
+            $"<strong style=\"{strongStyle}\">$1</strong>"
+        );
+
+        // Thay bullet • thành chấm tròn xanh đẹp mắt
+        if (!isUser)
+        {
+            formatted = formatted.Replace("•", "<span style=\"color: #22c55e; font-weight: bold; margin-right: 6px;\">●</span>");
+        }
+
+        // Chuyển đổi xuống dòng thành <br />
+        formatted = formatted.Replace("\n", "<br />");
+
+        return new MarkupString(formatted);
+    }
+
     private string GetFallbackAnswer(string question)
     {
         var q = question.ToLowerInvariant();
 
-        if (q.Contains("quy trình") || q.Contains("bước") || q.Contains("đặt trước") || q.Contains("làm sao") || q.Contains("mua hàng"))
+        // 1. Chào hỏi
+        if (q.Contains("xin chào") || q.Contains("chào") || q.Contains("hi") || q.Contains("hello") || q.Contains("hey") || q.Contains("alo"))
         {
-            return "Quy trình đặt trước nông sản tại COOPAGRI gồm 4 bước minh bạch:\n\n1️⃣ **Chọn Lô Mùa Vụ:** Theo dõi thông tin xã viên canh tác, tiêu chuẩn VietGAP và ngày thu hoạch dự kiến.\n2️⃣ **Đặt Trước & Chốt Giá:** Đặt số lượng cần mua, cố định đơn giá sỉ ưu đãi.\n3️⃣ **Thu Hoạch & Phân Bổ:** Khi thu hoạch thực tế, HTX kiểm định chất lượng và phân bổ sản lượng theo tỷ lệ công bằng.\n4️⃣ **Giao Hàng Tận Nơi:** Vận chuyển xe lạnh chuyên dụng trong 24h đến kho hoặc cửa hàng đại lý.";
+            return "Xin chào quý khách! 🌿 Rất vui được hỗ trợ bạn tại Hợp tác xã Nông nghiệp COOPAGRI.\n\nTôi có thể giải đáp thông tin về giá sỉ các lô nông sản mùa vụ, hướng dẫn đặt trước, chính sách thanh toán VietQR (Vietcombank) và thuật toán phân bổ khi hụt mùa. Bạn đang quan tâm đến sản phẩm nào?";
         }
 
-        if (q.Contains("phân bổ") || q.Contains("thiếu") || q.Contains("tỷ lệ") || q.Contains("thực tế") || q.Contains("luật"))
+        // 2. Hỏi cụ thể từng sản phẩm nông sản
+        if (q.Contains("thanh trà") || q.Contains("thủy biều"))
         {
-            return "⚖️ **Quy tắc Phân Bổ Sản Lượng Thực Tế:**\n\nKhi sản lượng thu hoạch thực tế thấp hơn tổng số lượng các đại lý đã đặt trước, COOPAGRI áp dụng **thuật toán phân bổ theo tỷ lệ**:\n\n• Số lượng phân bổ của mỗi đại lý = (Số lượng đặt của đại lý ÷ Tổng lượng đã đặt) × Sản lượng thực tế.\n• Thuật toán làm tròn đảm bảo tổng lượng phân bổ bằng đúng sản lượng thực tế thu hoạch, đảm bảo tính công bằng và minh bạch tuyệt đối giữa các bên.";
+            return "🍊 **Thanh trà Thủy Biều (Đặc sản Cố Đô Huế):**\n\n• **Giá sỉ bao tiêu:** 9.000 đ/kg.\n• **Đặc điểm:** Vỏ mỏng vàng ươm, tép mọng nước, vị ngọt thanh mát đặc trưng phù sa sông Hương.\n• **Tiêu chuẩn:** Canh tác theo hướng hữu cơ sinh học, thu hoạch đúng độ chín rộ.\n• Bạn có thể vào mục **Lô mùa vụ** để đặt trước ngay!";
         }
 
-        if (q.Contains("thanh toán") || q.Contains("vietqr") || q.Contains("ngân hàng") || q.Contains("tiền") || q.Contains("chuyển khoản"))
+        if (q.Contains("cà chua bi") || (q.Contains("cà chua") && q.Contains("bi")))
         {
-            return "💳 **Phương thức Thanh toán tại COOPAGRI:**\n\nWebsite hỗ trợ 2 hình thức thanh toán thuận tiện:\n1. **Thanh toán khi nhận hàng (COD):** Thanh toán tiền mặt trực tiếp cho nhân viên vận chuyển.\n2. **Chuyển khoản VietQR:** Hệ thống tự động sinh mã QR với số tiền chính xác.\n• Ngân hàng: **Vietcombank (VCB)**\n• Số tài khoản: **1041586535**\n• Chủ tài khoản: **LE THI LINH**\n• Nội dung chuyển khoản: Hệ thống tự động tạo mã cố định `CK + Số điện thoại khách`.";
+            return "🍅 **Cà chua bi hữu cơ VietGAP:**\n\n• **Giá sỉ bao tiêu:** 25.000 đ/kg.\n• **Đặc điểm:** Giống Hà Lan cao cấp, trồng trong nhà kính công nghệ cao, vỏ đỏ căng bóng, vị ngọt đậm đà xen chua thanh, giàu vitamin A và Lycopene.\n• **Quy cách:** Thùng carton 10kg/thùng, bảo quản xe lạnh giao trong 24h.";
         }
 
-        if (q.Contains("chiết khấu") || q.Contains("đại lý") || q.Contains("quyền lợi") || q.Contains("sỉ") || q.Contains("hợp tác"))
+        if (q.Contains("cà chua beef") || (q.Contains("cà chua") && q.Contains("beef")))
         {
-            return "🤝 **Quyền lợi khi đăng ký làm Đại lý COOPAGRI:**\n\n• **Chiết khấu sỉ hấp dẫn từ 15% - 25%** trực tiếp tại vườn của xã viên.\n• **Bảo đảm bao tiêu ổn định giá:** Đơn giá được cố định ngay khi chốt đơn, không lo biến động thị trường.\n• **Vận chuyển xe lạnh chuyên dụng trong 24h** giữ nông sản luôn tươi giòn.\n• **Cung cấp mã QR truy xuất nguồn gốc** và hồ sơ chứng nhận VietGAP/Hữu cơ đầy đủ.";
+            return "🍅 **Cà chua Beef Đà Lạt:**\n\n• **Giá sỉ bao tiêu:** 35.000 đ/kg.\n• **Đặc điểm:** Trái to dày cơm, ít hạt, thơm ngon đậm vị, chuyên dùng cho các chuỗi siêu thị và bếp ăn tiêu chuẩn cao.";
         }
 
-        if (q.Contains("sản phẩm") || q.Contains("lô") || q.Contains("mở") || q.Contains("mùa vụ") || q.Contains("giá") || q.Contains("bán") || q.Contains("rau") || q.Contains("quả") || q.Contains("trái cây"))
+        if (q.Contains("xoài") || q.Contains("hòa lộc"))
         {
-            return "🌾 **Nông sản mùa vụ nổi bật đang mở đặt trước:**\n\n• **Trái cây đặc sản:** Xoài cát Hòa Lộc (75k/kg), Sầu riêng Ri6 Bến Tre (135k/kg), Thanh trà Thủy Biều Huế (9k/kg), Bưởi da xanh (45k/kg), Dưa hấu không hạt (28k/kg).\n• **Rau củ quả sạch:** Cà chua bi VietGAP (25k/kg), Cà chua beef Đà Lạt (35k/kg), Bí ngô mật Nhật Bản, Bắp ngọt hữu cơ.\n• **Rau ăn lá & Nấm:** Cải xoăn Kale hữu cơ, Cải bó xôi, Nấm mối đen hữu cơ, Nấm đùi gà baby, Tỏi cô đơn Lý Sơn.\n\nBạn có thể vào mục **Lô mùa vụ** trên thanh menu để chọn mua ngay!";
+            return "🥭 **Xoài cát Hòa Lộc (Tiền Giang):**\n\n• **Giá sỉ bao tiêu:** 75.000 đ/kg.\n• **Đặc điểm:** Trái to thuôn dài, vỏ vàng tươi khi chín, thịt quả vàng ươm dẻo mịn, thơm lừng và ngọt sắc đậm đà. Đạt chứng nhận VietGAP.";
         }
 
-        if (q.Contains("xin chào") || q.Contains("chào") || q.Contains("hi") || q.Contains("hello"))
+        if (q.Contains("sầu riêng") || q.Contains("ri6"))
         {
-            return "Xin chào bạn! 🌿 Rất vui được hỗ trợ bạn. Bạn đang muốn tìm hiểu về sản phẩm nông sản nào, quy trình đặt trước theo mùa vụ hay thông tin thanh toán chuyển khoản VietQR?";
+            return "🍈 **Sầu riêng Ri6 Bến Tre:**\n\n• **Giá sỉ bao tiêu:** 135.000 đ/kg.\n• **Đặc điểm:** Cơm vàng hạt lép, vị béo ngậy ngọt lịm, múi ráo không nhão. Canh tác an toàn sinh học, kiểm định độ đường Brix trước khi cắt.";
         }
 
-        return "Cảm ơn bạn đã nhắn tin cho COOPAGRI! 🌿\n\nChúng tôi chuyên cung cấp nông sản sạch theo mùa vụ với cam kết bao tiêu và phân bổ minh bạch. Bạn có thể hỏi tôi bất kỳ thông tin nào về: sản phẩm, giá sỉ bao tiêu, chính sách đại lý, quy tắc phân bổ hụt mùa vụ hoặc quét mã chuyển khoản VietQR!";
+        if (q.Contains("bưởi") || q.Contains("da xanh"))
+        {
+            return "🍈 **Bưởi da xanh Bến Tre:**\n\n• **Giá sỉ bao tiêu:** 45.000 đ/kg.\n• **Đặc điểm:** Vỏ xanh bóng, ruột hồng đỏ, tép bưởi giòn mọng nước, vị ngọt thanh không the đắng. Trọng lượng từ 1.2kg đến 1.8kg/trái.";
+        }
+
+        if (q.Contains("kale") || q.Contains("cải xoăn"))
+        {
+            return "🥬 **Cải xoăn Kale hữu cơ:**\n\n• **Giá sỉ bao tiêu:** 55.000 đ/kg.\n• **Đặc điểm:** Siêu thực phẩm giàu canxi, sắt và chất chống oxy hóa. Trồng hữu cơ không thuốc bảo vệ thực vật, lá xoăn xanh mướt, giòn ngọt.";
+        }
+
+        if (q.Contains("cải bó xôi") || q.Contains("chân vịt"))
+        {
+            return "🥬 **Cải bó xôi (Rau chân vịt Đà Lạt):**\n\n• **Giá sỉ bao tiêu:** 32.000 đ/kg.\n• **Đặc điểm:** Rau lá xanh đậm giàu sắt và folate, thu hoạch buổi sớm và sơ chế đóng gói ngay tại trang trại.";
+        }
+
+        if (q.Contains("bí ngô") || q.Contains("bí mật"))
+        {
+            return "🎃 **Bí ngô mật Nhật Bản:**\n\n• **Giá sỉ bao tiêu:** 22.000 đ/kg.\n• **Đặc điểm:** Vỏ mỏng ruột vàng cam đậm, vị ngọt bùi béo tự nhiên, bảo quản được lâu và rất được các siêu thị ưa chuộng.";
+        }
+
+        if (q.Contains("nấm") || q.Contains("nấm mối"))
+        {
+            return "🍄 **Nấm mối đen hữu cơ:**\n\n• **Giá sỉ bao tiêu:** 180.000 đ/kg.\n• **Đặc điểm:** Nuôi cấy trong phòng sạch vô trùng, thân nấm giòn ngọt tự nhiên, giàu dinh dưỡng và các axit amin quý.";
+        }
+
+        if (q.Contains("tỏi") || q.Contains("lý sơn"))
+        {
+            return "🧄 **Tỏi cô đơn Lý Sơn (Đặc sản Quảng Ngãi):**\n\n• **Giá sỉ bao tiêu:** 420.000 đ/kg.\n• **Đặc điểm:** Tép tỏi tròn đều một tép duy nhất, hương thơm cay nồng thanh nhẹ, dược tính rất cao.";
+        }
+
+        // 3. Hỏi về giá cả chung hoặc danh mục
+        if (q.Contains("bảng giá") || q.Contains("bao nhiêu tiền") || (q.Contains("giá") && (q.Contains("nào") || q.Contains("bao nhiêu") || q.Contains("sỉ"))))
+        {
+            return "📋 **Bảng Giá Sỉ Bao Tiêu Nông Sản Mùa Vụ:**\n\n• Thanh trà Thủy Biều: **9.000 đ/kg**\n• Cà chua bi VietGAP: **25.000 đ/kg**\n• Cà chua beef Đà Lạt: **35.000 đ/kg**\n• Bưởi da xanh: **45.000 đ/kg**\n• Cải xoăn Kale: **55.000 đ/kg**\n• Xoài cát Hòa Lộc: **75.000 đ/kg**\n• Sầu riêng Ri6: **135.000 đ/kg**\n• Nấm mối đen hữu cơ: **180.000 đ/kg**\n\n👉 Giá đã được cố định theo hợp đồng bao tiêu, không tăng giá khi thị trường biến động!";
+        }
+
+        // 4. Thanh toán, VietQR, Số tài khoản, Ngân hàng
+        if (q.Contains("thanh toán") || q.Contains("vietqr") || q.Contains("stk") || q.Contains("số tài khoản") || q.Contains("ngân hàng") || q.Contains("chuyển khoản") || q.Contains("vietcombank") || q.Contains("tiền"))
+        {
+            return "💳 **Phương thức Thanh toán tại COOPAGRI:**\n\nHệ thống hỗ trợ 2 hình thức thanh toán chính thức:\n\n1. **Chuyển khoản VietQR:**\n• Ngân hàng: **Vietcombank (VCB)**\n• Số tài khoản: **1041586535**\n• Chủ tài khoản: **LE THI LINH**\n• Hệ thống tự động tạo mã QR có sẵn số tiền và nội dung cố định: **CK + Số điện thoại khách**.\n\n2. **Thanh toán khi nhận hàng (COD):**\n• Thanh toán tiền mặt trực tiếp cho nhân viên vận chuyển khi kiểm tra nhận hàng.";
+        }
+
+        // 5. Giao hàng, vận chuyển, thời gian
+        if (q.Contains("giao hàng") || q.Contains("vận chuyển") || q.Contains("xe lạnh") || q.Contains("bao lâu") || q.Contains("thời gian giao") || q.Contains("ship"))
+        {
+            return "🚚 **Chính Sách Vận Chuyển Xe Lạnh 24h:**\n\n• **Phương tiện:** 100% xe tải lạnh chuyên dụng duy trì nhiệt độ tiêu chuẩn (5°C - 10°C) giữ nông sản tươi giòn.\n• **Thời gian giao hàng:**\n• Nội thành Huế & Đà Nẵng: Giao hỏa tốc trong **4 - 8 giờ** sau thu hoạch.\n• Các tỉnh thành khác: Giao trong vòng **24 giờ** đến tận kho của đại lý.\n• **Đồng kiểm:** Đại lý được quyền kiểm tra quy cách và khối lượng trước khi ký nhận bàn giao.";
+        }
+
+        // 6. Địa chỉ, liên hệ, hotline, trụ sở
+        if (q.Contains("địa chỉ") || q.Contains("ở đâu") || q.Contains("liên hệ") || q.Contains("hotline") || q.Contains("số điện thoại") || q.Contains("sđt") || q.Contains("trụ sở") || q.Contains("email"))
+        {
+            return "📍 **Thông Tin Liên Hệ Hợp Tác Xã COOPAGRI:**\n\n• **Trụ sở chính:** Số 45 Đường Nông Nghiệp Xanh, Huyện Phong Điền, TP. Huế.\n• **Tổng kho lạnh Miền Trung:** Lô A3 KCN Phú Bài, Hương Thủy, Thừa Thiên Huế.\n• **Kho trung chuyển Đà Nẵng:** 120 Trường Chinh, Cẩm Lệ, Đà Nẵng.\n• **Chi nhánh đối tác TP.HCM:** 88 Nam Kỳ Khởi Nghĩa, Quận 1, TP. Hồ Chí Minh.\n• **Hotline 24/7:** **0981 291 299** | Tổng đài: 1900 6868.\n• **Email:** info@coopagri.vn | lienhe@coopagri.vn.\n• **Giấy phép kinh doanh:** GPKD số 0108686868 do Sở KH&ĐT cấp.";
+        }
+
+        // 7. Đại lý, đăng ký, đăng nhập, chiết khấu
+        if (q.Contains("đại lý") || q.Contains("chiết khấu") || q.Contains("đăng ký") || q.Contains("đăng nhập") || q.Contains("tài khoản") || q.Contains("hợp tác") || q.Contains("bán sỉ"))
+        {
+            return "🤝 **Chính Sách & Quyền Lợi Đại Lý Đối Tác:**\n\n• **Mức chiết khấu sỉ:** Hưởng giá gốc ưu đãi từ **15% đến 25%** so với thị trường bán lẻ.\n• **Cố định đơn giá:** Giá bao tiêu được chốt ngay khi đặt trước, không lo rủi ro tăng giá mùa khan hiếm.\n• **Ưu tiên phân bổ:** Được ưu tiên phân bổ sản lượng tối đa khi thu hoạch.\n• **Đăng ký tài khoản:** Nhấn nút **Đăng ký** trên góc phải trang web hoặc gọi Hotline **0981 291 299** để được kích hoạt tài khoản đại lý ngay.";
+        }
+
+        // 8. Quy trình đặt trước & Phân bổ khi hụt mùa vụ
+        if (q.Contains("quy trình") || q.Contains("bước") || q.Contains("đặt trước") || q.Contains("đặt hàng"))
+        {
+            return "🌾 **Quy Trình 4 Bước Đặt Trước Nông Sản Tại COOPAGRI:**\n\n1. **Chọn Lô Mùa Vụ:** Theo dõi thông tin hộ xã viên, tiêu chuẩn VietGAP và ngày thu hoạch dự kiến.\n2. **Đặt Trước & Chốt Giá:** Chọn số lượng cần mua, cố định giá sỉ ưu đãi.\n3. **Thu Hoạch & Phân Bổ:** Khi thu hoạch thực tế, HTX kiểm định chất lượng và phân bổ sản lượng minh bạch.\n4. **Giao Hàng Xe Lạnh:** Vận chuyển khép kín trong 24h đến kho hoặc cửa hàng của bạn.";
+        }
+
+        if (q.Contains("phân bổ") || q.Contains("thiếu") || q.Contains("hụt") || q.Contains("tỷ lệ") || q.Contains("luật") || q.Contains("thu hoạch"))
+        {
+            return "⚖️ **Thuật Toán Phân Bổ Khi Thu Hoạch Bị Hụt Mùa:**\n\nNếu sản lượng thu hoạch thực tế thấp hơn tổng số lượng các đại lý đã đặt trước:\n\n• HTX áp dụng **thuật toán phân bổ theo tỷ lệ** dựa trên khối lượng mỗi đại lý đã đặt: *(Lượng đặt của đại lý ÷ Tổng lượng đã đặt) × Sản lượng thực tế*.\n• Sử dụng phương pháp số dư lớn nhất để làm tròn chính xác đến 0,01 kg, bảo đảm **tổng lượng phân bổ bằng đúng sản lượng thu hoạch thực tế**.\n• Hệ thống tự động gửi thông báo chi tiết vào trang tài khoản của từng đại lý.";
+        }
+
+        // 9. Tiêu chuẩn chất lượng, VietGAP, Hữu cơ
+        if (q.Contains("vietgap") || q.Contains("chất lượng") || q.Contains("an toàn") || q.Contains("hữu cơ") || q.Contains("nguồn gốc") || q.Contains("kiểm định"))
+        {
+            return "🛡️ **Cam Kết Tiêu Chuẩn Nông Sản Sạch:**\n\n• **100% nông sản tươi sạch:** Canh tác tại các vùng trồng đạt chuẩn VietGAP, GlobalGAP và OCOP 5 sao.\n• **Không chất bảo quản độc hại:** Sơ chế khử trùng bằng công nghệ ozone hiện đại.\n• **Minh bạch truy xuất nguồn gốc:** Mỗi lô nông sản đều có mã định danh và thông tin xã viên phụ trách rõ ràng.\n• **Bảo hành đổi trả:** Đổi trả 100% trong vòng 24h nếu sản phẩm không đúng quy cách cam kết.";
+        }
+
+        // 10. Tìm kiếm sản phẩm hoặc lô mùa vụ chung
+        if (q.Contains("sản phẩm") || q.Contains("lô") || q.Contains("nông sản") || q.Contains("có gì") || q.Contains("bán gì"))
+        {
+            return "🌱 **COOPAGRI hiện đang mở đặt trước nhiều nhóm nông sản sạch:**\n\n1. **Trái cây đặc sản:** Xoài cát Hòa Lộc, Sầu riêng Ri6, Thanh trà Thủy Biều, Bưởi da xanh.\n2. **Rau củ quả:** Cà chua bi VietGAP, Cà chua beef Đà Lạt, Cà rốt hữu cơ, Bí ngô mật Nhật.\n3. **Rau ăn lá & Nấm:** Cải xoăn Kale, Cải thìa thủy canh, Xà lách Romaine, Nấm mối đen, Nấm đùi gà baby.\n\nBạn có thể vào tab **Nông sản** hoặc **Lô mùa vụ** trên thanh điều hướng để xem chi tiết từng lô!";
+        }
+
+        // Câu trả lời mặc định thân thiện, đầy đủ
+        return $"Cảm ơn quý khách đã quan tâm đến COOPAGRI! 🌿\n\nVề câu hỏi \"{question}\": Chúng tôi là nền tảng Đặt trước Nông sản theo Mùa vụ giữa các hộ nông dân xã viên và hệ thống siêu thị, đại lý.\n\nBạn có thể hỏi tôi chi tiết về: giá sỉ từng loại nông sản (thanh trà, cà chua bi, xoài, sầu riêng, cải kale...), tài khoản chuyển khoản VietQR Vietcombank, chính sách giao hàng xe lạnh 24h hoặc quy tắc phân bổ mùa vụ!";
     }
 }

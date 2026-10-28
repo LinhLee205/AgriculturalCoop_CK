@@ -1,5 +1,6 @@
 @attribute [Authorize(Roles = "Dealer")]
 @page "/my-orders"
+@page "/orders"
 @inject IViewPreOrdersByDealerUseCase ViewPreOrdersByDealerUseCase
 @inject UserSessionState UserSession
 @inject NavigationManager Nav
